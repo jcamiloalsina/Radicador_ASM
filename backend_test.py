@@ -703,7 +703,8 @@ def main():
                 "petitions",
                 200,
                 data=petition_data,
-                token=tester.tokens['citizen']
+                token=tester.tokens['citizen'],
+                form_data=True
             )
             
             if success and 'id' in response:
