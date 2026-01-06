@@ -951,6 +951,107 @@ export default function Predios() {
         </DialogContent>
       </Dialog>
 
+      {/* Cambios Pendientes Dialog */}
+      <Dialog open={showPendientesDialog} onOpenChange={setShowPendientesDialog}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-outfit flex items-center gap-2 text-amber-700">
+              <Bell className="w-5 h-5" />
+              Cambios Pendientes de Aprobación
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-emerald-50 p-3 rounded-lg text-center">
+                <p className="text-2xl font-bold text-emerald-700">{cambiosStats?.pendientes_creacion || 0}</p>
+                <p className="text-xs text-slate-500">Creaciones</p>
+              </div>
+              <div className="bg-blue-50 p-3 rounded-lg text-center">
+                <p className="text-2xl font-bold text-blue-700">{cambiosStats?.pendientes_modificacion || 0}</p>
+                <p className="text-xs text-slate-500">Modificaciones</p>
+              </div>
+              <div className="bg-red-50 p-3 rounded-lg text-center">
+                <p className="text-2xl font-bold text-red-700">{cambiosStats?.pendientes_eliminacion || 0}</p>
+                <p className="text-xs text-slate-500">Eliminaciones</p>
+              </div>
+            </div>
+
+            {cambiosPendientes.length === 0 ? (
+              <div className="py-8 text-center text-slate-500">
+                No hay cambios pendientes de aprobación
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {cambiosPendientes.map((cambio) => (
+                  <Card key={cambio.id} className="border-l-4 border-l-amber-400">
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant={
+                              cambio.tipo_cambio === 'creacion' ? 'default' :
+                              cambio.tipo_cambio === 'modificacion' ? 'secondary' : 'destructive'
+                            }>
+                              {cambio.tipo_cambio === 'creacion' ? 'Nuevo Predio' :
+                               cambio.tipo_cambio === 'modificacion' ? 'Modificación' : 'Eliminación'}
+                            </Badge>
+                            <span className="text-xs text-slate-500">
+                              {new Date(cambio.fecha_propuesta).toLocaleString('es-CO')}
+                            </span>
+                          </div>
+                          
+                          <div className="text-sm space-y-1">
+                            {cambio.predio_actual && (
+                              <p><strong>Predio:</strong> {cambio.predio_actual.codigo_homologado} - {cambio.predio_actual.nombre_propietario}</p>
+                            )}
+                            {cambio.datos_propuestos.nombre_propietario && (
+                              <p><strong>Propietario:</strong> {cambio.datos_propuestos.nombre_propietario}</p>
+                            )}
+                            {cambio.datos_propuestos.municipio && (
+                              <p><strong>Municipio:</strong> {cambio.datos_propuestos.municipio}</p>
+                            )}
+                            <p><strong>Propuesto por:</strong> {cambio.propuesto_por_nombre} ({cambio.propuesto_por_rol})</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            onClick={() => handleAprobarRechazar(cambio.id, true, 'Aprobado')}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Aprobar
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => {
+                              const comentario = window.prompt('Motivo del rechazo:');
+                              if (comentario !== null) {
+                                handleAprobarRechazar(cambio.id, false, comentario);
+                              }
+                            }}
+                          >
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Rechazar
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={() => setShowPendientesDialog(false)}>Cerrar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Detail Dialog */}
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
