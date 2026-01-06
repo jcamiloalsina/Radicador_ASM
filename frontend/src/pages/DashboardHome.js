@@ -124,7 +124,12 @@ export default function DashboardHome() {
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.title} className="border-slate-200 hover:shadow-md transition-shadow" data-testid={stat.testId}>
+            <Card 
+              key={stat.title} 
+              className="border-slate-200 hover:shadow-lg transition-all cursor-pointer hover:border-emerald-500" 
+              data-testid={stat.testId}
+              onClick={() => navigate('/dashboard/peticiones')}
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-slate-600">{stat.title}</CardTitle>
                 <div className={`${stat.color} p-2 rounded-md`}>
@@ -133,6 +138,7 @@ export default function DashboardHome() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-slate-900" data-testid={`${stat.testId}-value`}>{stat.value}</div>
+                <p className="text-xs text-slate-500 mt-2">Click para ver detalles</p>
               </CardContent>
             </Card>
           );
