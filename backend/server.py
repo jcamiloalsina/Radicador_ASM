@@ -481,11 +481,14 @@ async def login(credentials: UserLogin):
 
 @api_router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
+    # Get additional user data from database
+    user_db = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
     return {
         "id": current_user['id'],
         "email": current_user['email'],
         "full_name": current_user['full_name'],
-        "role": current_user['role']
+        "role": current_user['role'],
+        "puede_actualizar_gdb": user_db.get('puede_actualizar_gdb', False) if user_db else False
     }
 
 
