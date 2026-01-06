@@ -45,6 +45,7 @@ export default function DashboardLayout() {
   if (user.role !== 'ciudadano') {
     menuItems.push({ path: '/dashboard/todas-peticiones', label: 'Todas las Peticiones', icon: Users });
     menuItems.push({ path: '/dashboard/predios', label: 'Gestión de Predios', icon: MapPin });
+    menuItems.push({ path: '/dashboard/visor-predios', label: 'Visor de Predios', icon: Map });
   }
 
   if (['administrador', 'coordinador', 'atencion_usuario'].includes(user.role)) {
