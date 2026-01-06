@@ -251,13 +251,10 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "Filtro de estados desde dashboard"
-    - "Dropdowns en cascada para tipos de trámite"
-    - "Botón subir documento final en sección documentos"
-    - "Flujo de recuperación de contraseña"
+  current_focus: []
   stuck_tasks: []
-  test_all: true
+  test_all: false
+  test_priority: "completed"
 
 agent_communication:
   - agent: "main"
