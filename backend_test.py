@@ -934,21 +934,33 @@ def main():
         print("⚠️ Citizen login failed, but continuing with admin tests")
     
     # NEW FUNCTIONALITY TESTS - As requested in review
-    print("\n🆕 Testing New Functionalities...")
+    print("\n🆕 Testing New Functionalities from Review Request...")
     
-    # Test 1: Password Recovery Endpoints
+    # Test 1: Predios Eliminados Endpoint
+    tester.test_predios_eliminados_endpoint()
+    
+    # Test 2: Export Excel Endpoint
+    tester.test_export_excel_endpoint()
+    
+    # Test 3: Password Validation with Special Characters
+    tester.test_password_validation_special_chars()
+    
+    # Test 4: Terreno Info Endpoint
+    tester.test_terreno_info_endpoint()
+    
+    # Test 5: Password Recovery Endpoints (existing)
     tester.test_password_recovery_endpoints()
     
-    # Test 2: Dashboard Filtering
+    # Test 6: Dashboard Filtering (existing)
     tester.test_dashboard_filtering()
     
-    # Test 3: Petition Creation with Catalogs
+    # Test 7: Petition Creation with Catalogs (existing)
     tester.test_petition_creation_with_catalogs()
     
-    # Test 4: File Upload in Documents Section
+    # Test 8: File Upload in Documents Section (existing)
     tester.test_file_upload_in_documents_section()
     
-    # Test 5: Citizen File Upload and ZIP Download
+    # Test 9: Citizen File Upload and ZIP Download (existing)
     tester.test_citizen_file_upload_and_zip_download()
     
     # Test file operations with the specific petition mentioned
