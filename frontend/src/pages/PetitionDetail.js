@@ -577,6 +577,93 @@ export default function PetitionDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Historial Card */}
+      <Card className="border-slate-200">
+        <CardHeader>
+          <CardTitle className="text-slate-900 font-outfit">Historial del Trámite</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {petition.historial && petition.historial.length > 0 ? (
+            <div className="relative space-y-6" data-testid="historial-timeline">
+              {/* Timeline line */}
+              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+              
+              {petition.historial.map((entry, idx) => {
+                const fecha = new Date(entry.fecha);
+                const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+                
+                // Determine icon and color based on action
+                let IconComponent = Calendar;
+                let iconBgColor = 'bg-blue-100';
+                let iconColor = 'text-blue-600';
+                
+                if (entry.accion.includes('Radicado')) {
+                  IconComponent = FileText;
+                  iconBgColor = 'bg-indigo-100';
+                  iconColor = 'text-indigo-600';
+                } else if (entry.accion.includes('asignado') || entry.accion.includes('Asignado')) {
+                  IconComponent = UserPlus;
+                  iconBgColor = 'bg-yellow-100';
+                  iconColor = 'text-yellow-600';
+                } else if (entry.estado_nuevo === 'finalizado') {
+                  IconComponent = CheckCircle;
+                  iconBgColor = 'bg-emerald-100';
+                  iconColor = 'text-emerald-600';
+                } else if (entry.estado_nuevo === 'rechazado') {
+                  IconComponent = XCircle;
+                  iconBgColor = 'bg-red-100';
+                  iconColor = 'text-red-600';
+                } else if (entry.accion.includes('archivos') || entry.accion.includes('Archivos')) {
+                  IconComponent = Upload;
+                  iconBgColor = 'bg-purple-100';
+                  iconColor = 'text-purple-600';
+                }
+                
+                return (
+                  <div key={idx} className="relative flex gap-4 pl-10" data-testid={`historial-entry-${idx}`}>
+                    {/* Timeline dot/icon */}
+                    <div className={`absolute left-0 ${iconBgColor} p-2 rounded-full`}>
+                      <IconComponent className={`w-4 h-4 ${iconColor}`} />
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 pb-6">
+                      <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <p className="font-medium text-slate-900">{entry.accion}</p>
+                          <span className="text-xs text-slate-500">{fechaFormateada}</span>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-1">
+                          Por: <span className="font-medium">{entry.usuario}</span>
+                          <span className="text-xs text-slate-500 ml-2">
+                            ({entry.usuario_rol === 'atencion_usuario' ? 'Atención al Usuario' : 
+                              entry.usuario_rol === 'gestor_auxiliar' ? 'Gestor Auxiliar' : 
+                              entry.usuario_rol.charAt(0).toUpperCase() + entry.usuario_rol.slice(1)})
+                          </span>
+                        </p>
+                        {entry.notas && (
+                          <p className="text-sm text-slate-700 mt-2 p-2 bg-white rounded border border-slate-200">
+                            {entry.notas}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No hay historial disponible</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
