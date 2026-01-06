@@ -203,7 +203,7 @@ export default function ProductivityReports() {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-red-500"></div>
-              <span className="text-slate-700">< 60% - Necesita Mejora</span>
+              <span className="text-slate-700">&lt; 60% - Necesita Mejora</span>
             </div>
           </div>
         </CardContent>
