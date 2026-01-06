@@ -463,9 +463,27 @@ async def upload_petition_files(
     current_files = petition.get('archivos', [])
     updated_files = current_files + saved_files
     
+    # Add to historial
+    historial_entry = {
+        "accion": f"Archivos cargados ({len(saved_files)} archivo(s))",
+        "usuario": current_user['full_name'],
+        "usuario_rol": current_user['role'],
+        "estado_anterior": petition['estado'],
+        "estado_nuevo": petition['estado'],
+        "notas": f"Se cargaron {len(saved_files)} archivo(s) adicional(es)",
+        "fecha": datetime.now(timezone.utc).isoformat()
+    }
+    
+    current_historial = petition.get('historial', [])
+    current_historial.append(historial_entry)
+    
     await db.petitions.update_one(
         {"id": petition_id},
-        {"$set": {"archivos": updated_files, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        {"$set": {
+            "archivos": updated_files,
+            "historial": current_historial,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
     )
     
     # Notify assigned gestores or atencion usuario
