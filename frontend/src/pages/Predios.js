@@ -501,12 +501,12 @@ export default function Predios() {
                 </div>
                 <div>
                   <Label>Estado Civil</Label>
-                  <Select value={formData.estado_civil} onValueChange={(v) => setFormData({...formData, estado_civil: v})}>
+                  <Select value={formData.estado_civil || "none"} onValueChange={(v) => setFormData({...formData, estado_civil: v === "none" ? "" : v})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sin especificar</SelectItem>
+                      <SelectItem value="none">Sin especificar</SelectItem>
                       {catalogos?.estado_civil && Object.entries(catalogos.estado_civil).map(([k, v]) => (
                         <SelectItem key={k} value={k}>{k} - {v}</SelectItem>
                       ))}
