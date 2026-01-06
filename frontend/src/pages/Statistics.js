@@ -127,11 +127,28 @@ export default function Statistics() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500">Total Usuarios</p>
-                <p className="text-3xl font-bold text-slate-900">{summary?.total_users || 0}</p>
+                <p className="text-sm text-slate-500">Equipo Staff</p>
+                <p className="text-3xl font-bold text-slate-900">{totalStaff}</p>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {summary?.staff_counts?.coordinadores > 0 && (
+                    <Badge className="bg-emerald-100 text-emerald-800 text-xs">
+                      {summary.staff_counts.coordinadores} Coord.
+                    </Badge>
+                  )}
+                  {summary?.staff_counts?.gestores > 0 && (
+                    <Badge className="bg-green-100 text-green-800 text-xs">
+                      {summary.staff_counts.gestores} Gest.
+                    </Badge>
+                  )}
+                  {summary?.staff_counts?.atencion_usuario > 0 && (
+                    <Badge className="bg-indigo-100 text-indigo-800 text-xs">
+                      {summary.staff_counts.atencion_usuario} Atención
+                    </Badge>
+                  )}
+                </div>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-700" />
+                <UserCog className="w-6 h-6 text-blue-700" />
               </div>
             </div>
           </CardContent>
