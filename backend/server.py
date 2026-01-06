@@ -1346,6 +1346,167 @@ async def export_gestor_productivity_pdf(current_user: dict = Depends(get_curren
     )
 
 
+# ===== ADVANCED STATISTICS =====
+
+@api_router.get("/stats/by-municipality")
+async def get_stats_by_municipality(current_user: dict = Depends(get_current_user)):
+    """Get petition statistics grouped by municipality"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.ATENCION_USUARIO]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
+    
+    pipeline = [
+        {"$group": {
+            "_id": "$municipio",
+            "total": {"$sum": 1},
+            "radicado": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.RADICADO]}, 1, 0]}},
+            "asignado": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.ASIGNADO]}, 1, 0]}},
+            "revision": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.REVISION]}, 1, 0]}},
+            "finalizado": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.FINALIZADO]}, 1, 0]}},
+            "rechazado": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.RECHAZADO]}, 1, 0]}},
+            "devuelto": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.DEVUELTO]}, 1, 0]}}
+        }},
+        {"$sort": {"total": -1}}
+    ]
+    
+    results = await db.petitions.aggregate(pipeline).to_list(100)
+    
+    return [
+        {
+            "municipio": r["_id"] or "Sin especificar",
+            "total": r["total"],
+            "radicado": r["radicado"],
+            "asignado": r["asignado"],
+            "revision": r["revision"],
+            "finalizado": r["finalizado"],
+            "rechazado": r["rechazado"],
+            "devuelto": r["devuelto"]
+        }
+        for r in results
+    ]
+
+@api_router.get("/stats/by-tramite")
+async def get_stats_by_tramite(current_user: dict = Depends(get_current_user)):
+    """Get petition statistics grouped by tramite type"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.ATENCION_USUARIO]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
+    
+    pipeline = [
+        {"$group": {
+            "_id": "$tipo_tramite",
+            "total": {"$sum": 1},
+            "radicado": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.RADICADO]}, 1, 0]}},
+            "asignado": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.ASIGNADO]}, 1, 0]}},
+            "revision": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.REVISION]}, 1, 0]}},
+            "finalizado": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.FINALIZADO]}, 1, 0]}},
+            "rechazado": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.RECHAZADO]}, 1, 0]}},
+            "devuelto": {"$sum": {"$cond": [{"$eq": ["$estado", PetitionStatus.DEVUELTO]}, 1, 0]}}
+        }},
+        {"$sort": {"total": -1}}
+    ]
+    
+    results = await db.petitions.aggregate(pipeline).to_list(100)
+    
+    return [
+        {
+            "tipo_tramite": r["_id"] or "Sin especificar",
+            "total": r["total"],
+            "radicado": r["radicado"],
+            "asignado": r["asignado"],
+            "revision": r["revision"],
+            "finalizado": r["finalizado"],
+            "rechazado": r["rechazado"],
+            "devuelto": r["devuelto"]
+        }
+        for r in results
+    ]
+
+@api_router.get("/stats/by-gestor")
+async def get_stats_by_gestor(current_user: dict = Depends(get_current_user)):
+    """Get petition statistics grouped by assigned gestor"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.ATENCION_USUARIO]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
+    
+    # Get all gestores
+    gestores = await db.users.find(
+        {"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]}},
+        {"_id": 0, "id": 1, "full_name": 1, "role": 1}
+    ).to_list(100)
+    
+    gestor_stats = []
+    
+    for gestor in gestores:
+        gestor_id = gestor['id']
+        
+        # Count by status for this gestor
+        total = await db.petitions.count_documents({"gestores_asignados": gestor_id})
+        radicado = await db.petitions.count_documents({"gestores_asignados": gestor_id, "estado": PetitionStatus.RADICADO})
+        asignado = await db.petitions.count_documents({"gestores_asignados": gestor_id, "estado": PetitionStatus.ASIGNADO})
+        revision = await db.petitions.count_documents({"gestores_asignados": gestor_id, "estado": PetitionStatus.REVISION})
+        finalizado = await db.petitions.count_documents({"gestores_asignados": gestor_id, "estado": PetitionStatus.FINALIZADO})
+        rechazado = await db.petitions.count_documents({"gestores_asignados": gestor_id, "estado": PetitionStatus.RECHAZADO})
+        devuelto = await db.petitions.count_documents({"gestores_asignados": gestor_id, "estado": PetitionStatus.DEVUELTO})
+        
+        completion_rate = round((finalizado / total * 100), 1) if total > 0 else 0
+        
+        gestor_stats.append({
+            "gestor_id": gestor_id,
+            "gestor_name": gestor['full_name'],
+            "gestor_role": "Gestor" if gestor['role'] == UserRole.GESTOR else "Gestor Auxiliar",
+            "total": total,
+            "radicado": radicado,
+            "asignado": asignado,
+            "revision": revision,
+            "finalizado": finalizado,
+            "rechazado": rechazado,
+            "devuelto": devuelto,
+            "completion_rate": completion_rate
+        })
+    
+    # Sort by total descending
+    gestor_stats.sort(key=lambda x: x['total'], reverse=True)
+    
+    return gestor_stats
+
+@api_router.get("/stats/summary")
+async def get_stats_summary(current_user: dict = Depends(get_current_user)):
+    """Get overall statistics summary"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.ATENCION_USUARIO]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
+    
+    # Total counts
+    total_petitions = await db.petitions.count_documents({})
+    total_users = await db.users.count_documents({})
+    total_gestores = await db.users.count_documents({"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]}})
+    
+    # Status counts
+    status_counts = {
+        "radicado": await db.petitions.count_documents({"estado": PetitionStatus.RADICADO}),
+        "asignado": await db.petitions.count_documents({"estado": PetitionStatus.ASIGNADO}),
+        "revision": await db.petitions.count_documents({"estado": PetitionStatus.REVISION}),
+        "finalizado": await db.petitions.count_documents({"estado": PetitionStatus.FINALIZADO}),
+        "rechazado": await db.petitions.count_documents({"estado": PetitionStatus.RECHAZADO}),
+        "devuelto": await db.petitions.count_documents({"estado": PetitionStatus.DEVUELTO})
+    }
+    
+    # Completion rate
+    completion_rate = round((status_counts["finalizado"] / total_petitions * 100), 1) if total_petitions > 0 else 0
+    
+    # Recent petitions (last 30 days)
+    thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    recent_petitions = await db.petitions.count_documents({
+        "created_at": {"$gte": thirty_days_ago}
+    })
+    
+    return {
+        "total_petitions": total_petitions,
+        "total_users": total_users,
+        "total_gestores": total_gestores,
+        "status_counts": status_counts,
+        "completion_rate": completion_rate,
+        "recent_petitions_30_days": recent_petitions
+    }
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
