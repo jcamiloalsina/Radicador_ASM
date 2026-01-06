@@ -136,6 +136,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Endpoint /petitions/{id}/download-zip filtra y descarga solo archivos subidos por ciudadanos como ZIP"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: ZIP download working correctly. Contains only citizen files (solicitud.txt, cedula.pdf). Staff files excluded. Citizens blocked from access (403). ZIP file valid and downloadable by admin."
 
   - task: "Modelo Petition corregido para archivos como dict"
     implemented: true
