@@ -114,16 +114,25 @@ backend:
   - task: "Filtro de estados en Dashboard"
     implemented: true
     working: true
-    file: "/app/frontend/src/pages/DashboardHome.js"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Cards del dashboard ahora navegan con parámetro ?estado=X"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: GET /api/petitions/stats/dashboard returns proper status counts (total, radicado, asignado, rechazado, revision, devuelto, finalizado). Dashboard filtering backend support fully functional."
 
   - task: "AllPetitions lee filtro de URL"
     implemented: true
     working: true
     file: "/app/frontend/src/pages/AllPetitions.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
@@ -133,10 +142,61 @@ backend:
     implemented: true
     working: true
     file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "POST /auth/forgot-password, GET /auth/validate-reset-token, POST /auth/reset-password"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: All password recovery endpoints working correctly. POST /api/auth/forgot-password returns 520 (SMTP not configured) for valid email, 404 for invalid email. GET /api/auth/validate-reset-token and POST /api/auth/reset-password return 404 for invalid tokens as expected."
+
+  - task: "Catálogos de tipos de trámite y municipios backend"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Backend acepta y almacena valores de catálogos correctamente"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: POST /api/petitions accepts and stores catalog values correctly. Tested with 'Mutación Primera' and 'Ábrego' - values stored and retrieved properly."
+
+  - task: "File upload con metadata de rol"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "POST /api/petitions/{id}/upload añade metadata de rol y usuario"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: File upload functionality working correctly. Admin uploads include metadata (uploaded_by_role: administrador, uploaded_by_name, upload_date). Citizen uploads marked with ciudadano role."
+
+  - task: "ZIP download de archivos ciudadano"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "GET /api/petitions/{id}/download-zip descarga solo archivos de ciudadanos"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: ZIP download functionality working as designed. Admin can download ZIP containing only citizen-uploaded files. Staff files correctly excluded. Citizens blocked from ZIP download (403 Forbidden)."
 
 frontend:
   - task: "Botón Subir Archivos movido a sección documentos"
