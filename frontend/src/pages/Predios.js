@@ -20,6 +20,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 export default function Predios() {
+  const { user } = useAuth();
   const [predios, setPredios] = useState([]);
   const [catalogos, setCatalogos] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,8 +32,11 @@ export default function Predios() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showDeletedDialog, setShowDeletedDialog] = useState(false);
+  const [showPendientesDialog, setShowPendientesDialog] = useState(false);
   const [selectedPredio, setSelectedPredio] = useState(null);
   const [prediosEliminados, setPrediosEliminados] = useState([]);
+  const [cambiosPendientes, setCambiosPendientes] = useState([]);
+  const [cambiosStats, setCambiosStats] = useState(null);
   const [terrenoInfo, setTerrenoInfo] = useState(null);
   const [formData, setFormData] = useState({
     municipio: '',
