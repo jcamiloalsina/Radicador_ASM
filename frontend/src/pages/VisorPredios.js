@@ -140,12 +140,13 @@ export default function VisorPredios() {
     return `${area} m²`;
   };
 
+  // Estilo de polígonos - Cyan/Blanco para visibilidad en satélite
   const geoJSONStyle = {
-    color: '#047857',
+    color: '#00FFFF', // Cyan brillante para el borde
     weight: 3,
-    opacity: 0.9,
-    fillColor: '#10b981',
-    fillOpacity: 0.3
+    opacity: 1,
+    fillColor: '#FFFFFF', // Blanco para el relleno
+    fillOpacity: 0.25
   };
 
   const tileLayers = {
@@ -156,6 +157,38 @@ export default function VisorPredios() {
     satellite: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       attribution: '&copy; Esri'
+    }
+  };
+
+  // Función para subir nueva base GDB
+  const handleUploadGdb = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!file.name.endsWith('.zip') && !file.name.endsWith('.gdb')) {
+      toast.error('El archivo debe ser un .zip que contenga el .gdb');
+      return;
+    }
+    
+    setUploadingGdb(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/gdb/upload`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      toast.success('Base gráfica actualizada exitosamente');
+      fetchGdbStats(); // Recargar estadísticas
+      setShowUploadGdb(false);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al subir la base gráfica');
+    } finally {
+      setUploadingGdb(false);
     }
   };
 
