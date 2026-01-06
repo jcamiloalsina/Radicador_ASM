@@ -255,6 +255,7 @@ test_plan:
     - "Predios - Export Excel"
     - "Predios - Modal Eliminados"
     - "Validación de contraseñas con caracteres especiales"
+    - "Predios - Terreno Info"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
