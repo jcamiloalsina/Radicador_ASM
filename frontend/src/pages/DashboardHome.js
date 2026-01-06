@@ -50,56 +50,63 @@ export default function DashboardHome() {
     },
   ];
 
-  // Stats for staff - all states
+  // Stats for staff - all states with filter parameter
   const staffStats = [
     {
       title: 'Total de Peticiones',
       value: stats?.total || 0,
       icon: FileText,
       color: 'bg-blue-500',
-      testId: 'stat-total'
+      testId: 'stat-total',
+      filter: 'todos'
     },
     {
       title: 'Radicado',
       value: stats?.radicado || 0,
       icon: FileCheck,
       color: 'bg-indigo-500',
-      testId: 'stat-radicado'
+      testId: 'stat-radicado',
+      filter: 'radicado'
     },
     {
       title: 'Asignado',
       value: stats?.asignado || 0,
       icon: Clock,
       color: 'bg-yellow-500',
-      testId: 'stat-asignado'
+      testId: 'stat-asignado',
+      filter: 'asignado'
     },
     {
       title: 'En Revisión',
       value: stats?.revision || 0,
       icon: FileCheck,
       color: 'bg-purple-500',
-      testId: 'stat-revision'
+      testId: 'stat-revision',
+      filter: 'revision'
     },
     {
       title: 'Finalizado',
       value: stats?.finalizado || 0,
       icon: CheckCircle,
       color: 'bg-emerald-500',
-      testId: 'stat-finalizado'
+      testId: 'stat-finalizado',
+      filter: 'finalizado'
     },
     {
       title: 'Rechazado',
       value: stats?.rechazado || 0,
       icon: XCircle,
       color: 'bg-red-500',
-      testId: 'stat-rechazado'
+      testId: 'stat-rechazado',
+      filter: 'rechazado'
     },
     {
       title: 'Devuelto',
       value: stats?.devuelto || 0,
       icon: RotateCcw,
       color: 'bg-orange-500',
-      testId: 'stat-devuelto'
+      testId: 'stat-devuelto',
+      filter: 'devuelto'
     },
   ];
 
@@ -128,7 +135,7 @@ export default function DashboardHome() {
               key={stat.title} 
               className="border-slate-200 hover:shadow-lg transition-all cursor-pointer hover:border-emerald-500" 
               data-testid={stat.testId}
-              onClick={() => navigate('/dashboard/peticiones')}
+              onClick={() => navigate(user?.role === 'ciudadano' ? '/dashboard/peticiones' : `/dashboard/todas-peticiones?estado=${stat.filter || 'todos'}`)}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-slate-600">{stat.title}</CardTitle>
