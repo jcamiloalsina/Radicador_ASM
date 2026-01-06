@@ -29,6 +29,7 @@ function App() {
             <Route path="peticiones/:id" element={<PetitionDetail />} />
             <Route path="todas-peticiones" element={<AllPetitions />} />
             <Route path="usuarios" element={<UserManagement />} />
+            <Route path="reportes" element={<ProductivityReports />} />
           </Route>
         </Routes>
       </BrowserRouter>
