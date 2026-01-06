@@ -2356,7 +2356,7 @@ def generate_certificado_catastral(predio: dict, firmante: dict) -> bytes:
 
 @api_router.get("/predios/{predio_id}/certificado")
 async def generar_certificado_catastral_endpoint(predio_id: str, current_user: dict = Depends(get_current_user)):
-    """Genera un certificado catastral PDF para un predio específico"""
+    """Genera un certificado catastral PDF para un predio específico con consecutivo en blanco para llenado manual"""
     # Solo coordinador, administrador y atencion_usuario pueden generar certificados
     if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR, UserRole.ATENCION_USUARIO]:
         raise HTTPException(status_code=403, detail="No tiene permiso para generar certificados")
@@ -2366,16 +2366,10 @@ async def generar_certificado_catastral_endpoint(predio_id: str, current_user: d
     if not predio:
         raise HTTPException(status_code=404, detail="Predio no encontrado")
     
-    # Generar número de certificado único
-    # Formato: COM-F03-XXX-GC-YYY donde XXX es correlativo y YYY es el año
-    count = await db.certificados.count_documents({}) + 1
-    year = datetime.now().year
-    numero_certificado = f"COM-F03-{count:03d}-GC-{year}"
-    
-    # Registrar certificado en la base de datos
+    # Registrar certificado en la base de datos (sin número, se llena manualmente)
     certificado_record = {
         "id": str(uuid.uuid4()),
-        "numero": numero_certificado,
+        "numero": "(Por asignar)",
         "predio_id": predio_id,
         "codigo_predial": predio.get('codigo_predial_nacional', ''),
         "generado_por": current_user['id'],
@@ -2391,8 +2385,8 @@ async def generar_certificado_catastral_endpoint(predio_id: str, current_user: d
         "cargo": "SUBDIRECTOR(A) FINANCIERO(A) Y ADMINISTRATIVO(A)"
     }
     
-    # Generar PDF
-    pdf_bytes = generate_certificado_catastral(predio, numero_certificado, firmante)
+    # Generar PDF con campo editable para número
+    pdf_bytes = generate_certificado_catastral(predio, firmante)
     
     # Guardar temporalmente
     temp_path = UPLOAD_DIR / f"certificado_{predio_id}_{uuid.uuid4()}.pdf"
