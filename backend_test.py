@@ -538,7 +538,8 @@ class CatastralAPITester:
             "petitions",
             200,
             data=valid_petition_data,
-            token=self.tokens['admin']
+            token=self.tokens['admin'],
+            form_data=True
         )
         
         if success and 'id' in response:
