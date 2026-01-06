@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -15,12 +15,13 @@ const API = `${BACKEND_URL}/api`;
 
 export default function AllPetitions() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const [petitions, setPetitions] = useState([]);
   const [filteredPetitions, setFilteredPetitions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('todos');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('estado') || 'todos');
 
   useEffect(() => {
     if (user?.role === 'ciudadano') {
@@ -29,6 +30,25 @@ export default function AllPetitions() {
       fetchPetitions();
     }
   }, [user]);
+
+  // Update URL when filter changes
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter(value);
+    if (value === 'todos') {
+      searchParams.delete('estado');
+    } else {
+      searchParams.set('estado', value);
+    }
+    setSearchParams(searchParams);
+  };
+
+  useEffect(() => {
+    // Read initial filter from URL
+    const estadoFromUrl = searchParams.get('estado');
+    if (estadoFromUrl && estadoFromUrl !== statusFilter) {
+      setStatusFilter(estadoFromUrl);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     let filtered = [...petitions];
@@ -116,7 +136,7 @@ export default function AllPetitions() {
             </div>
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-slate-500" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                 <SelectTrigger className="focus:ring-emerald-600" data-testid="status-filter">
                   <SelectValue />
                 </SelectTrigger>
