@@ -623,11 +623,26 @@ def main():
     )
     
     if not admin_success:
-        print("❌ Admin login failed, cannot continue with file tests")
+        print("❌ Admin login failed, cannot continue with most tests")
         return 1
         
     if not citizen_success:
         print("⚠️ Citizen login failed, but continuing with admin tests")
+    
+    # NEW FUNCTIONALITY TESTS - As requested in review
+    print("\n🆕 Testing New Functionalities...")
+    
+    # Test 1: Password Recovery Endpoints
+    tester.test_password_recovery_endpoints()
+    
+    # Test 2: Dashboard Filtering
+    tester.test_dashboard_filtering()
+    
+    # Test 3: Petition Creation with Catalogs
+    tester.test_petition_creation_with_catalogs()
+    
+    # Test 4: File Upload in Documents Section
+    tester.test_file_upload_in_documents_section()
     
     # Test file operations with the specific petition mentioned
     print("\n📁 Testing File Upload and Download Operations...")
@@ -666,8 +681,8 @@ def main():
                 "nombre_completo": "Juan Pérez Ciudadano",
                 "correo": "ciudadano.prueba@test.com", 
                 "telefono": "3001234567",
-                "tipo_tramite": "Certificado de Tradición y Libertad",
-                "municipio": "Bogotá"
+                "tipo_tramite": "Certificado catastral",
+                "municipio": "Ábrego"
             }
             
             success, response = tester.run_test(
