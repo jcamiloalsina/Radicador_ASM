@@ -256,7 +256,43 @@ backend:
         comment: "GET /api/predios/terreno-info/{municipio} endpoint ya implementado previamente"
       - working: true
         agent: "testing"
-        comment: "✅ TESTED: GET /api/predios/terreno-info/{municipio} working correctly. Admin can get terrain info for 'Ábrego' (returns siguiente_terreno: '0001'). Citizens properly denied access (403 Forbidden). Returns proper structure with municipio, zona, sector, manzana_vereda, and siguiente_terreno fields."
+        comment: "✅ TESTED: GET /api/predios/terreno-info/{municipio} working correctly. Admin can get terrain info for 'Ábrego' (returns siguiente_terreno: '0002'). Citizens properly denied access (403 Forbidden). Returns proper structure with municipio, zona, sector, manzana_vereda, and siguiente_terreno fields."
+
+  - task: "Predios - Data Import Verification"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: GET /api/predios endpoint verified. Found exactly 11,267 properties from Ábrego as expected in review request. Data import verification successful."
+
+  - task: "Predios - Approval System"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Complete approval system working. POST /api/predios/cambios/proponer (gestor can propose changes), GET /api/predios/cambios/pendientes (admin can list pending), GET /api/predios/cambios/stats (statistics working), POST /api/predios/cambios/aprobar (admin can approve/reject). All endpoints functional."
+
+  - task: "Unified Statistics Page"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: All unified statistics endpoints working. GET /api/stats/summary, GET /api/stats/by-municipality (5 municipalities), GET /api/stats/by-tramite (6 types), GET /api/stats/by-gestor (1 gestor), GET /api/reports/gestor-productivity (1 gestor). All endpoints functional."
 
 frontend:
   - task: "Botón Subir Archivos movido a sección documentos"
