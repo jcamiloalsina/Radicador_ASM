@@ -224,3 +224,30 @@ agent_communication:
       - Ciudadano: ciudadano.prueba@test.com / Test123!
       
       Petición de prueba con archivos: RASMCG-0006-06-01-2026
+  - agent: "testing"
+    message: |
+      BACKEND TESTING COMPLETED - All requested functionalities working correctly:
+      
+      ✅ TESTED SUCCESSFULLY:
+      1. File Upload by Staff (POST /api/petitions/{id}/upload):
+         - Admin successfully uploaded file with complete metadata
+         - File metadata includes: uploaded_by_role, uploaded_by_name, upload_date
+         - Tested with petition RASMCG-0006-06-01-2026
+      
+      2. ZIP Download of Citizen Files (GET /api/petitions/{id}/download-zip):
+         - Admin successfully downloaded ZIP containing only citizen files
+         - ZIP contains: solicitud.txt, cedula.pdf (citizen files only)
+         - Staff-uploaded files correctly excluded from ZIP
+         - Citizens correctly blocked from accessing ZIP download (403 Forbidden)
+      
+      3. Authentication & Authorization:
+         - Admin login: ✅ catastro@asomunicipios.gov.co
+         - Citizen login: ✅ ciudadano.prueba@test.com
+         - Role-based access control working correctly
+      
+      4. File Metadata Verification:
+         - Citizen files: No role metadata (backward compatibility)
+         - Staff files: Complete metadata with role, name, date
+         - Proper differentiation between citizen and staff uploads
+      
+      BACKEND APIs are fully functional and meet all requirements.
