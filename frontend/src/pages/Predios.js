@@ -1207,8 +1207,8 @@ export default function Predios() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-3 gap-4 text-sm">
                   <div><span className="text-slate-500">Destino:</span> <strong>{selectedPredio.destino_economico} - {catalogos?.destino_economico?.[selectedPredio.destino_economico]}</strong></div>
-                  <div><span className="text-slate-500">Área Terreno:</span> <strong>{selectedPredio.area_terreno?.toLocaleString()} m²</strong></div>
-                  <div><span className="text-slate-500">Área Construida:</span> <strong>{selectedPredio.area_construida?.toLocaleString()} m²</strong></div>
+                  <div><span className="text-slate-500">Área Terreno:</span> <strong>{formatAreaHectareas(selectedPredio.area_terreno)}</strong></div>
+                  <div><span className="text-slate-500">Área Construida:</span> <strong>{formatAreaHectareas(selectedPredio.area_construida)}</strong></div>
                   <div className="col-span-2"><span className="text-slate-500">Avalúo:</span> <strong className="text-emerald-700">{formatCurrency(selectedPredio.avaluo)}</strong></div>
                 </CardContent>
               </Card>
