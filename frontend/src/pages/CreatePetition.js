@@ -1,0 +1,173 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { toast } from 'sonner';
+import axios from 'axios';
+import { ArrowLeft, Send } from 'lucide-react';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+export default function CreatePetition() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    nombre_completo: '',
+    correo: '',
+    telefono: '',
+    tipo_tramite: '',
+    municipio: ''
+  });
+
+  const tiposTramite = [
+    'Certificado de Tradición y Libertad',
+    'Actualización Catastral',
+    'Rectificación de Área',
+    'Englobo de Predios',
+    'Desenglobe de Predios',
+    'Formación Catastral',
+    'Conservación Catastral',
+    'Otro'
+  ];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await axios.post(`${API}/petitions`, formData);
+      toast.success('¡Petición creada exitosamente!');
+      navigate('/dashboard/peticiones');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al crear la petición');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto" data-testid="create-petition-page">
+      <Button
+        onClick={() => navigate('/dashboard')}
+        variant="ghost"
+        className="mb-6 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+        data-testid="back-button"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Volver
+      </Button>
+
+      <Card className="border-slate-200">
+        <CardHeader className="bg-gradient-to-br from-emerald-800 to-emerald-600 text-white rounded-t-lg">
+          <CardTitle className="text-2xl font-outfit" data-testid="form-title">Nueva Petición de Trámite</CardTitle>
+          <p className="text-emerald-100 text-sm mt-1">Complete el formulario con los datos del trámite catastral</p>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <form onSubmit={handleSubmit} className="space-y-6" data-testid="petition-form">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="nombre_completo" className="text-slate-700">Nombre Completo *</Label>
+                <Input
+                  id="nombre_completo"
+                  value={formData.nombre_completo}
+                  onChange={(e) => setFormData({ ...formData, nombre_completo: e.target.value })}
+                  required
+                  className="focus-visible:ring-emerald-600"
+                  placeholder="Juan Pérez Gómez"
+                  data-testid="input-nombre"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="correo" className="text-slate-700">Correo Electrónico *</Label>
+                <Input
+                  id="correo"
+                  type="email"
+                  value={formData.correo}
+                  onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+                  required
+                  className="focus-visible:ring-emerald-600"
+                  placeholder="correo@ejemplo.com"
+                  data-testid="input-correo"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="telefono" className="text-slate-700">Teléfono *</Label>
+                <Input
+                  id="telefono"
+                  type="tel"
+                  value={formData.telefono}
+                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                  required
+                  className="focus-visible:ring-emerald-600"
+                  placeholder="3001234567"
+                  data-testid="input-telefono"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="municipio" className="text-slate-700">Municipio *</Label>
+                <Input
+                  id="municipio"
+                  value={formData.municipio}
+                  onChange={(e) => setFormData({ ...formData, municipio: e.target.value })}
+                  required
+                  className="focus-visible:ring-emerald-600"
+                  placeholder="Bogotá"
+                  data-testid="input-municipio"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tipo_tramite" className="text-slate-700">Tipo de Trámite *</Label>
+              <Select value={formData.tipo_tramite} onValueChange={(value) => setFormData({ ...formData, tipo_tramite: value })}>
+                <SelectTrigger className="focus:ring-emerald-600" data-testid="select-tipo-tramite">
+                  <SelectValue placeholder="Seleccione el tipo de trámite" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposTramite.map((tipo) => (
+                    <SelectItem key={tipo} value={tipo} data-testid={`tramite-${tipo.toLowerCase().replace(/\s+/g, '-')}`}>
+                      {tipo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white"
+                data-testid="submit-petition-button"
+              >
+                {loading ? (
+                  'Enviando...'
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Enviar Petición
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/dashboard')}
+                className="flex-1"
+                data-testid="cancel-button"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
