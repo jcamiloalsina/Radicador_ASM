@@ -519,8 +519,26 @@ async def assign_gestor(
     }
     
     # If first assignment, change status to ASIGNADO
+    estado_cambio = False
     if petition['estado'] == PetitionStatus.RADICADO:
         update_data['estado'] = PetitionStatus.ASIGNADO
+        estado_cambio = True
+    
+    # Add to historial
+    gestor_rol = "Gestor" if gestor['role'] == UserRole.GESTOR else "Gestor Auxiliar"
+    historial_entry = {
+        "accion": f"{gestor_rol} asignado: {gestor['full_name']}",
+        "usuario": current_user['full_name'],
+        "usuario_rol": current_user['role'],
+        "estado_anterior": petition['estado'],
+        "estado_nuevo": update_data.get('estado', petition['estado']),
+        "notas": f"Asignado a {gestor['full_name']} ({gestor_rol})",
+        "fecha": datetime.now(timezone.utc).isoformat()
+    }
+    
+    current_historial = petition.get('historial', [])
+    current_historial.append(historial_entry)
+    update_data['historial'] = current_historial
     
     await db.petitions.update_one({"id": petition_id}, {"$set": update_data})
     
