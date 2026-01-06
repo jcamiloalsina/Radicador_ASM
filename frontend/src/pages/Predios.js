@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { 
   Plus, Search, Edit, Trash2, MapPin, FileText, Building, 
-  User, DollarSign, LayoutGrid, Eye, History
+  User, DollarSign, LayoutGrid, Eye, History, Download, AlertTriangle, Users
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -28,7 +28,10 @@ export default function Predios() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showDeletedDialog, setShowDeletedDialog] = useState(false);
   const [selectedPredio, setSelectedPredio] = useState(null);
+  const [prediosEliminados, setPrediosEliminados] = useState([]);
+  const [terrenoInfo, setTerrenoInfo] = useState(null);
   const [formData, setFormData] = useState({
     municipio: '',
     zona: '00',
