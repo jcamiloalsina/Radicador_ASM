@@ -536,6 +536,7 @@ export default function PetitionDetail() {
           <div className="flex justify-between items-center">
             <CardTitle className="text-slate-900 font-outfit">Documentos Adjuntos</CardTitle>
             <div className="flex gap-2">
+              {/* Botón para ciudadanos: subir archivos propios */}
               {petition.user_id === user?.id && (
                 <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
                   <DialogTrigger asChild>
@@ -563,6 +564,46 @@ export default function PetitionDetail() {
                         </div>
                       )}
                       <Button onClick={handleFileUpload} className="w-full" data-testid="confirm-upload-button">
+                        Subir Archivos
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+              {/* Botón para personal: subir archivos finales (solo en modo edición o siempre visible) */}
+              {user?.role !== 'ciudadano' && petition.user_id !== user?.id && (
+                <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" data-testid="staff-upload-button">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Subir Documento Final
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Subir Documento Final</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <p className="text-sm text-slate-600">
+                        Los archivos que subas estarán disponibles para que el ciudadano los descargue.
+                      </p>
+                      <Input
+                        type="file"
+                        multiple
+                        onChange={(e) => setFiles(Array.from(e.target.files))}
+                        data-testid="staff-upload-input"
+                      />
+                      {files.length > 0 && (
+                        <div className="space-y-2">
+                          {files.map((file, idx) => (
+                            <div key={idx} className="text-sm text-slate-700 flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              {file.name}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <Button onClick={handleFileUpload} className="w-full bg-emerald-700 hover:bg-emerald-800" data-testid="confirm-staff-upload">
                         Subir Archivos
                       </Button>
                     </div>
