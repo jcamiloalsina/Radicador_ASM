@@ -1361,6 +1361,263 @@ class CatastralAPITester:
         
         return stats_success and approval_success
 
+    def test_gdb_integration_endpoints(self):
+        """Test GDB Geographic Database Integration endpoints"""
+        print("\n🗺️ Testing GDB Geographic Database Integration...")
+        
+        if 'admin' not in self.tokens:
+            print("   ❌ No admin token available")
+            return False
+        
+        # Test 1: GET /api/gdb/stats (staff only)
+        success, response = self.run_test(
+            "Get GDB statistics (admin)",
+            "GET",
+            "gdb/stats",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        stats_success = False
+        if success:
+            expected_fields = ['gdb_disponible', 'predios_rurales', 'predios_urbanos', 'total_geometrias']
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields:
+                print(f"   ✅ GDB stats working:")
+                print(f"   - GDB Disponible: {response['gdb_disponible']}")
+                print(f"   - Predios Rurales: {response['predios_rurales']}")
+                print(f"   - Predios Urbanos: {response['predios_urbanos']}")
+                print(f"   - Total Geometrías: {response['total_geometrias']}")
+                stats_success = True
+            else:
+                missing_fields = [field for field in expected_fields if field not in response]
+                print(f"   ❌ Missing fields in GDB stats: {missing_fields}")
+        else:
+            print(f"   ❌ Failed to get GDB stats")
+        
+        # Test 2: GET /api/gdb/capas (staff only)
+        success, response = self.run_test(
+            "Get GDB layers (admin)",
+            "GET",
+            "gdb/capas",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        layers_success = False
+        if success and isinstance(response, list):
+            print(f"   ✅ Found {len(response)} GDB layers")
+            if len(response) > 0:
+                layer = response[0]
+                if 'nombre' in layer and 'tipo_geometria' in layer:
+                    print(f"   - Sample layer: {layer['nombre']} ({layer['tipo_geometria']})")
+                    layers_success = True
+                else:
+                    print(f"   ❌ Layer missing required fields (nombre, tipo_geometria)")
+            else:
+                print(f"   ⚠️ No layers found in GDB")
+                layers_success = True  # Empty list is valid
+        else:
+            print(f"   ❌ Failed to get GDB layers or invalid response format")
+        
+        # Test 3: GET /api/predios/codigo/{codigo}/geometria with real codes
+        rural_code = "540030008000000010027000000000"
+        urban_code = "540030101000000420002000000000"
+        
+        # Test rural code
+        success, response = self.run_test(
+            f"Get geometry for rural code (admin)",
+            "GET",
+            f"predios/codigo/{rural_code}/geometria",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        rural_geometry_success = False
+        if success:
+            if 'type' in response and response['type'] == 'Feature':
+                if 'geometry' in response and 'properties' in response:
+                    properties = response['properties']
+                    required_props = ['codigo', 'area_m2', 'perimetro_m', 'tipo']
+                    has_required_props = all(prop in properties for prop in required_props)
+                    
+                    if has_required_props:
+                        print(f"   ✅ Rural geometry retrieved successfully")
+                        print(f"   - Código: {properties['codigo']}")
+                        print(f"   - Área: {properties['area_m2']} m²")
+                        print(f"   - Tipo: {properties['tipo']}")
+                        rural_geometry_success = True
+                    else:
+                        missing_props = [prop for prop in required_props if prop not in properties]
+                        print(f"   ❌ Rural geometry missing properties: {missing_props}")
+                else:
+                    print(f"   ❌ Rural geometry missing geometry or properties")
+            else:
+                print(f"   ❌ Rural geometry not in GeoJSON Feature format")
+        else:
+            print(f"   ❌ Failed to get rural geometry")
+        
+        # Test urban code
+        success, response = self.run_test(
+            f"Get geometry for urban code (admin)",
+            "GET",
+            f"predios/codigo/{urban_code}/geometria",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        urban_geometry_success = False
+        if success:
+            if 'type' in response and response['type'] == 'Feature':
+                if 'geometry' in response and 'properties' in response:
+                    properties = response['properties']
+                    required_props = ['codigo', 'area_m2', 'perimetro_m', 'tipo']
+                    has_required_props = all(prop in properties for prop in required_props)
+                    
+                    if has_required_props:
+                        print(f"   ✅ Urban geometry retrieved successfully")
+                        print(f"   - Código: {properties['codigo']}")
+                        print(f"   - Área: {properties['area_m2']} m²")
+                        print(f"   - Tipo: {properties['tipo']}")
+                        urban_geometry_success = True
+                    else:
+                        missing_props = [prop for prop in required_props if prop not in properties]
+                        print(f"   ❌ Urban geometry missing properties: {missing_props}")
+                else:
+                    print(f"   ❌ Urban geometry missing geometry or properties")
+            else:
+                print(f"   ❌ Urban geometry not in GeoJSON Feature format")
+        else:
+            print(f"   ❌ Failed to get urban geometry")
+        
+        # Test 4: Verify citizens are denied access (403)
+        citizen_denied_success = True
+        if 'citizen' in self.tokens:
+            # Test GDB stats access denial
+            success, response = self.run_test(
+                "Get GDB stats (citizen) - should fail",
+                "GET",
+                "gdb/stats",
+                403,
+                token=self.tokens['citizen']
+            )
+            
+            if not success:
+                print(f"   ❌ Citizen access to GDB stats not properly denied")
+                citizen_denied_success = False
+            
+            # Test GDB layers access denial
+            success, response = self.run_test(
+                "Get GDB layers (citizen) - should fail",
+                "GET",
+                "gdb/capas",
+                403,
+                token=self.tokens['citizen']
+            )
+            
+            if not success:
+                print(f"   ❌ Citizen access to GDB layers not properly denied")
+                citizen_denied_success = False
+            
+            # Test geometry access denial
+            success, response = self.run_test(
+                "Get geometry (citizen) - should fail",
+                "GET",
+                f"predios/codigo/{rural_code}/geometria",
+                403,
+                token=self.tokens['citizen']
+            )
+            
+            if not success:
+                print(f"   ❌ Citizen access to geometry not properly denied")
+                citizen_denied_success = False
+            
+            if citizen_denied_success:
+                print(f"   ✅ Citizens properly denied access to GDB endpoints")
+        else:
+            print(f"   ⚠️ No citizen token available for access denial test")
+        
+        return stats_success and layers_success and rural_geometry_success and urban_geometry_success and citizen_denied_success
+
+    def test_certificate_generation_atencion_usuario(self):
+        """Test certificate generation for 'Atención al Usuario' role"""
+        print("\n📄 Testing Certificate Generation for Atención al Usuario...")
+        
+        # Test login with atencion_usuario credentials
+        atencion_success = self.test_login_with_credentials(
+            "atencion.test@asomunicipios.gov.co",
+            "Atencion123!",
+            "atencion_usuario"
+        )
+        
+        if not atencion_success:
+            print("   ❌ Failed to login with atencion_usuario credentials")
+            return False
+        
+        # Get a petition ID to test PDF export
+        if 'admin' in self.tokens:
+            success, response = self.run_test(
+                "Get petitions list for PDF test",
+                "GET",
+                "petitions",
+                200,
+                token=self.tokens['admin']
+            )
+            
+            petition_id = None
+            if success and isinstance(response, list) and len(response) > 0:
+                petition_id = response[0]['id']
+                print(f"   ✅ Found petition for testing: {response[0].get('radicado', 'Unknown')}")
+            else:
+                print("   ❌ No petitions found for PDF testing")
+                return False
+        else:
+            print("   ❌ No admin token to get petition list")
+            return False
+        
+        # Test PDF export with atencion_usuario role
+        if petition_id:
+            url = f"{self.api_url}/petitions/{petition_id}/export-pdf"
+            headers = {'Authorization': f'Bearer {self.tokens["atencion_usuario"]}'}
+            
+            self.tests_run += 1
+            print(f"\n🔍 Testing PDF Export by Atención al Usuario...")
+            
+            try:
+                response = requests.get(url, headers=headers, timeout=30)
+                
+                success = response.status_code == 200
+                if success:
+                    self.tests_passed += 1
+                    print(f"✅ Passed - Status: {response.status_code}")
+                    
+                    # Check if response is a PDF file
+                    content_type = response.headers.get('content-type', '')
+                    if 'pdf' in content_type or 'application/pdf' in content_type:
+                        print(f"   ✅ PDF file generated successfully")
+                        print(f"   - Content-Type: {content_type}")
+                        print(f"   - Content-Length: {len(response.content)} bytes")
+                        print(f"   - PDF should contain signature from 'Usuario Atención Test'")
+                        return True
+                    else:
+                        print(f"   ❌ Content-Type is {content_type}, expected PDF")
+                        return False
+                else:
+                    print(f"❌ Failed - Expected 200, got {response.status_code}")
+                    try:
+                        error_detail = response.json()
+                        print(f"   Error details: {error_detail}")
+                    except:
+                        print(f"   Response text: {response.text}")
+                    return False
+                    
+            except Exception as e:
+                print(f"❌ Failed - Error: {str(e)}")
+                return False
+        
+        return False
+
 def main():
     print("🚀 Starting Asomunicipios Cadastral Management System API Tests")
     print("=" * 60)
