@@ -732,7 +732,7 @@ def generate_petition_pdf(petition_data: dict, user_data: dict, signed_by: str =
     if signed_by:
         story.append(Spacer(1, 0.5*inch))
         story.append(Paragraph("___________________________", normal_style))
-        story.append(Paragraph(f"<b>Firmado digitalmente por:</b>", normal_style))
+        story.append(Paragraph("<b>Firmado digitalmente por:</b>", normal_style))
         story.append(Paragraph(f"{signed_by}", normal_style))
         story.append(Paragraph(f"Fecha: {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}", normal_style))
     
