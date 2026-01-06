@@ -11,8 +11,10 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { 
   Plus, Search, Edit, Trash2, MapPin, FileText, Building, 
-  User, DollarSign, LayoutGrid, Eye, History, Download, AlertTriangle, Users
+  User, DollarSign, LayoutGrid, Eye, History, Download, AlertTriangle, Users,
+  Clock, CheckCircle, XCircle, Bell
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
