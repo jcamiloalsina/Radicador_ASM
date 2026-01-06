@@ -141,10 +141,10 @@ class Petition(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-# ===== PREDIO MODELS (Código Nacional Catastral) =====
+# ===== PREDIO MODELS (Codigo Nacional Catastral) =====
 
-# Catálogo de municipios con código Código Nacional Catastral
-MUNICIPIOS_Código Nacional Catastral = {
+# Catalogo de municipios con codigo catastral nacional
+MUNICIPIOS_DIVIPOLA = {
     "Ábrego": {"departamento": "54", "municipio": "003"},
     "Bucarasica": {"departamento": "54", "municipio": "109"},
     "Cáchira": {"departamento": "54", "municipio": "128"},
