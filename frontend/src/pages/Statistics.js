@@ -184,7 +184,7 @@ export default function Statistics() {
       </div>
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Status Distribution Pie Chart */}
         <Card className="border-slate-200">
           <CardHeader>
@@ -194,7 +194,7 @@ export default function Statistics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -203,7 +203,7 @@ export default function Statistics() {
                     cy="50%"
                     labelLine={false}
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
+                    outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
                   >
@@ -219,6 +219,73 @@ export default function Statistics() {
           </CardContent>
         </Card>
 
+        {/* Staff Distribution Pie Chart */}
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-slate-900 font-outfit flex items-center gap-2">
+              <UserCog className="w-5 h-5 text-emerald-700" />
+              Equipo Staff
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-72">
+              {staffPieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={staffPieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ${value}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {staffPieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-500">
+                  <p>No hay personal registrado</p>
+                </div>
+              )}
+            </div>
+            {/* Staff Details */}
+            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+              <div className="flex items-center justify-between p-2 bg-emerald-50 rounded">
+                <span className="text-slate-600">Coordinadores</span>
+                <Badge className="bg-emerald-700 text-white">{summary?.staff_counts?.coordinadores || 0}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-green-50 rounded">
+                <span className="text-slate-600">Gestores</span>
+                <Badge className="bg-green-600 text-white">{summary?.staff_counts?.gestores || 0}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-teal-50 rounded">
+                <span className="text-slate-600">Gest. Auxiliares</span>
+                <Badge className="bg-teal-600 text-white">{summary?.staff_counts?.gestores_auxiliares || 0}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-indigo-50 rounded">
+                <span className="text-slate-600">Atención Usuario</span>
+                <Badge className="bg-indigo-600 text-white">{summary?.staff_counts?.atencion_usuario || 0}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-purple-50 rounded">
+                <span className="text-slate-600">Administradores</span>
+                <Badge className="bg-purple-600 text-white">{summary?.staff_counts?.administradores || 0}</Badge>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                <span className="text-slate-600">Ciudadanos</span>
+                <Badge className="bg-slate-500 text-white">{summary?.staff_counts?.ciudadanos || 0}</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* By Municipality Bar Chart */}
         <Card className="border-slate-200">
           <CardHeader>
@@ -228,18 +295,14 @@ export default function Statistics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={byMunicipality} layout="vertical" margin={{ left: 80 }}>
+                <BarChart data={byMunicipality.slice(0, 6)} layout="vertical" margin={{ left: 60 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
-                  <YAxis dataKey="municipio" type="category" tick={{ fontSize: 12 }} width={75} />
+                  <YAxis dataKey="municipio" type="category" tick={{ fontSize: 11 }} width={55} />
                   <Tooltip />
-                  <Legend />
-                  <Bar dataKey="finalizado" stackId="a" fill={STATUS_COLORS.finalizado} name="Finalizado" />
-                  <Bar dataKey="revision" stackId="a" fill={STATUS_COLORS.revision} name="Revisión" />
-                  <Bar dataKey="asignado" stackId="a" fill={STATUS_COLORS.asignado} name="Asignado" />
-                  <Bar dataKey="radicado" stackId="a" fill={STATUS_COLORS.radicado} name="Radicado" />
+                  <Bar dataKey="total" fill="#047857" name="Total" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
