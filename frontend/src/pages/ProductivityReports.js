@@ -1,293 +1,213 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { toast } from 'sonner';
+import axios from 'axios';
+import { Download, TrendingUp, Users, CheckCircle, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
-const ProductivityReports = () => {
-  const { user, token } = useAuth();
-  const { toast } = useToast();
-  const [productivityData, setProductivityData] = useState([]);
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+export default function ProductivityReports() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/reports/gestor-productivity', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+    // Only allow admin, coordinador, and atencion_usuario
+    if (user && !['administrador', 'coordinador', 'atencion_usuario'].includes(user.role)) {
+      navigate('/dashboard');
+      return;
+    }
+    fetchProductivityData();
+  }, [user, navigate]);
 
-        if (response.ok) {
-          const data = await response.json();
-          setProductivityData(data);
-        } else {
-          throw new Error('Error al cargar los datos de productividad');
-        }
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [token, toast]);
-
-  const exportToPDF = async () => {
-    setExporting(true);
+  const fetchProductivityData = async () => {
     try {
-      const response = await fetch('/api/reports/gestor-productivity/export-pdf', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `reporte_productividad_${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        toast({
-          title: "Éxito",
-          description: "Reporte exportado exitosamente"
-        });
-      } else {
-        throw new Error('Error al exportar el reporte');
-      }
+      const response = await axios.get(`${API}/reports/gestor-productivity`);
+      setData(response.data);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast.error('Error al cargar reportes de productividad');
     } finally {
-      setExporting(false);
+      setLoading(false);
     }
   };
 
+  const handleExportPDF = () => {
+    const url = `${API}/reports/gestor-productivity/export-pdf`;
+    window.open(url, '_blank');
+    toast.success('Descargando reporte PDF...');
+  };
+
   const getCompletionRateColor = (rate) => {
-    if (rate >= 80) return 'text-green-600 bg-green-100';
-    if (rate >= 60) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
+    if (rate >= 80) return 'bg-emerald-100 text-emerald-800';
+    if (rate >= 60) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-700"></div>
       </div>
     );
   }
 
+  // Calculate summary statistics
+  const totalGestores = data.length;
+  const totalAssigned = data.reduce((sum, g) => sum + g.total_assigned, 0);
+  const totalCompleted = data.reduce((sum, g) => sum + g.completed, 0);
+  const avgCompletionRate = totalGestores > 0 
+    ? (data.reduce((sum, g) => sum + g.completion_rate, 0) / totalGestores).toFixed(1) 
+    : 0;
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6" data-testid="productivity-reports-page">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reporte de Productividad</h1>
-          <p className="text-gray-600">Estadísticas de rendimiento por gestor</p>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 font-outfit" data-testid="page-heading">
+            Reportes de Productividad
+          </h2>
+          <p className="text-slate-600 mt-1">Análisis de desempeño de gestores y auxiliares</p>
         </div>
-        <button
-          onClick={exportToPDF}
-          disabled={exporting}
-          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        <Button
+          onClick={handleExportPDF}
+          className="bg-emerald-700 hover:bg-emerald-800 text-white"
+          data-testid="export-pdf-button"
         >
-          {exporting ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              Exportando...
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Exportar PDF
-            </>
-          )}
-        </button>
+          <Download className="w-4 h-4 mr-2" />
+          Exportar a PDF
+        </Button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Gestores</p>
-              <p className="text-2xl font-bold text-gray-900">{productivityData.length}</p>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-slate-200">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Total Gestores</CardTitle>
+            <Users className="w-4 h-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-slate-900" data-testid="total-gestores">{totalGestores}</div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Finalizados</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {productivityData.reduce((sum, gestor) => sum + gestor.completed, 0)}
-              </p>
-            </div>
-          </div>
-        </div>
+        <Card className="border-slate-200">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Total Asignados</CardTitle>
+            <Clock className="w-4 h-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-slate-900" data-testid="total-assigned">{totalAssigned}</div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">En Proceso</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {productivityData.reduce((sum, gestor) => sum + gestor.in_process, 0)}
-              </p>
-            </div>
-          </div>
-        </div>
+        <Card className="border-slate-200">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Total Finalizados</CardTitle>
+            <CheckCircle className="w-4 h-4 text-emerald-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-slate-900" data-testid="total-completed">{totalCompleted}</div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white p-6 rounded-lg shadow border">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tasa Promedio</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {productivityData.length > 0 
-                  ? Math.round(productivityData.reduce((sum, gestor) => sum + gestor.completion_rate, 0) / productivityData.length)
-                  : 0}%
-              </p>
-            </div>
-          </div>
-        </div>
+        <Card className="border-slate-200">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Tasa Promedio</CardTitle>
+            <TrendingUp className="w-4 h-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-slate-900" data-testid="avg-rate">{avgCompletionRate}%</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Productivity Table */}
-      <div className="bg-white rounded-lg shadow border overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Productividad por Gestor</h2>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Gestor
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rol
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Asignados
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Finalizados
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  En Proceso
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rechazados
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tiempo Promedio (días)
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tasa de Finalización
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {productivityData.map((gestor, index) => (
-                <tr key={gestor.gestor_id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                          <span className="text-sm font-medium text-green-800">
-                            {gestor.gestor_name.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                          </span>
+      <Card className="border-slate-200">
+        <CardHeader>
+          <CardTitle className="text-slate-900 font-outfit">Desempeño por Gestor</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {data.length === 0 ? (
+            <p className="text-center text-slate-600 py-8">No hay datos de gestores disponibles</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm" data-testid="productivity-table">
+                <thead className="bg-slate-100 border-b-2 border-slate-200">
+                  <tr>
+                    <th className="text-left p-3 font-semibold text-slate-700">Gestor</th>
+                    <th className="text-left p-3 font-semibold text-slate-700">Rol</th>
+                    <th className="text-center p-3 font-semibold text-slate-700">Total Asignados</th>
+                    <th className="text-center p-3 font-semibold text-slate-700">Finalizados</th>
+                    <th className="text-center p-3 font-semibold text-slate-700">En Proceso</th>
+                    <th className="text-center p-3 font-semibold text-slate-700">Rechazados</th>
+                    <th className="text-center p-3 font-semibold text-slate-700">Tiempo Prom. (días)</th>
+                    <th className="text-center p-3 font-semibold text-slate-700">Tasa Finalización</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map((gestor, idx) => (
+                    <tr 
+                      key={gestor.gestor_id} 
+                      className="border-b border-slate-200 hover:bg-slate-50"
+                      data-testid={`gestor-row-${idx}`}
+                    >
+                      <td className="p-3">
+                        <div>
+                          <p className="font-medium text-slate-900">{gestor.gestor_name}</p>
+                          <p className="text-xs text-slate-500">{gestor.gestor_email}</p>
                         </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{gestor.gestor_name}</div>
-                        <div className="text-sm text-gray-500">{gestor.gestor_email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      gestor.gestor_role === 'gestor' 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : 'bg-purple-100 text-purple-800'
-                    }`}>
-                      {gestor.gestor_role === 'gestor' ? 'Gestor' : 'Gestor Auxiliar'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {gestor.total_assigned}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {gestor.completed}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {gestor.in_process}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {gestor.rejected}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {gestor.avg_completion_days}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCompletionRateColor(gestor.completion_rate)}`}>
-                      {gestor.completion_rate}%
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td className="p-3">
+                        <Badge className="bg-blue-100 text-blue-800">
+                          {gestor.gestor_role === 'gestor' ? 'Gestor' : 'Gestor Auxiliar'}
+                        </Badge>
+                      </td>
+                      <td className="text-center p-3 font-medium">{gestor.total_assigned}</td>
+                      <td className="text-center p-3 text-emerald-700 font-medium">{gestor.completed}</td>
+                      <td className="text-center p-3 text-yellow-700 font-medium">{gestor.in_process}</td>
+                      <td className="text-center p-3 text-red-700 font-medium">{gestor.rejected}</td>
+                      <td className="text-center p-3 font-medium">{gestor.avg_completion_days}</td>
+                      <td className="text-center p-3">
+                        <Badge className={getCompletionRateColor(gestor.completion_rate)}>
+                          {gestor.completion_rate}%
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {productivityData.length === 0 && (
-          <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No hay datos disponibles</h3>
-            <p className="mt-1 text-sm text-gray-500">No se encontraron gestores con trámites asignados.</p>
+      {/* Legend */}
+      <Card className="border-emerald-200 bg-emerald-50">
+        <CardContent className="pt-6">
+          <p className="text-sm text-emerald-900 mb-2 font-medium">Indicadores de Tasa de Finalización:</p>
+          <div className="flex flex-wrap gap-4 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-emerald-500"></div>
+              <span className="text-slate-700">≥ 80% - Excelente</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-yellow-500"></div>
+              <span className="text-slate-700">60-79% - Bueno</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-red-500"></div>
+              <span className="text-slate-700">< 60% - Necesita Mejora</span>
+            </div>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default ProductivityReports;
+}
