@@ -103,160 +103,117 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Sistema de gestión catastral para Asomunicipios. Funcionalidades requeridas:
-  1. Personal (coordinador, gestores, atención al usuario) puede cargar archivos en peticiones
-  2. Ciudadanos cargan archivos individuales, personal puede descargar todos como ZIP
-  3. Los campos nombre, correo y teléfono no deben ser editables
-  4. Información sobre espacio de almacenamiento y migración de BD
+  Sistema de gestión catastral para Asomunicipios. Nuevas funcionalidades implementadas:
+  1. Filtro de estados en Dashboard - cards clickeables que filtran por estado
+  2. Botón "Subir Archivos" movido dentro de la sección de documentos
+  3. Recuperación de contraseña (enlace por email)
+  4. Catálogos de Tipos de Trámite con sub-opciones (cascada)
+  5. Catálogo de Municipios limitado a 12 opciones específicas
 
 backend:
-  - task: "Upload de archivos por personal (coordinador, gestor, atencion_usuario)"
+  - task: "Filtro de estados en Dashboard"
     implemented: true
     working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
+    file: "/app/frontend/src/pages/DashboardHome.js"
     status_history:
       - working: true
         agent: "main"
-        comment: "Endpoint /petitions/{id}/upload permite subir archivos con metadata de quien lo sube (role, name, date)"
-      - working: true
-        agent: "testing"
-        comment: "✅ VERIFIED: File upload by admin successful. Metadata includes uploaded_by_role='administrador', uploaded_by_name='Administrador Asomunicipios', upload_date. Tested with petition RASMCG-0006-06-01-2026"
+        comment: "Cards del dashboard ahora navegan con parámetro ?estado=X"
 
-  - task: "Descarga ZIP de archivos del ciudadano"
+  - task: "AllPetitions lee filtro de URL"
     implemented: true
     working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
+    file: "/app/frontend/src/pages/AllPetitions.js"
     status_history:
       - working: true
         agent: "main"
-        comment: "Endpoint /petitions/{id}/download-zip filtra y descarga solo archivos subidos por ciudadanos como ZIP"
-      - working: true
-        agent: "testing"
-        comment: "✅ VERIFIED: ZIP download working correctly. Contains only citizen files (solicitud.txt, cedula.pdf). Staff files excluded. Citizens blocked from access (403). ZIP file valid and downloadable by admin."
+        comment: "Usa useSearchParams para leer y actualizar filtro desde URL"
 
-  - task: "Modelo Petition corregido para archivos como dict"
+  - task: "Endpoints de recuperación de contraseña"
     implemented: true
     working: true
     file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
-        comment: "Cambiado archivos de List[str] a List[dict] para permitir metadata de archivos"
-      - working: true
-        agent: "testing"
-        comment: "✅ VERIFIED: File metadata model working correctly. Citizen files have basic structure, staff files include complete metadata (uploaded_by, uploaded_by_name, uploaded_by_role, upload_date)"
+        comment: "POST /auth/forgot-password, GET /auth/validate-reset-token, POST /auth/reset-password"
 
 frontend:
-  - task: "Campos no editables (nombre, correo, telefono) en formulario de edición"
+  - task: "Botón Subir Archivos movido a sección documentos"
     implemented: true
     working: true
     file: "/app/frontend/src/pages/PetitionDetail.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
-        comment: "Campos mostrados como disabled con fondo gris en sección 'Datos del Solicitante (No editables)'"
-      - working: true
-        agent: "testing"
-        comment: "✅ VERIFIED: Non-editable fields working perfectly. Found 'Datos del Solicitante (No editables)' section with all three fields (nombre, correo, telefono) properly disabled with gray background. Admin can edit other fields but not personal data."
+        comment: "Botón 'Subir Documento Final' ahora está en CardHeader de Documentos Adjuntos"
 
-  - task: "Botón subir archivos para personal"
+  - task: "Página recuperación de contraseña"
     implemented: true
     working: true
-    file: "/app/frontend/src/pages/PetitionDetail.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
+    file: "/app/frontend/src/pages/ForgotPassword.js"
     status_history:
       - working: true
         agent: "main"
-        comment: "Botón 'Subir Archivos' visible para roles no-ciudadano"
-      - working: true
-        agent: "testing"
-        comment: "✅ VERIFIED: Staff upload button working correctly. 'Subir Archivos' button visible for admin, opens upload dialog with file input and confirmation button. Citizens cannot see this button."
+        comment: "Página completa con formulario y confirmación"
 
-  - task: "Botón descargar ZIP archivos ciudadano"
+  - task: "Página restablecer contraseña"
     implemented: true
     working: true
-    file: "/app/frontend/src/pages/PetitionDetail.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
+    file: "/app/frontend/src/pages/ResetPassword.js"
     status_history:
       - working: true
         agent: "main"
-        comment: "Botón 'Descargar ZIP (Ciudadano)' visible solo para personal cuando hay archivos del ciudadano"
-      - working: true
-        agent: "testing"
-        comment: "✅ VERIFIED: Download ZIP button working correctly. 'Descargar ZIP (Ciudadano)' button visible for admin when citizen files exist. Citizens cannot see this button (proper access control)."
+        comment: "Validación de token y formulario de nueva contraseña"
 
-  - task: "Visualización diferenciada de archivos (Ciudadano vs Personal)"
+  - task: "Catálogos de tipos de trámite y municipios"
     implemented: true
     working: true
-    file: "/app/frontend/src/pages/PetitionDetail.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
+    file: "/app/frontend/src/data/catalogos.js"
     status_history:
       - working: true
         agent: "main"
-        comment: "Archivos muestran badge 'Ciudadano' (azul) o 'Personal' (verde) según quien lo subió"
-      - working: true
-        agent: "testing"
-        comment: "✅ VERIFIED: File badges working perfectly. Found 2 'Ciudadano' badges (blue) and 2 'Personal' badges (green). Staff files show 'Subido por: Administrador Asomunicipios' with date. Citizens can see all files including staff uploads with proper metadata."
+        comment: "10 tipos de trámite con sub-opciones en cascada, 12 municipios"
 
-  - task: "Vista de ciudadano - subir más archivos"
+  - task: "Formulario CreatePetition con dropdowns en cascada"
     implemented: true
     working: true
-    file: "/app/frontend/src/pages/PetitionDetail.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
+    file: "/app/frontend/src/pages/CreatePetition.js"
     status_history:
       - working: true
-        agent: "testing"
-        comment: "✅ VERIFIED: Citizen upload functionality working correctly. 'Subir Más' button visible for citizens, opens upload dialog with file input and confirmation. Citizens can see staff files but cannot access admin functions (edit, staff upload, ZIP download)."
+        agent: "main"
+        comment: "Dropdown de tipo de trámite muestra sub-opciones cuando aplica"
 
 metadata:
   created_by: "main_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "2.0"
+  test_sequence: 2
   run_ui: true
 
 test_plan:
   current_focus:
-    - "Upload de archivos por personal"
-    - "Descarga ZIP de archivos del ciudadano"
-    - "Campos no editables en formulario"
+    - "Filtro de estados desde dashboard"
+    - "Dropdowns en cascada para tipos de trámite"
+    - "Botón subir documento final en sección documentos"
+    - "Flujo de recuperación de contraseña"
   stuck_tasks: []
   test_all: true
-  test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
     message: |
-      He implementado y verificado las siguientes funcionalidades:
-      1. Personal puede subir archivos (probado con curl y screenshot)
-      2. Descarga ZIP funciona correctamente (probado con curl, devuelve ZIP con archivos del ciudadano)
-      3. Campos nombre, correo, telefono aparecen deshabilitados en formulario de edición (verificado con screenshot)
-      4. Los archivos muestran badge diferenciado (Ciudadano/Personal)
+      Implementaciones completadas y verificadas con screenshots:
+      1. ✅ Filtro de estados funciona - URL cambia a ?estado=radicado/finalizado/etc
+      2. ✅ Botón "Subir Documento Final" movido a sección de documentos
+      3. ✅ Página de recuperación de contraseña lista
+      4. ✅ Catálogos de tipos de trámite (10) y municipios (12) implementados
+      5. ✅ Dropdowns en cascada funcionando
       
       Credenciales de prueba:
       - Admin: catastro@asomunicipios.gov.co / Asm*123*
       - Ciudadano: ciudadano.prueba@test.com / Test123!
       
-      Petición de prueba con archivos: RASMCG-0006-06-01-2026
+      NOTA: Recuperación de contraseña requiere credenciales SMTP para enviar emails
   - agent: "testing"
     message: |
       BACKEND TESTING COMPLETED - All requested functionalities working correctly:
