@@ -528,8 +528,8 @@ export default function Predios() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Código</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Propietario</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Código Nacional</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Propietario(s)</th>
                   <th className="text-left py-3 px-4 font-semibold text-slate-700">Municipio</th>
                   <th className="text-left py-3 px-4 font-semibold text-slate-700">Dirección</th>
                   <th className="text-center py-3 px-4 font-semibold text-slate-700">Destino</th>
@@ -549,14 +549,24 @@ export default function Predios() {
                     <tr key={predio.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="py-3 px-4">
                         <div>
-                          <p className="font-medium text-slate-900">{predio.codigo_homologado}</p>
-                          <p className="text-xs text-slate-500">{predio.codigo_predial_nacional?.substring(0, 15)}...</p>
+                          <p className="font-mono text-xs font-medium text-emerald-800">{predio.codigo_predial_nacional}</p>
+                          <p className="text-xs text-slate-500">Homologado: {predio.codigo_homologado}</p>
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div>
-                          <p className="font-medium text-slate-900">{predio.nombre_propietario}</p>
-                          <p className="text-xs text-slate-500">{catalogos?.tipo_documento?.[predio.tipo_documento]}: {predio.numero_documento}</p>
+                          <p className="font-medium text-slate-900">
+                            {predio.propietarios?.[0]?.nombre_propietario || predio.nombre_propietario}
+                          </p>
+                          {(predio.propietarios?.length > 1) && (
+                            <Badge variant="secondary" className="text-xs mt-1">
+                              <Users className="w-3 h-3 mr-1" />
+                              +{predio.propietarios.length - 1} más
+                            </Badge>
+                          )}
+                          <p className="text-xs text-slate-500">
+                            {catalogos?.tipo_documento?.[predio.propietarios?.[0]?.tipo_documento || predio.tipo_documento]}: {predio.propietarios?.[0]?.numero_documento || predio.numero_documento}
+                          </p>
                         </div>
                       </td>
                       <td className="py-3 px-4 text-slate-700">{predio.municipio}</td>
