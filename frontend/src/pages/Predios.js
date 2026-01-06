@@ -74,6 +74,7 @@ export default function Predios() {
   useEffect(() => {
     fetchCatalogos();
     fetchPredios();
+    fetchCambiosStats();
   }, []);
 
   useEffect(() => {
