@@ -122,10 +122,12 @@ export default function AllPetitions() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos los Estados</SelectItem>
-                  <SelectItem value="pendiente">Pendiente</SelectItem>
-                  <SelectItem value="en_revision">En Revisión</SelectItem>
-                  <SelectItem value="aprobada">Aprobada</SelectItem>
-                  <SelectItem value="rechazada">Rechazada</SelectItem>
+                  <SelectItem value="radicado">Radicado</SelectItem>
+                  <SelectItem value="asignado">Asignado</SelectItem>
+                  <SelectItem value="rechazado">Rechazado</SelectItem>
+                  <SelectItem value="revision">En Revisión</SelectItem>
+                  <SelectItem value="devuelto">Devuelto</SelectItem>
+                  <SelectItem value="finalizado">Finalizado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
