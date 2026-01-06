@@ -294,6 +294,18 @@ backend:
         agent: "testing"
         comment: "✅ TESTED: All unified statistics endpoints working. GET /api/stats/summary, GET /api/stats/by-municipality (5 municipalities), GET /api/stats/by-tramite (6 types), GET /api/stats/by-gestor (1 gestor), GET /api/reports/gestor-productivity (1 gestor). All endpoints functional."
 
+  - task: "Predios - Reimported Data Structure Verification"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Reimported Predios data structure fully verified. Found property 540030101000000010001000000000 with 3 owners (MONTAGUTH AREVALO MIGUEL ANTONIO, PALACIO JESUS HEMEL, VERGEL PABON ELISEO SUC). Property 540030001000000010001000000000 has R2 data with 3 zones containing all required fields (zona_fisica, zona_economica, area_terreno). Total count: 11,269 predios (exact match). Multiple owners functionality working correctly."
+
 frontend:
   - task: "Botón Subir Archivos movido a sección documentos"
     implemented: true
