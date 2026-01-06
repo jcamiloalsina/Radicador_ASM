@@ -348,12 +348,22 @@ export default function Predios() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 font-outfit">Gestión de Predios</h1>
-          <p className="text-sm text-slate-500">Sistema de información catastral Código Nacional Catastral</p>
+          <p className="text-sm text-slate-500">Sistema de información catastral - Código Nacional Catastral</p>
         </div>
-        <Button onClick={() => { resetForm(); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Predio
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={fetchPrediosEliminados}>
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            Eliminados
+          </Button>
+          <Button variant="outline" onClick={handleExportExcel}>
+            <Download className="w-4 h-4 mr-2" />
+            Exportar Excel
+          </Button>
+          <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Predio
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
