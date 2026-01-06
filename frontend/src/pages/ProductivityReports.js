@@ -39,32 +39,6 @@ const ProductivityReports = () => {
     fetchData();
   }, [token, toast]);
 
-  const fetchProductivityData = async () => {
-    try {
-      const response = await fetch('/api/reports/gestor-productivity', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProductivityData(data);
-      } else {
-        throw new Error('Error al cargar los datos de productividad');
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const exportToPDF = async () => {
     setExporting(true);
     try {
