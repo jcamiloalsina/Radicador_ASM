@@ -156,10 +156,11 @@ export default function AllPetitions() {
               <CardHeader>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                   <div>
-                    <CardTitle className="text-lg font-outfit text-slate-900" data-testid={`petition-name-${petition.id}`}>
-                      {petition.nombre_completo}
+                    <CardTitle className="text-lg font-outfit text-slate-900" data-testid={`petition-radicado-${petition.id}`}>
+                      {petition.radicado}
                     </CardTitle>
-                    <p className="text-sm text-slate-600 mt-1" data-testid={`petition-date-${petition.id}`}>
+                    <p className="text-sm text-slate-600 mt-1">{petition.nombre_completo}</p>
+                    <p className="text-xs text-slate-500 mt-1" data-testid={`petition-date-${petition.id}`}>
                       Creada el {formatDate(petition.created_at)}
                     </p>
                   </div>
