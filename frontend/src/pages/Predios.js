@@ -1129,6 +1129,38 @@ export default function Predios() {
           
           {selectedPredio && (
             <div className="space-y-6">
+              {/* Botón Generar Certificado */}
+              {['coordinador', 'administrador', 'atencion_usuario'].includes(user?.role) && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="default"
+                    className="bg-emerald-700 hover:bg-emerald-800"
+                    onClick={async () => {
+                      try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`${API}/predios/${selectedPredio.id}/certificado`, {
+                          headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (!response.ok) throw new Error('Error generando certificado');
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `Certificado_Catastral_${selectedPredio.codigo_predial_nacional}.pdf`;
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        toast.success('Certificado generado correctamente');
+                      } catch (error) {
+                        toast.error('Error al generar el certificado');
+                      }
+                    }}
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Generar Certificado Catastral
+                  </Button>
+                </div>
+              )}
+              
               {/* Códigos */}
               <div className="bg-emerald-50 p-4 rounded-lg">
                 <div className="grid grid-cols-2 gap-4">
