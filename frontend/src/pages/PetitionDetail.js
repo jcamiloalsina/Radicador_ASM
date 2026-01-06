@@ -277,6 +277,45 @@ export default function PetitionDetail() {
             <Download className="w-4 h-4 mr-2" />
             Exportar PDF
           </Button>
+          {user?.role !== 'ciudadano' && (
+            <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" data-testid="staff-upload-button">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Subir Archivos
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Subir Archivos al Trámite</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <p className="text-sm text-slate-600">
+                    Los archivos que subas estarán disponibles para el ciudadano.
+                  </p>
+                  <Input
+                    type="file"
+                    multiple
+                    onChange={(e) => setFiles(Array.from(e.target.files))}
+                    data-testid="staff-upload-input"
+                  />
+                  {files.length > 0 && (
+                    <div className="space-y-2">
+                      {files.map((file, idx) => (
+                        <div key={idx} className="text-sm text-slate-700 flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          {file.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <Button onClick={handleFileUpload} className="w-full bg-emerald-700 hover:bg-emerald-800" data-testid="confirm-staff-upload">
+                    Subir Archivos
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
           {canAssignGestor && (
             <Dialog open={showGestorDialog} onOpenChange={setShowGestorDialog}>
               <DialogTrigger asChild>
