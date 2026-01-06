@@ -344,6 +344,17 @@ async def create_petition(
                 "path": str(file_path)
             })
     
+    # Initialize historial
+    historial = [{
+        "accion": "Radicado creado",
+        "usuario": current_user['full_name'],
+        "usuario_rol": current_user['role'],
+        "estado_anterior": None,
+        "estado_nuevo": PetitionStatus.RADICADO,
+        "notas": "Petición radicada en el sistema",
+        "fecha": datetime.now(timezone.utc).isoformat()
+    }]
+    
     petition = Petition(
         radicado=radicado,
         user_id=current_user['id'],
@@ -352,7 +363,8 @@ async def create_petition(
         telefono=telefono,
         tipo_tramite=tipo_tramite,
         municipio=municipio,
-        archivos=saved_files
+        archivos=saved_files,
+        historial=historial
     )
     
     doc = petition.model_dump()
@@ -361,14 +373,15 @@ async def create_petition(
     
     await db.petitions.insert_one(doc)
     
-    # Send email notification to atencion usuarios
-    atencion_users = await db.users.find({"role": UserRole.ATENCION_USUARIO}, {"_id": 0}).to_list(100)
-    for user in atencion_users:
-        await send_email(
-            user['email'],
-            f"Nueva Petición - {radicado}",
-            f"<h3>Nueva petición radicada</h3><p>Radicado: {radicado}</p><p>Solicitante: {nombre_completo}</p><p>Tipo: {tipo_tramite}</p>"
-        )
+    # Send email notification to atencion usuarios only if created by citizen
+    if current_user['role'] == UserRole.CIUDADANO:
+        atencion_users = await db.users.find({"role": UserRole.ATENCION_USUARIO}, {"_id": 0}).to_list(100)
+        for user in atencion_users:
+            await send_email(
+                user['email'],
+                f"Nueva Petición - {radicado}",
+                f"<h3>Nueva petición radicada</h3><p>Radicado: {radicado}</p><p>Solicitante: {nombre_completo}</p><p>Tipo: {tipo_tramite}</p>"
+            )
     
     return petition
 
