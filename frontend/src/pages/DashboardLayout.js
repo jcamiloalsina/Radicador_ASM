@@ -48,7 +48,7 @@ export default function DashboardLayout() {
 
   if (['administrador', 'coordinador', 'atencion_usuario'].includes(user.role)) {
     menuItems.push({ path: '/dashboard/usuarios', label: 'Gestión de Usuarios', icon: UserCog });
-    menuItems.push({ path: '/dashboard/reportes', label: 'Reportes de Productividad', icon: BarChart });
+    menuItems.push({ path: '/dashboard/reportes', label: 'Reportes de Productividad', icon: BarChart3 });
   }
 
   return (
