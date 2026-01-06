@@ -106,19 +106,6 @@ export default function Register() {
                   data-testid="register-password-input"
                 />
               </div>
-              <div>
-                <Label htmlFor="role" className="text-slate-700">Tipo de Usuario</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-                  <SelectTrigger className="mt-1 focus:ring-emerald-600" data-testid="register-role-select">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ciudadano" data-testid="role-ciudadano">Ciudadano</SelectItem>
-                    <SelectItem value="atencion_usuario" data-testid="role-atencion">Atención al Usuario</SelectItem>
-                    <SelectItem value="coordinador" data-testid="role-coordinador">Coordinador</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <Button
