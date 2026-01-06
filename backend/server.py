@@ -2300,6 +2300,266 @@ async def delete_predio(predio_id: str, current_user: dict = Depends(get_current
     return {"message": "Predio eliminado exitosamente"}
 
 
+# ===== SISTEMA DE APROBACIÓN DE PREDIOS =====
+
+@api_router.post("/predios/cambios/proponer")
+async def proponer_cambio_predio(
+    cambio: CambioPendienteCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Propone un cambio en un predio (crear, modificar, eliminar).
+    Solo gestores y atención pueden proponer. Coordinadores aprueban directamente.
+    """
+    # Verificar permisos
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    # Coordinadores y administradores aprueban directamente
+    aprueba_directo = current_user['role'] in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]
+    
+    cambio_doc = {
+        "id": str(uuid.uuid4()),
+        "predio_id": cambio.predio_id,
+        "tipo_cambio": cambio.tipo_cambio,
+        "datos_propuestos": cambio.datos_propuestos,
+        "justificacion": cambio.justificacion,
+        "estado": PredioEstadoAprobacion.APROBADO if aprueba_directo else f"pendiente_{cambio.tipo_cambio}",
+        "propuesto_por": current_user['id'],
+        "propuesto_por_nombre": current_user['full_name'],
+        "propuesto_por_rol": current_user['role'],
+        "fecha_propuesta": datetime.now(timezone.utc).isoformat(),
+        "aprobado_por": current_user['id'] if aprueba_directo else None,
+        "aprobado_por_nombre": current_user['full_name'] if aprueba_directo else None,
+        "fecha_aprobacion": datetime.now(timezone.utc).isoformat() if aprueba_directo else None,
+        "comentario_aprobacion": "Aprobación directa por coordinador/administrador" if aprueba_directo else None
+    }
+    
+    # Si aprueba directo, aplicar el cambio inmediatamente
+    if aprueba_directo:
+        resultado = await aplicar_cambio_predio(cambio_doc, current_user)
+        cambio_doc["resultado"] = resultado
+    
+    # Guardar el cambio en la colección de cambios
+    await db.predios_cambios.insert_one(cambio_doc)
+    
+    return {
+        "id": cambio_doc["id"],
+        "estado": cambio_doc["estado"],
+        "mensaje": "Cambio aplicado directamente" if aprueba_directo else "Cambio propuesto, pendiente de aprobación",
+        "requiere_aprobacion": not aprueba_directo
+    }
+
+
+@api_router.get("/predios/cambios/pendientes")
+async def get_cambios_pendientes(
+    skip: int = 0,
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista todos los cambios pendientes de aprobación (solo coordinadores/admin)"""
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden ver cambios pendientes")
+    
+    query = {
+        "estado": {"$in": [
+            PredioEstadoAprobacion.PENDIENTE_CREACION,
+            PredioEstadoAprobacion.PENDIENTE_MODIFICACION,
+            PredioEstadoAprobacion.PENDIENTE_ELIMINACION
+        ]}
+    }
+    
+    total = await db.predios_cambios.count_documents(query)
+    cambios = await db.predios_cambios.find(query, {"_id": 0}).sort("fecha_propuesta", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Enriquecer con datos del predio actual si existe
+    for cambio in cambios:
+        if cambio.get("predio_id"):
+            predio = await db.predios.find_one({"id": cambio["predio_id"]}, {"_id": 0, "codigo_homologado": 1, "nombre_propietario": 1, "municipio": 1})
+            cambio["predio_actual"] = predio
+    
+    return {
+        "total": total,
+        "cambios": cambios
+    }
+
+
+@api_router.get("/predios/cambios/historial")
+async def get_historial_cambios(
+    predio_id: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 100,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obtiene el historial de cambios (aprobados y rechazados)"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    query = {}
+    if predio_id:
+        query["predio_id"] = predio_id
+    
+    total = await db.predios_cambios.count_documents(query)
+    cambios = await db.predios_cambios.find(query, {"_id": 0}).sort("fecha_propuesta", -1).skip(skip).limit(limit).to_list(limit)
+    
+    return {
+        "total": total,
+        "cambios": cambios
+    }
+
+
+@api_router.post("/predios/cambios/aprobar")
+async def aprobar_rechazar_cambio(
+    request: CambioAprobacionRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Aprueba o rechaza un cambio pendiente (solo coordinadores/admin)"""
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden aprobar cambios")
+    
+    # Buscar el cambio
+    cambio = await db.predios_cambios.find_one({"id": request.cambio_id}, {"_id": 0})
+    
+    if not cambio:
+        raise HTTPException(status_code=404, detail="Cambio no encontrado")
+    
+    if cambio["estado"] not in [
+        PredioEstadoAprobacion.PENDIENTE_CREACION,
+        PredioEstadoAprobacion.PENDIENTE_MODIFICACION,
+        PredioEstadoAprobacion.PENDIENTE_ELIMINACION
+    ]:
+        raise HTTPException(status_code=400, detail="Este cambio ya fue procesado")
+    
+    nuevo_estado = PredioEstadoAprobacion.APROBADO if request.aprobado else PredioEstadoAprobacion.RECHAZADO
+    
+    update_data = {
+        "estado": nuevo_estado,
+        "aprobado_por": current_user['id'],
+        "aprobado_por_nombre": current_user['full_name'],
+        "fecha_aprobacion": datetime.now(timezone.utc).isoformat(),
+        "comentario_aprobacion": request.comentario
+    }
+    
+    # Si se aprueba, aplicar el cambio
+    if request.aprobado:
+        resultado = await aplicar_cambio_predio(cambio, current_user)
+        update_data["resultado"] = resultado
+    
+    await db.predios_cambios.update_one(
+        {"id": request.cambio_id},
+        {"$set": update_data}
+    )
+    
+    return {
+        "mensaje": "Cambio aprobado y aplicado" if request.aprobado else "Cambio rechazado",
+        "estado": nuevo_estado
+    }
+
+
+async def aplicar_cambio_predio(cambio: dict, aprobador: dict) -> dict:
+    """Aplica un cambio aprobado al predio"""
+    tipo = cambio["tipo_cambio"]
+    datos = cambio["datos_propuestos"]
+    
+    historial_entry = {
+        "accion": f"Cambio {tipo} aprobado",
+        "usuario": aprobador['full_name'],
+        "usuario_rol": aprobador['role'],
+        "propuesto_por": cambio.get("propuesto_por_nombre"),
+        "fecha": datetime.now(timezone.utc).isoformat(),
+        "comentario": cambio.get("comentario_aprobacion")
+    }
+    
+    if tipo == "creacion":
+        # Crear nuevo predio
+        predio_doc = datos.copy()
+        predio_doc["id"] = str(uuid.uuid4())
+        predio_doc["estado_aprobacion"] = PredioEstadoAprobacion.APROBADO
+        predio_doc["deleted"] = False
+        predio_doc["created_at"] = datetime.now(timezone.utc).isoformat()
+        predio_doc["updated_at"] = datetime.now(timezone.utc).isoformat()
+        predio_doc["historial"] = [historial_entry]
+        
+        await db.predios.insert_one(predio_doc)
+        return {"predio_id": predio_doc["id"], "accion": "creado"}
+    
+    elif tipo == "modificacion":
+        predio_id = cambio["predio_id"]
+        
+        # Actualizar predio
+        datos["updated_at"] = datetime.now(timezone.utc).isoformat()
+        datos["estado_aprobacion"] = PredioEstadoAprobacion.APROBADO
+        
+        await db.predios.update_one(
+            {"id": predio_id},
+            {
+                "$set": datos,
+                "$push": {"historial": historial_entry}
+            }
+        )
+        return {"predio_id": predio_id, "accion": "modificado"}
+    
+    elif tipo == "eliminacion":
+        predio_id = cambio["predio_id"]
+        
+        # Soft delete
+        await db.predios.update_one(
+            {"id": predio_id},
+            {
+                "$set": {
+                    "deleted": True,
+                    "deleted_at": datetime.now(timezone.utc).isoformat(),
+                    "deleted_by": aprobador['id'],
+                    "deleted_by_name": aprobador['full_name'],
+                    "estado_aprobacion": PredioEstadoAprobacion.APROBADO
+                },
+                "$push": {"historial": historial_entry}
+            }
+        )
+        return {"predio_id": predio_id, "accion": "eliminado"}
+    
+    return {"error": "Tipo de cambio no reconocido"}
+
+
+@api_router.get("/predios/cambios/mis-propuestas")
+async def get_mis_propuestas(
+    skip: int = 0,
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista las propuestas de cambio del usuario actual"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    query = {"propuesto_por": current_user['id']}
+    
+    total = await db.predios_cambios.count_documents(query)
+    cambios = await db.predios_cambios.find(query, {"_id": 0}).sort("fecha_propuesta", -1).skip(skip).limit(limit).to_list(limit)
+    
+    return {
+        "total": total,
+        "cambios": cambios
+    }
+
+
+@api_router.get("/predios/cambios/stats")
+async def get_cambios_stats(current_user: dict = Depends(get_current_user)):
+    """Obtiene estadísticas de cambios pendientes"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    pendientes_creacion = await db.predios_cambios.count_documents({"estado": PredioEstadoAprobacion.PENDIENTE_CREACION})
+    pendientes_modificacion = await db.predios_cambios.count_documents({"estado": PredioEstadoAprobacion.PENDIENTE_MODIFICACION})
+    pendientes_eliminacion = await db.predios_cambios.count_documents({"estado": PredioEstadoAprobacion.PENDIENTE_ELIMINACION})
+    
+    return {
+        "pendientes_creacion": pendientes_creacion,
+        "pendientes_modificacion": pendientes_modificacion,
+        "pendientes_eliminacion": pendientes_eliminacion,
+        "total_pendientes": pendientes_creacion + pendientes_modificacion + pendientes_eliminacion
+    }
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
