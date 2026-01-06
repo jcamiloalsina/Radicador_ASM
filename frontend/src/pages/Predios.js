@@ -479,7 +479,7 @@ export default function Predios() {
             <div className="md:col-span-2">
               <div className="flex gap-2">
                 <Input
-                  placeholder="Buscar por código, propietario, documento..."
+                  placeholder="Buscar por código, propietario, documento, matrícula..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
