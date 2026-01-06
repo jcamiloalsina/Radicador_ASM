@@ -1847,9 +1847,10 @@ async def get_predios(
         query["$or"] = [
             {"codigo_predial_nacional": {"$regex": search, "$options": "i"}},
             {"codigo_homologado": {"$regex": search, "$options": "i"}},
-            {"nombre_propietario": {"$regex": search, "$options": "i"}},
-            {"numero_documento": {"$regex": search, "$options": "i"}},
-            {"direccion": {"$regex": search, "$options": "i"}}
+            {"propietarios.nombre_propietario": {"$regex": search, "$options": "i"}},
+            {"propietarios.numero_documento": {"$regex": search, "$options": "i"}},
+            {"direccion": {"$regex": search, "$options": "i"}},
+            {"matriculas": {"$regex": search, "$options": "i"}}  # Búsqueda por matrícula
         ]
     
     total = await db.predios.count_documents(query)
