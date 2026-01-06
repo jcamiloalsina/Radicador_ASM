@@ -689,11 +689,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "GET /api/gdb/stats returns counts for rural and urban properties"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: GET /api/gdb/stats working correctly. Returns gdb_disponible: True, predios_rurales: 5126, predios_urbanos: 4767, total_geometrias: 9893. Citizens properly denied access (403 Forbidden). Staff can access GDB statistics successfully."
 
   - task: "GDB Integration - Layers List"
     implemented: true
@@ -701,11 +704,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "GET /api/gdb/capas lists all 55 layers with geometry types"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: GET /api/gdb/capas working correctly. Returns 55 layers with nombre and tipo_geometria fields. Sample layer: R_COTAS_54003 (MultiLineString). Citizens properly denied access (403 Forbidden). Response format includes 'capas' array and 'total' count."
 
   - task: "GDB Integration - Geometry by Code"
     implemented: true
@@ -713,11 +719,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "GET /api/predios/codigo/{codigo}/geometria returns GeoJSON feature"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: GET /api/predios/codigo/{codigo}/geometria working correctly. Tested with rural code 540030008000000010027000000000 (1020693.31 m²) and urban code 540030101000000420002000000000 (651.87 m²). Returns proper GeoJSON Feature format with geometry, properties (codigo, area_m2, perimetro_m, tipo). Citizens properly denied access (403 Forbidden)."
 
   - task: "Certificate Generation for Atencion al Usuario"
     implemented: true
@@ -725,11 +734,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Modified export-pdf endpoint to allow atencion_usuario role to sign PDFs"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Certificate generation for atencion_usuario role working correctly. Login with atencion.test@asomunicipios.gov.co successful. GET /api/petitions/{petition_id}/export-pdf returns valid PDF (3072 bytes, application/pdf content-type). PDF generation includes signature from Usuario Atención Test as expected."
 
 test_plan:
   current_focus:
