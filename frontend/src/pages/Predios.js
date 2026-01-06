@@ -74,6 +74,13 @@ export default function Predios() {
     fetchPredios();
   }, [filterMunicipio, filterDestino]);
 
+  // Obtener info del terreno cuando cambia la ubicación
+  useEffect(() => {
+    if (formData.municipio && showCreateDialog) {
+      fetchTerrenoInfo();
+    }
+  }, [formData.municipio, formData.zona, formData.sector, formData.manzana_vereda, showCreateDialog]);
+
   const fetchCatalogos = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -103,6 +110,57 @@ export default function Predios() {
       toast.error('Error al cargar predios');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTerrenoInfo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(
+        `${API}/predios/terreno-info/${encodeURIComponent(formData.municipio)}?zona=${formData.zona}&sector=${formData.sector}&manzana_vereda=${formData.manzana_vereda}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setTerrenoInfo(res.data);
+    } catch (error) {
+      setTerrenoInfo(null);
+    }
+  };
+
+  const fetchPrediosEliminados = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/predios/eliminados`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPrediosEliminados(res.data.predios);
+      setShowDeletedDialog(true);
+    } catch (error) {
+      toast.error('Error al cargar predios eliminados');
+    }
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const municipio = filterMunicipio !== 'todos' ? `?municipio=${encodeURIComponent(filterMunicipio)}` : '';
+      
+      const response = await axios.get(`${API}/predios/export-excel${municipio}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const fecha = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `Predios_${filterMunicipio !== 'todos' ? filterMunicipio : 'Todos'}_${fecha}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.success('Excel exportado exitosamente');
+    } catch (error) {
+      toast.error('Error al exportar Excel');
     }
   };
 
