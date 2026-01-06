@@ -545,6 +545,7 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
     
     # Determine what fields can be updated based on role
     update_dict = {}
+    historial_entry = None
     
     if current_user['role'] in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
         # Coordinador and Admin can update all fields
@@ -564,6 +565,36 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
     
     if update_dict:
         update_dict['updated_at'] = datetime.now(timezone.utc).isoformat()
+        
+        # Create historial entry if status changed
+        if 'estado' in update_dict:
+            estado_anterior = petition.get('estado')
+            estado_nuevo = update_dict['estado']
+            
+            status_names = {
+                PetitionStatus.RADICADO: "Radicado",
+                PetitionStatus.ASIGNADO: "Asignado",
+                PetitionStatus.RECHAZADO: "Rechazado",
+                PetitionStatus.REVISION: "En Revisión",
+                PetitionStatus.DEVUELTO: "Devuelto",
+                PetitionStatus.FINALIZADO: "Finalizado"
+            }
+            
+            historial_entry = {
+                "accion": f"Estado cambiado de {status_names.get(estado_anterior, estado_anterior)} a {status_names.get(estado_nuevo, estado_nuevo)}",
+                "usuario": current_user['full_name'],
+                "usuario_rol": current_user['role'],
+                "estado_anterior": estado_anterior,
+                "estado_nuevo": estado_nuevo,
+                "notas": update_dict.get('notas', ''),
+                "fecha": datetime.now(timezone.utc).isoformat()
+            }
+            
+            # Add to historial
+            current_historial = petition.get('historial', [])
+            current_historial.append(historial_entry)
+            update_dict['historial'] = current_historial
+        
         await db.petitions.update_one({"id": petition_id}, {"$set": update_dict})
         
         # Send email notification to citizen if status changed
