@@ -253,7 +253,7 @@ export default function PetitionDetail() {
       )}
 
       {/* Gestores Asignados */}
-      {petition.gestores_asignados && petition.gestores_asignados.length > 0 && (
+      {petition.gestores_asignados && petition.gestores_asignados.length > 0 && user?.role !== 'ciudadano' && (
         <Card className="border-slate-200">
           <CardHeader>
             <CardTitle className="text-slate-900 font-outfit">Gestores Asignados</CardTitle>
