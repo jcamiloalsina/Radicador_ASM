@@ -563,6 +563,11 @@ async def reset_password(request: ResetPasswordRequest):
         await db.password_resets.delete_one({"token": request.token})
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El token ha expirado")
     
+    # Validate new password
+    is_valid, error_msg = validate_password(request.new_password)
+    if not is_valid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+    
     # Update password
     new_hashed_password = hash_password(request.new_password)
     await db.users.update_one(
