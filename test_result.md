@@ -198,6 +198,66 @@ backend:
         agent: "testing"
         comment: "✅ TESTED: ZIP download functionality working as designed. Admin can download ZIP containing only citizen-uploaded files. Staff files correctly excluded. Citizens blocked from ZIP download (403 Forbidden)."
 
+  - task: "Predios - Modal Eliminados"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "GET /api/predios/eliminados endpoint implementado con paginación y filtros de acceso"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: GET /api/predios/eliminados working correctly. Admin can access deleted predios (found 2 deleted predios with total count). Citizens properly denied access (403 Forbidden). Returns proper structure with 'total' and 'predios' fields."
+
+  - task: "Predios - Export Excel"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "GET /api/predios/export-excel endpoint implementado con filtros por municipio"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: GET /api/predios/export-excel working correctly. Admin can export Excel files successfully. Municipio filter parameter working (tested with 'Ábrego'). Citizens properly denied access (403 Forbidden). Returns valid Excel file format."
+
+  - task: "Validación de contraseñas con caracteres especiales"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Función validate_password() implementada con soporte para caracteres especiales"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Password validation with special characters working correctly. Registration and login with 'Test@123!' successful. All validation rules working: minimum 6 chars, uppercase, lowercase, digit requirements. Special characters (!@#$%^&*()_+-=[]{}|;':\",./<>?) properly supported."
+
+  - task: "Predios - Terreno Info"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "GET /api/predios/terreno-info/{municipio} endpoint ya implementado previamente"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: GET /api/predios/terreno-info/{municipio} working correctly. Admin can get terrain info for 'Ábrego' (returns siguiente_terreno: '0001'). Citizens properly denied access (403 Forbidden). Returns proper structure with municipio, zona, sector, manzana_vereda, and siguiente_terreno fields."
+
 frontend:
   - task: "Botón Subir Archivos movido a sección documentos"
     implemented: true
