@@ -298,6 +298,30 @@ class PredioUpdate(BaseModel):
     area_construida_1: Optional[float] = None
 
 
+# ===== SISTEMA DE APROBACIÓN DE PREDIOS =====
+
+class PredioEstadoAprobacion:
+    """Estados de aprobación para cambios en predios"""
+    APROBADO = "aprobado"  # Cambios aplicados y firmes
+    PENDIENTE_CREACION = "pendiente_creacion"  # Nuevo predio esperando aprobación
+    PENDIENTE_MODIFICACION = "pendiente_modificacion"  # Modificación esperando aprobación
+    PENDIENTE_ELIMINACION = "pendiente_eliminacion"  # Eliminación esperando aprobación
+    RECHAZADO = "rechazado"  # Cambio rechazado por coordinador
+
+class CambioPendienteCreate(BaseModel):
+    """Modelo para crear un cambio pendiente"""
+    predio_id: Optional[str] = None  # None para nuevos predios
+    tipo_cambio: str  # creacion, modificacion, eliminacion
+    datos_propuestos: dict  # Datos del predio (nuevo o modificado)
+    justificacion: Optional[str] = None
+
+class CambioAprobacionRequest(BaseModel):
+    """Modelo para aprobar/rechazar un cambio"""
+    cambio_id: str
+    aprobado: bool
+    comentario: Optional[str] = None
+
+
 # ===== UTILITY FUNCTIONS =====
 
 import re
