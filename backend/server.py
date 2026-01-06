@@ -809,8 +809,6 @@ async def export_multiple_petitions(
     for idx, petition_id in enumerate(petition_ids):
         petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
         if petition:
-            user = await db.users.find_one({"id": petition['user_id']}, {"_id": 0, "password": 0})
-            
             # Generate petition content
             styles = getSampleStyleSheet()
             title_style = ParagraphStyle(
