@@ -151,6 +151,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Cambiado archivos de List[str] a List[dict] para permitir metadata de archivos"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: File metadata model working correctly. Citizen files have basic structure, staff files include complete metadata (uploaded_by, uploaded_by_name, uploaded_by_role, upload_date)"
 
 frontend:
   - task: "Campos no editables (nombre, correo, telefono) en formulario de edición"
