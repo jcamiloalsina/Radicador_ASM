@@ -440,8 +440,10 @@ async def upload_petition_files(
     if not petition:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Petición no encontrada")
     
-    # Only petition owner can upload files
-    if petition['user_id'] != current_user['id']:
+    # Citizens and staff can upload files
+    # Citizens: only to their own petitions
+    # Staff: to any petition they have access to
+    if current_user['role'] == UserRole.CIUDADANO and petition['user_id'] != current_user['id']:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
     
     saved_files = []
@@ -457,15 +459,20 @@ async def upload_petition_files(
             saved_files.append({
                 "id": file_id,
                 "original_name": file.filename,
-                "path": str(file_path)
+                "path": str(file_path),
+                "uploaded_by": current_user['id'],
+                "uploaded_by_name": current_user['full_name'],
+                "uploaded_by_role": current_user['role'],
+                "upload_date": datetime.now(timezone.utc).isoformat()
             })
     
     current_files = petition.get('archivos', [])
     updated_files = current_files + saved_files
     
     # Add to historial
+    uploader_role = "Ciudadano" if current_user['role'] == UserRole.CIUDADANO else current_user['role'].replace('_', ' ').title()
     historial_entry = {
-        "accion": f"Archivos cargados ({len(saved_files)} archivo(s))",
+        "accion": f"Archivos cargados por {uploader_role} ({len(saved_files)} archivo(s))",
         "usuario": current_user['full_name'],
         "usuario_rol": current_user['role'],
         "estado_anterior": petition['estado'],
@@ -486,24 +493,34 @@ async def upload_petition_files(
         }}
     )
     
-    # Notify assigned gestores or atencion usuario
-    if petition.get('gestores_asignados'):
-        for gestor_id in petition['gestores_asignados']:
-            gestor = await db.users.find_one({"id": gestor_id}, {"_id": 0})
-            if gestor:
+    # Notify based on who uploaded
+    if current_user['role'] == UserRole.CIUDADANO:
+        # Notify assigned gestores or atencion usuario
+        if petition.get('gestores_asignados'):
+            for gestor_id in petition['gestores_asignados']:
+                gestor = await db.users.find_one({"id": gestor_id}, {"_id": 0})
+                if gestor:
+                    await send_email(
+                        gestor['email'],
+                        f"Nuevos archivos - {petition['radicado']}",
+                        f"<h3>El ciudadano ha cargado nuevos archivos</h3><p>Radicado: {petition['radicado']}</p>"
+                    )
+        else:
+            atencion_users = await db.users.find({"role": UserRole.ATENCION_USUARIO}, {"_id": 0}).to_list(100)
+            for user in atencion_users:
                 await send_email(
-                    gestor['email'],
+                    user['email'],
                     f"Nuevos archivos - {petition['radicado']}",
-                    f"<h3>Se han cargado nuevos archivos</h3><p>Radicado: {petition['radicado']}</p>"
+                    f"<h3>El ciudadano ha cargado nuevos archivos</h3><p>Radicado: {petition['radicado']}</p>"
                 )
     else:
-        # Notify atencion usuarios
-        atencion_users = await db.users.find({"role": UserRole.ATENCION_USUARIO}, {"_id": 0}).to_list(100)
-        for user in atencion_users:
+        # Notify citizen if staff uploaded
+        citizen = await db.users.find_one({"id": petition['user_id']}, {"_id": 0})
+        if citizen:
             await send_email(
-                user['email'],
-                f"Nuevos archivos - {petition['radicado']}",
-                f"<h3>Se han cargado nuevos archivos</h3><p>Radicado: {petition['radicado']}</p>"
+                citizen['email'],
+                f"Nuevos documentos disponibles - {petition['radicado']}",
+                f"<h3>Se han agregado nuevos documentos a su trámite</h3><p>Radicado: {petition['radicado']}</p><p>Puede descargarlos desde el sistema.</p>"
             )
     
     return {"message": "Archivos subidos exitosamente", "files": saved_files}
