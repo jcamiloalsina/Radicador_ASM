@@ -1170,122 +1170,29 @@ def main():
     # Test 4: Excel Export
     tester.test_export_excel_endpoint()
     
-    # Test 5: Password Recovery Endpoints (existing)
+    # ADDITIONAL TESTS (from previous functionality)
+    print("\n🔧 Testing Additional System Functionality...")
+    
+    # Test password recovery endpoints
     tester.test_password_recovery_endpoints()
     
-    # Test 6: Dashboard Filtering (existing)
+    # Test dashboard filtering
     tester.test_dashboard_filtering()
     
-    # Test 7: Petition Creation with Catalogs (existing)
+    # Test petition creation with catalogs
     tester.test_petition_creation_with_catalogs()
     
-    # Test 8: File Upload in Documents Section (existing)
+    # Test file upload functionality
     tester.test_file_upload_in_documents_section()
     
-    # Test 9: Citizen File Upload and ZIP Download (existing)
-    tester.test_citizen_file_upload_and_zip_download()
+    # Test predios eliminados endpoint
+    tester.test_predios_eliminados_endpoint()
     
-    # Test file operations with the specific petition mentioned
-    print("\n📁 Testing File Upload and Download Operations...")
+    # Test password validation with special characters
+    tester.test_password_validation_special_chars()
     
-    # Test file upload by admin (staff)
-    test_petition_id = "RASMCG-0006-06-01-2026"
-    
-    # First check if petition exists
-    success, petition_data = tester.run_test(
-        "Get test petition",
-        "GET",
-        f"petitions/{test_petition_id}",
-        200,
-        token=tester.tokens.get('admin')
-    )
-    
-    if success:
-        print(f"   Found petition: {petition_data.get('radicado', 'Unknown')}")
-        
-        # Test file upload by admin
-        upload_success, upload_result = tester.test_file_upload_by_staff('admin', test_petition_id)
-        
-        # Test ZIP download
-        if upload_success:
-            download_success = tester.test_download_citizen_zip('admin', test_petition_id)
-        else:
-            print("⚠️ Skipping ZIP download test due to upload failure")
-            
-    else:
-        print(f"❌ Test petition {test_petition_id} not found")
-        print("   Creating a new petition for testing...")
-        
-        # Create a new petition as citizen if available
-        if citizen_success:
-            petition_data = {
-                "nombre_completo": "Juan Pérez Ciudadano",
-                "correo": "ciudadano.prueba@test.com", 
-                "telefono": "3001234567",
-                "tipo_tramite": "Certificado catastral",
-                "municipio": "Ábrego"
-            }
-            
-            success, response = tester.run_test(
-                "Create test petition",
-                "POST",
-                "petitions",
-                200,
-                data=petition_data,
-                token=tester.tokens['citizen'],
-                form_data=True
-            )
-            
-            if success and 'id' in response:
-                new_petition_id = response['id']
-                print(f"   Created petition: {response.get('radicado', 'Unknown')}")
-                
-                # Test file upload by admin on new petition
-                upload_success, upload_result = tester.test_file_upload_by_staff('admin', new_petition_id)
-                
-                # Test ZIP download
-                if upload_success:
-                    download_success = tester.test_download_citizen_zip('admin', new_petition_id)
-    
-    # Test user registration for additional roles if needed
-    roles = ['ciudadano', 'atencion_usuario', 'coordinador']
-    
-    print("\n👤 Testing User Registration & Authentication...")
-    for role in roles:
-        if not tester.test_user_registration(role):
-            print(f"⚠️ Registration failed for {role}, but continuing")
-    
-    # Test login for registered users
-    for role in roles:
-        if not tester.test_user_login(role):
-            print(f"⚠️ Login failed for {role}")
-    
-    # Test getting current user
-    for role in roles:
-        if role in tester.tokens:
-            if not tester.test_get_current_user(role):
-                print(f"⚠️ Get current user failed for {role}")
-    
-    print("\n📝 Testing Petition Management...")
-    
-    # Test creating petitions (all roles should be able to create)
-    for role in roles:
-        if role in tester.tokens:
-            if not tester.test_create_petition(role):
-                print(f"⚠️ Create petition failed for {role}")
-    
-    # Test getting petitions (role-based access)
-    for role in roles:
-        if role in tester.tokens:
-            if not tester.test_get_petitions(role):
-                print(f"⚠️ Get petitions failed for {role}")
-    
-    # Test dashboard stats
-    print("\n📊 Testing Dashboard Statistics...")
-    for role in roles:
-        if role in tester.tokens:
-            if not tester.test_dashboard_stats(role):
-                print(f"⚠️ Dashboard stats failed for {role}")
+    # Test terreno info endpoint
+    tester.test_terreno_info_endpoint()
     
     # Print final results
     print("\n" + "=" * 60)
