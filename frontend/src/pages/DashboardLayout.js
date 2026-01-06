@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { Button } from '../components/ui/button';
-import { LogOut, FileText, Activity, Users, Menu, X } from 'lucide-react';
+import { LogOut, FileText, Activity, Users, Menu, X, UserCog } from 'lucide-react';
 import { useState } from 'react';
 
 export default function DashboardLayout() {
@@ -29,18 +29,25 @@ export default function DashboardLayout() {
     const roles = {
       ciudadano: 'Ciudadano',
       atencion_usuario: 'Atención al Usuario',
-      coordinador: 'Coordinador'
+      gestor: 'Gestor',
+      gestor_auxiliar: 'Gestor Auxiliar',
+      coordinador: 'Coordinador',
+      administrador: 'Administrador'
     };
     return roles[role] || role;
   };
 
   const menuItems = [
     { path: '/dashboard', label: 'Inicio', icon: Activity },
-    { path: '/dashboard/peticiones', label: 'Peticiones', icon: FileText },
+    { path: '/dashboard/peticiones', label: 'Mis Peticiones', icon: FileText },
   ];
 
   if (user.role !== 'ciudadano') {
     menuItems.push({ path: '/dashboard/todas-peticiones', label: 'Todas las Peticiones', icon: Users });
+  }
+
+  if (['administrador', 'coordinador', 'atencion_usuario'].includes(user.role)) {
+    menuItems.push({ path: '/dashboard/usuarios', label: 'Gestión de Usuarios', icon: UserCog });
   }
 
   return (
@@ -48,8 +55,16 @@ export default function DashboardLayout() {
       {/* Sidebar - Desktop */}
       <div className="hidden md:flex w-64 flex-col bg-emerald-900 text-white border-r border-emerald-800">
         <div className="p-6 border-b border-emerald-800">
-          <h2 className="text-2xl font-bold font-outfit" data-testid="sidebar-title">Gestoría Catastral</h2>
-          <p className="text-emerald-100 text-sm mt-1">{getRoleName(user.role)}</p>
+          <img 
+            src="https://customer-assets.emergentagent.com/job_28ae97d1-3b3d-446d-842a-30fce089309a/artifacts/3sbor4tr_HorizontalBlancoCorto_ConFondo.png" 
+            alt="Asomunicipios Logo" 
+            className="w-full mb-3"
+            data-testid="sidebar-logo"
+          />
+          <h2 className="text-sm font-bold font-outfit leading-tight" data-testid="sidebar-title">
+            Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar
+          </h2>
+          <p className="text-emerald-100 text-xs mt-2">{getRoleName(user.role)}</p>
         </div>
 
         <nav className="flex-1 p-4 space-y-2" data-testid="sidebar-nav">
@@ -96,12 +111,17 @@ export default function DashboardLayout() {
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)}></div>
           <div className="absolute left-0 top-0 bottom-0 w-64 bg-emerald-900 text-white">
-            <div className="p-6 border-b border-emerald-800 flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold font-outfit">Gestoría Catastral</h2>
-                <p className="text-emerald-100 text-sm mt-1">{getRoleName(user.role)}</p>
+            <div className="p-6 border-b border-emerald-800 flex justify-between items-start">
+              <div className="flex-1">
+                <img 
+                  src="https://customer-assets.emergentagent.com/job_28ae97d1-3b3d-446d-842a-30fce089309a/artifacts/3sbor4tr_HorizontalBlancoCorto_ConFondo.png" 
+                  alt="Asomunicipios Logo" 
+                  className="w-full mb-2"
+                />
+                <h2 className="text-xs font-bold font-outfit leading-tight">Asociación de Municipios del Catatumbo</h2>
+                <p className="text-emerald-100 text-xs mt-1">{getRoleName(user.role)}</p>
               </div>
-              <button onClick={() => setSidebarOpen(false)} className="text-white">
+              <button onClick={() => setSidebarOpen(false)} className="text-white ml-2">
                 <X className="w-6 h-6" />
               </button>
             </div>

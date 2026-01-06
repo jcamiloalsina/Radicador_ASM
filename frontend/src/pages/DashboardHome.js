@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { FileText, Clock, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, Plus, FileCheck, RotateCcw } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -48,25 +48,46 @@ export default function DashboardHome() {
       testId: 'stat-total'
     },
     {
-      title: 'Pendientes',
-      value: stats?.pendientes || 0,
+      title: 'Radicado',
+      value: stats?.radicado || 0,
+      icon: FileCheck,
+      color: 'bg-indigo-500',
+      testId: 'stat-radicado'
+    },
+    {
+      title: 'Asignado',
+      value: stats?.asignado || 0,
       icon: Clock,
       color: 'bg-yellow-500',
-      testId: 'stat-pendientes'
+      testId: 'stat-asignado'
     },
     {
-      title: 'Aprobadas',
-      value: stats?.aprobadas || 0,
+      title: 'En Revisión',
+      value: stats?.revision || 0,
+      icon: FileCheck,
+      color: 'bg-purple-500',
+      testId: 'stat-revision'
+    },
+    {
+      title: 'Finalizado',
+      value: stats?.finalizado || 0,
       icon: CheckCircle,
       color: 'bg-emerald-500',
-      testId: 'stat-aprobadas'
+      testId: 'stat-finalizado'
     },
     {
-      title: 'Rechazadas',
-      value: stats?.rechazadas || 0,
+      title: 'Rechazado',
+      value: stats?.rechazado || 0,
       icon: XCircle,
       color: 'bg-red-500',
-      testId: 'stat-rechazadas'
+      testId: 'stat-rechazado'
+    },
+    {
+      title: 'Devuelto',
+      value: stats?.devuelto || 0,
+      icon: RotateCcw,
+      color: 'bg-orange-500',
+      testId: 'stat-devuelto'
     },
   ];
 
@@ -80,7 +101,7 @@ export default function DashboardHome() {
         <p className="text-slate-600 mt-2">
           {user?.role === 'ciudadano'
             ? 'Gestiona tus peticiones catastrales desde aquí'
-            : 'Panel de control de peticiones catastrales'}
+            : 'Panel de control de peticiones catastrales - Asomunicipios'}
         </p>
       </div>
 
@@ -142,6 +163,17 @@ export default function DashboardHome() {
               Ver Todas las Peticiones
             </Button>
           )}
+          {['administrador', 'coordinador', 'atencion_usuario'].includes(user?.role) && (
+            <Button
+              onClick={() => navigate('/dashboard/usuarios')}
+              variant="outline"
+              className="w-full md:w-auto ml-0 md:ml-2"
+              data-testid="manage-users-button"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Gestionar Usuarios
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -152,8 +184,12 @@ export default function DashboardHome() {
             {user?.role === 'ciudadano'
               ? 'Puedes crear nuevas peticiones y hacer seguimiento al estado de tus trámites desde esta plataforma.'
               : user?.role === 'atencion_usuario'
-              ? 'Como personal de atención, puedes revisar y actualizar el estado de las peticiones.'
-              : 'Como coordinador, tienes acceso completo para gestionar y modificar todas las peticiones del sistema.'}
+              ? 'Como personal de atención, puedes revisar, asignar gestores y actualizar el estado de las peticiones.'
+              : user?.role === 'gestor' || user?.role === 'gestor_auxiliar'
+              ? 'Como gestor, puedes procesar trámites asignados, pedir ayuda a auxiliares y enviar trámites para revisión.'
+              : user?.role === 'coordinador'
+              ? 'Como coordinador, puedes revisar, aprobar o devolver trámites, y finalizar procesos.'
+              : 'Como administrador, tienes acceso completo para gestionar usuarios y todas las peticiones del sistema.'}
           </p>
         </CardContent>
       </Card>
