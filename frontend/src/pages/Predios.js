@@ -1105,18 +1105,41 @@ export default function Predios() {
                 </CardContent>
               </Card>
               
-              {/* Propietario */}
+              {/* Propietarios (R1) */}
               <Card>
                 <CardHeader className="py-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <User className="w-4 h-4" /> Propietario (R1)
+                    <Users className="w-4 h-4" /> 
+                    Propietarios (R1)
+                    {selectedPredio.propietarios?.length > 1 && (
+                      <Badge variant="secondary">{selectedPredio.propietarios.length} propietarios</Badge>
+                    )}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="col-span-2"><span className="text-slate-500">Nombre:</span> <strong>{selectedPredio.nombre_propietario}</strong></div>
-                  <div><span className="text-slate-500">Documento:</span> <strong>{catalogos?.tipo_documento?.[selectedPredio.tipo_documento]} {selectedPredio.numero_documento}</strong></div>
-                  <div><span className="text-slate-500">Estado Civil:</span> <strong>{catalogos?.estado_civil?.[selectedPredio.estado_civil] || 'N/A'}</strong></div>
-                  <div className="col-span-2"><span className="text-slate-500">Dirección:</span> <strong>{selectedPredio.direccion}</strong></div>
+                <CardContent>
+                  {selectedPredio.propietarios && selectedPredio.propietarios.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedPredio.propietarios.map((prop, idx) => (
+                        <div key={idx} className={`grid grid-cols-2 gap-4 text-sm ${idx > 0 ? 'border-t pt-3' : ''}`}>
+                          <div className="col-span-2 flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">{idx + 1}/{selectedPredio.propietarios.length}</Badge>
+                            <strong>{prop.nombre_propietario}</strong>
+                          </div>
+                          <div><span className="text-slate-500">Documento:</span> <strong>{catalogos?.tipo_documento?.[prop.tipo_documento]} {prop.numero_documento}</strong></div>
+                          <div><span className="text-slate-500">Estado Civil:</span> <strong>{catalogos?.estado_civil?.[prop.estado_civil] || 'N/A'}</strong></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="col-span-2"><span className="text-slate-500">Nombre:</span> <strong>{selectedPredio.nombre_propietario}</strong></div>
+                      <div><span className="text-slate-500">Documento:</span> <strong>{catalogos?.tipo_documento?.[selectedPredio.tipo_documento]} {selectedPredio.numero_documento}</strong></div>
+                      <div><span className="text-slate-500">Estado Civil:</span> <strong>{catalogos?.estado_civil?.[selectedPredio.estado_civil] || 'N/A'}</strong></div>
+                    </div>
+                  )}
+                  <div className="mt-3 pt-3 border-t">
+                    <span className="text-slate-500 text-sm">Dirección:</span> <strong className="text-sm">{selectedPredio.direccion}</strong>
+                  </div>
                 </CardContent>
               </Card>
               
