@@ -43,12 +43,17 @@ export default function Register() {
           />
         </div>
         <div className="relative z-10">
-          <h2 className="text-3xl font-bold font-outfit">Gestoría Catastral</h2>
-          <p className="text-emerald-100 mt-2">Sistema de gestión de peticiones y radicaciones</p>
+          <img 
+            src="https://customer-assets.emergentagent.com/job_28ae97d1-3b3d-446d-842a-30fce089309a/artifacts/3sbor4tr_HorizontalBlancoCorto_ConFondo.png" 
+            alt="Asomunicipios Logo" 
+            className="w-48 mb-4"
+          />
+          <h2 className="text-2xl font-bold font-outfit">Asociación de Municipios del Catatumbo</h2>
+          <p className="text-emerald-100 mt-2 text-sm">Provincia de Ocaña y Sur del Cesar - Asomunicipios</p>
         </div>
         <div className="relative z-10">
           <p className="text-emerald-100 text-sm">
-            Plataforma profesional para la gestión eficiente de trámites catastrales
+            Sistema profesional de gestión catastral
           </p>
         </div>
       </div>
