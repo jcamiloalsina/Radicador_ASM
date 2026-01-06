@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import axios from 'axios';
 import { ArrowLeft, Send, Upload, X } from 'lucide-react';
+import { TIPOS_TRAMITE, MUNICIPIOS, getTramiteCompleto } from '../data/catalogos';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -20,20 +21,14 @@ export default function CreatePetition() {
     correo: '',
     telefono: '',
     tipo_tramite: '',
+    sub_tipo_tramite: '',
     municipio: ''
   });
   const [files, setFiles] = useState([]);
 
-  const tiposTramite = [
-    'Certificado de Tradición y Libertad',
-    'Actualización Catastral',
-    'Rectificación de Área',
-    'Englobo de Predios',
-    'Desenglobe de Predios',
-    'Formación Catastral',
-    'Conservación Catastral',
-    'Otro'
-  ];
+  // Obtener el tipo de trámite seleccionado
+  const selectedTipoTramite = TIPOS_TRAMITE.find(t => t.id === formData.tipo_tramite);
+  const hasSubOpciones = selectedTipoTramite?.subOpciones?.length > 0;
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -44,15 +39,33 @@ export default function CreatePetition() {
     setFiles(files.filter((_, i) => i !== index));
   };
 
+  const handleTipoTramiteChange = (value) => {
+    setFormData({ 
+      ...formData, 
+      tipo_tramite: value,
+      sub_tipo_tramite: '' // Reset sub-opción cuando cambia el tipo
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validar que si hay sub-opciones, se haya seleccionado una
+    if (hasSubOpciones && !formData.sub_tipo_tramite) {
+      toast.error('Por favor seleccione la sub-opción del trámite');
+      return;
+    }
+    
     setLoading(true);
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('nombre_completo', formData.nombre_completo);
       formDataToSend.append('correo', formData.correo);
       formDataToSend.append('telefono', formData.telefono);
-      formDataToSend.append('tipo_tramite', formData.tipo_tramite);
+      
+      // Construir el tipo de trámite completo
+      const tipoTramiteCompleto = getTramiteCompleto(formData.tipo_tramite, formData.sub_tipo_tramite);
+      formDataToSend.append('tipo_tramite', tipoTramiteCompleto);
       formDataToSend.append('municipio', formData.municipio);
       
       files.forEach((file) => {
@@ -136,33 +149,58 @@ export default function CreatePetition() {
 
               <div className="space-y-2">
                 <Label htmlFor="municipio" className="text-slate-700">Municipio *</Label>
-                <Input
-                  id="municipio"
-                  value={formData.municipio}
-                  onChange={(e) => setFormData({ ...formData, municipio: e.target.value })}
-                  required
-                  className="focus-visible:ring-emerald-600"
-                  placeholder="Ocaña"
-                  data-testid="input-municipio"
-                />
+                <Select value={formData.municipio} onValueChange={(value) => setFormData({ ...formData, municipio: value })} required>
+                  <SelectTrigger className="focus:ring-emerald-600" data-testid="select-municipio">
+                    <SelectValue placeholder="Seleccione el municipio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MUNICIPIOS.map((municipio) => (
+                      <SelectItem key={municipio} value={municipio}>
+                        {municipio}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="tipo_tramite" className="text-slate-700">Tipo de Trámite *</Label>
-              <Select value={formData.tipo_tramite} onValueChange={(value) => setFormData({ ...formData, tipo_tramite: value })} required>
+              <Select value={formData.tipo_tramite} onValueChange={handleTipoTramiteChange} required>
                 <SelectTrigger className="focus:ring-emerald-600" data-testid="select-tipo-tramite">
                   <SelectValue placeholder="Seleccione el tipo de trámite" />
                 </SelectTrigger>
                 <SelectContent>
-                  {tiposTramite.map((tipo) => (
-                    <SelectItem key={tipo} value={tipo} data-testid={`tramite-${tipo.toLowerCase().replace(/\s+/g, '-')}`}>
-                      {tipo}
+                  {TIPOS_TRAMITE.map((tipo) => (
+                    <SelectItem key={tipo.id} value={tipo.id} data-testid={`tramite-${tipo.id}`}>
+                      {tipo.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {selectedTipoTramite && (
+                <p className="text-xs text-slate-500 mt-1">{selectedTipoTramite.descripcion}</p>
+              )}
             </div>
+
+            {/* Sub-tipo de trámite (si aplica) */}
+            {hasSubOpciones && (
+              <div className="space-y-2">
+                <Label htmlFor="sub_tipo_tramite" className="text-slate-700">Especifique el tipo *</Label>
+                <Select value={formData.sub_tipo_tramite} onValueChange={(value) => setFormData({ ...formData, sub_tipo_tramite: value })} required>
+                  <SelectTrigger className="focus:ring-emerald-600" data-testid="select-sub-tipo-tramite">
+                    <SelectValue placeholder="Seleccione una opción" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedTipoTramite.subOpciones.map((subOpcion) => (
+                      <SelectItem key={subOpcion.id} value={subOpcion.id}>
+                        {subOpcion.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="files" className="text-slate-700">Documentos Adjuntos</Label>
