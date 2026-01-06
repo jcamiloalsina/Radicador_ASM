@@ -2578,7 +2578,7 @@ GDB_PATH = Path("/app/gdb_data/54003.gdb")
 def get_gdb_geometry(codigo_predial: str) -> Optional[dict]:
     """Get geometry for a property from GDB file"""
     import geopandas as gpd
-    import json
+    from shapely.geometry import mapping
     
     if not GDB_PATH.exists():
         return None
@@ -2598,20 +2598,20 @@ def get_gdb_geometry(codigo_predial: str) -> Optional[dict]:
         if len(match) == 0:
             return None
         
-        # Convert to GeoJSON
+        # Convert to GeoJSON using shapely mapping
         geom = match.iloc[0]['geometry']
         if geom is None:
             return None
             
-        geojson = json.loads(geom.to_json())
+        geojson = mapping(geom)
         
         return {
             "type": "Feature",
             "geometry": geojson,
             "properties": {
                 "codigo": codigo_predial,
-                "area_m2": match.iloc[0]['shape_Area'] if 'shape_Area' in match.columns else None,
-                "perimetro_m": match.iloc[0]['shape_Length'] if 'shape_Length' in match.columns else None,
+                "area_m2": float(match.iloc[0]['shape_Area']) if 'shape_Area' in match.columns else None,
+                "perimetro_m": float(match.iloc[0]['shape_Length']) if 'shape_Length' in match.columns else None,
                 "tipo": "Urbano" if is_urban else "Rural"
             }
         }
