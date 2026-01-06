@@ -287,7 +287,7 @@ export default function Predios() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 font-outfit">Gestión de Predios</h1>
-          <p className="text-sm text-slate-500">Sistema de información catastral DIVIPOLA</p>
+          <p className="text-sm text-slate-500">Sistema de información catastral Código Nacional Catastral</p>
         </div>
         <Button onClick={() => { resetForm(); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
           <Plus className="w-4 h-4 mr-2" />
@@ -423,7 +423,7 @@ export default function Predios() {
           
           <Tabs defaultValue="ubicacion" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="ubicacion">Ubicación DIVIPOLA</TabsTrigger>
+              <TabsTrigger value="ubicacion">Ubicación Código Nacional Catastral</TabsTrigger>
               <TabsTrigger value="propietario">Propietario (R1)</TabsTrigger>
               <TabsTrigger value="fisico">Físico (R2)</TabsTrigger>
             </TabsList>
@@ -442,9 +442,9 @@ export default function Predios() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {formData.municipio && catalogos?.divipola?.[formData.municipio] && (
+                  {formData.municipio && catalogos?.codigo_nacional?.[formData.municipio] && (
                     <p className="text-xs text-slate-500 mt-1">
-                      Código DIVIPOLA: {catalogos.divipola[formData.municipio].departamento}-{catalogos.divipola[formData.municipio].municipio}
+                      Código Código Nacional Catastral: {catalogos.codigo_nacional[formData.municipio].departamento}-{catalogos.codigo_nacional[formData.municipio].municipio}
                     </p>
                   )}
                 </div>
@@ -707,7 +707,7 @@ export default function Predios() {
               <Card>
                 <CardHeader className="py-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <LayoutGrid className="w-4 h-4" /> Ubicación DIVIPOLA
+                    <LayoutGrid className="w-4 h-4" /> Ubicación Código Nacional Catastral
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-3 gap-4 text-sm">

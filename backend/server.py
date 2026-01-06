@@ -139,10 +139,10 @@ class Petition(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-# ===== PREDIO MODELS (DIVIPOLA) =====
+# ===== PREDIO MODELS (Código Nacional Catastral) =====
 
-# Catálogo de municipios con código DIVIPOLA
-MUNICIPIOS_DIVIPOLA = {
+# Catálogo de municipios con código Código Nacional Catastral
+MUNICIPIOS_Código Nacional Catastral = {
     "Ábrego": {"departamento": "54", "municipio": "003"},
     "Bucarasica": {"departamento": "54", "municipio": "109"},
     "Cáchira": {"departamento": "54", "municipio": "128"},
@@ -1675,15 +1675,15 @@ async def get_stats_summary(current_user: dict = Depends(get_current_user)):
     }
 
 
-# ===== PREDIOS ROUTES (DIVIPOLA) =====
+# ===== PREDIOS ROUTES (Código Nacional Catastral) =====
 
 async def generate_codigo_predial(municipio: str, zona: str, sector: str, manzana_vereda: str, 
                                    terreno: str, condicion: str, ph: str) -> str:
     """Genera el código predial nacional de 30 dígitos"""
-    if municipio not in MUNICIPIOS_DIVIPOLA:
+    if municipio not in MUNICIPIOS_Código Nacional Catastral:
         raise HTTPException(status_code=400, detail=f"Municipio '{municipio}' no válido")
     
-    divipola = MUNICIPIOS_DIVIPOLA[municipio]
+    divipola = MUNICIPIOS_Código Nacional Catastral[municipio]
     
     # Construir código de 30 dígitos
     codigo = (
@@ -1754,11 +1754,11 @@ async def get_predios_catalogos(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     return {
-        "municipios": list(MUNICIPIOS_DIVIPOLA.keys()),
+        "municipios": list(MUNICIPIOS_Código Nacional Catastral.keys()),
         "destino_economico": DESTINO_ECONOMICO,
         "tipo_documento": TIPO_DOCUMENTO_PREDIO,
         "estado_civil": ESTADO_CIVIL_PREDIO,
-        "divipola": MUNICIPIOS_DIVIPOLA
+        "divipola": MUNICIPIOS_Código Nacional Catastral
     }
 
 @api_router.get("/predios")
@@ -1837,8 +1837,8 @@ async def create_predio(predio_data: PredioCreate, current_user: dict = Depends(
     # Generar código homologado
     codigo_homologado, numero_predio = await generate_codigo_homologado(r1.municipio)
     
-    # Obtener código DIVIPOLA
-    divipola = MUNICIPIOS_DIVIPOLA[r1.municipio]
+    # Obtener código Código Nacional Catastral
+    divipola = MUNICIPIOS_Código Nacional Catastral[r1.municipio]
     
     # Crear el predio
     predio = {
