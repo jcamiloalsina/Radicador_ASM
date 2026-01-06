@@ -404,6 +404,11 @@ async def register(user_data: UserRegister):
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El correo ya está registrado")
     
+    # Validate password
+    is_valid, error_msg = validate_password(user_data.password)
+    if not is_valid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+    
     # Always assign ciudadano role on self-registration
     user = User(
         email=user_data.email,
