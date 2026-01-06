@@ -1634,6 +1634,20 @@ def main():
         "admin"
     )
     
+    # Test atencion_usuario login
+    atencion_success = tester.test_login_with_credentials(
+        "atencion.test@asomunicipios.gov.co",
+        "Atencion123!",
+        "atencion_usuario"
+    )
+    
+    # Test citizen login
+    citizen_success = tester.test_login_with_credentials(
+        "ciudadano.prueba@test.com",
+        "Test123!",
+        "citizen"
+    )
+    
     # Test gestor login
     gestor_success = tester.test_login_with_credentials(
         "gestor.prueba@test.com",
@@ -1645,28 +1659,43 @@ def main():
         print("❌ Admin login failed, cannot continue with most tests")
         return 1
         
+    if not atencion_success:
+        print("⚠️ Atención al Usuario login failed, but continuing with other tests")
+    
+    if not citizen_success:
+        print("⚠️ Citizen login failed, but continuing with other tests")
+        
     if not gestor_success:
         print("⚠️ Gestor login failed, but continuing with admin tests")
     
-    # REVIEW REQUEST TESTS - Testing specific features mentioned in review
-    print("\n🎯 Testing Features from Review Request...")
+    # NEW FUNCTIONALITY TESTS - Testing specific features mentioned in review request
+    print("\n🎯 Testing NEW Functionalities from Review Request...")
     
-    # Test 1: Reimported Predios Data Structure Verification
+    # Test 1: GDB Geographic Database Integration
+    tester.test_gdb_integration_endpoints()
+    
+    # Test 2: Certificate Generation for 'Atención al Usuario' Role
+    tester.test_certificate_generation_atencion_usuario()
+    
+    # PREVIOUS FUNCTIONALITY TESTS - Testing previously implemented features
+    print("\n🔧 Testing Previously Implemented Functionality...")
+    
+    # Test 3: Reimported Predios Data Structure Verification
     tester.test_predios_reimported_data_structure()
     
-    # Test 2: Predios Approval System Verification
+    # Test 4: Predios Approval System Verification
     tester.test_predios_approval_system_verification()
     
-    # Test 3: Predios Data Import Verification (11,269 properties from Ábrego)
+    # Test 5: Predios Data Import Verification (11,269 properties from Ábrego)
     tester.test_predios_data_import_verification()
     
-    # Test 4: Approval System for Property Changes
+    # Test 6: Approval System for Property Changes
     tester.test_approval_system_endpoints()
     
-    # Test 5: Unified Statistics Page
+    # Test 7: Unified Statistics Page
     tester.test_unified_statistics_endpoints()
     
-    # Test 6: Excel Export
+    # Test 8: Excel Export
     tester.test_export_excel_endpoint()
     
     # ADDITIONAL TESTS (from previous functionality)
