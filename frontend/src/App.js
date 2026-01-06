@@ -15,6 +15,7 @@ import PetitionDetail from "./pages/PetitionDetail";
 import AllPetitions from "./pages/AllPetitions";
 import UserManagement from "./pages/UserManagement";
 import ProductivityReports from "./pages/ProductivityReports";
+import Statistics from "./pages/Statistics";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
             <Route path="todas-peticiones" element={<AllPetitions />} />
             <Route path="usuarios" element={<UserManagement />} />
             <Route path="reportes" element={<ProductivityReports />} />
+            <Route path="estadisticas" element={<Statistics />} />
           </Route>
         </Routes>
       </BrowserRouter>
