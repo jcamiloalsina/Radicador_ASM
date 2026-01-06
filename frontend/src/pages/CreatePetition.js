@@ -7,7 +7,7 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Upload, X } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -22,6 +22,7 @@ export default function CreatePetition() {
     tipo_tramite: '',
     municipio: ''
   });
+  const [files, setFiles] = useState([]);
 
   const tiposTramite = [
     'Certificado de Tradición y Libertad',
@@ -34,11 +35,35 @@ export default function CreatePetition() {
     'Otro'
   ];
 
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    setFiles([...files, ...selectedFiles]);
+  };
+
+  const removeFile = (index) => {
+    setFiles(files.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post(`${API}/petitions`, formData);
+      const formDataToSend = new FormData();
+      formDataToSend.append('nombre_completo', formData.nombre_completo);
+      formDataToSend.append('correo', formData.correo);
+      formDataToSend.append('telefono', formData.telefono);
+      formDataToSend.append('tipo_tramite', formData.tipo_tramite);
+      formDataToSend.append('municipio', formData.municipio);
+      
+      files.forEach((file) => {
+        formDataToSend.append('files', file);
+      });
+
+      await axios.post(`${API}/petitions`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       toast.success('¡Petición creada exitosamente!');
       navigate('/dashboard/peticiones');
     } catch (error) {
@@ -117,7 +142,7 @@ export default function CreatePetition() {
                   onChange={(e) => setFormData({ ...formData, municipio: e.target.value })}
                   required
                   className="focus-visible:ring-emerald-600"
-                  placeholder="Bogotá"
+                  placeholder="Ocaña"
                   data-testid="input-municipio"
                 />
               </div>
@@ -125,7 +150,7 @@ export default function CreatePetition() {
 
             <div className="space-y-2">
               <Label htmlFor="tipo_tramite" className="text-slate-700">Tipo de Trámite *</Label>
-              <Select value={formData.tipo_tramite} onValueChange={(value) => setFormData({ ...formData, tipo_tramite: value })}>
+              <Select value={formData.tipo_tramite} onValueChange={(value) => setFormData({ ...formData, tipo_tramite: value })} required>
                 <SelectTrigger className="focus:ring-emerald-600" data-testid="select-tipo-tramite">
                   <SelectValue placeholder="Seleccione el tipo de trámite" />
                 </SelectTrigger>
@@ -137,6 +162,48 @@ export default function CreatePetition() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="files" className="text-slate-700">Documentos Adjuntos</Label>
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
+                <Upload className="w-8 h-8 mx-auto text-slate-400 mb-2" />
+                <p className="text-sm text-slate-600 mb-2">Arrastra archivos aquí o haz clic para seleccionar</p>
+                <Input
+                  id="files"
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                  data-testid="input-files"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('files').click()}
+                  data-testid="select-files-button"
+                >
+                  Seleccionar Archivos
+                </Button>
+              </div>
+              {files.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {files.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-md" data-testid={`file-item-${index}`}>
+                      <span className="text-sm text-slate-700">{file.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                        data-testid={`remove-file-${index}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 pt-4">
