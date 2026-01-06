@@ -63,12 +63,14 @@ export default function AllPetitions() {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      pendiente: { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-      en_revision: { label: 'En Revisión', className: 'bg-blue-100 text-blue-800 border-blue-200' },
-      aprobada: { label: 'Aprobada', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-      rechazada: { label: 'Rechazada', className: 'bg-red-100 text-red-800 border-red-200' },
+      radicado: { label: 'Radicado', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+      asignado: { label: 'Asignado', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+      rechazado: { label: 'Rechazado', className: 'bg-red-100 text-red-800 border-red-200' },
+      revision: { label: 'En Revisión', className: 'bg-purple-100 text-purple-800 border-purple-200' },
+      devuelto: { label: 'Devuelto', className: 'bg-orange-100 text-orange-800 border-orange-200' },
+      finalizado: { label: 'Finalizado', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
     };
-    const config = statusConfig[status] || statusConfig.pendiente;
+    const config = statusConfig[status] || statusConfig.radicado;
     return <Badge className={config.className} data-testid={`badge-${status}`}>{config.label}</Badge>;
   };
 
