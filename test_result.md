@@ -251,26 +251,44 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Predios - Export Excel"
+    - "Predios - Modal Eliminados"
+    - "Validación de contraseñas con caracteres especiales"
   stuck_tasks: []
   test_all: false
-  test_priority: "completed"
+  test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
     message: |
-      Implementaciones completadas y verificadas con screenshots:
-      1. ✅ Filtro de estados funciona - URL cambia a ?estado=radicado/finalizado/etc
-      2. ✅ Botón "Subir Documento Final" movido a sección de documentos
-      3. ✅ Página de recuperación de contraseña lista
-      4. ✅ Catálogos de tipos de trámite (10) y municipios (12) implementados
-      5. ✅ Dropdowns en cascada funcionando
+      NUEVAS FUNCIONALIDADES IMPLEMENTADAS (Fork Job):
       
-      Credenciales de prueba:
+      1. ✅ Modal de Predios Eliminados - Implementado y funcionando
+         - Endpoint: GET /api/predios/eliminados
+         - Modal con tabla de predios eliminados
+         - Muestra código, propietario, municipio, terreno, fecha y usuario
+         - Mensaje sobre no reutilización de terrenos
+      
+      2. ✅ Export a Excel - Funcionando
+         - Endpoint: GET /api/predios/export-excel
+         - Genera archivo .xlsx con hojas R1 y R2
+         - Probado exitosamente (archivo de 6KB generado)
+      
+      3. ✅ Validación de contraseñas con caracteres especiales
+         - Función validate_password() creada
+         - Aplica en registro (/api/auth/register) y reset (/api/auth/reset-password)
+         - Permite caracteres: !@#$%^&*()_+-=[]{}|;':\",./<>?
+         - Probado exitosamente con contraseña "Test@123!"
+      
+      4. ✅ Terreno Info - Ya implementado previamente
+         - Endpoint: GET /api/predios/terreno-info/{municipio}
+         - Muestra siguiente terreno disponible en formulario de crear
+      
+      CREDENCIALES DE PRUEBA:
       - Admin: catastro@asomunicipios.gov.co / Asm*123*
       - Ciudadano: ciudadano.prueba@test.com / Test123!
-      
-      NOTA: Recuperación de contraseña requiere credenciales SMTP para enviar emails
+      - Test con especiales: test_special@example.com / Test@123!
   - agent: "testing"
     message: |
       BACKEND TESTING COMPLETED - All requested functionalities working correctly:
