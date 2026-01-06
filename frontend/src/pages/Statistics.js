@@ -84,6 +84,23 @@ export default function Statistics() {
     { name: 'Devuelto', value: summary.status_counts.devuelto, color: STATUS_COLORS.devuelto }
   ].filter(item => item.value > 0) : [];
 
+  // Prepare pie chart data for staff distribution
+  const staffPieData = summary?.staff_counts ? [
+    { name: 'Coordinadores', value: summary.staff_counts.coordinadores, color: STAFF_COLORS.coordinadores },
+    { name: 'Gestores', value: summary.staff_counts.gestores, color: STAFF_COLORS.gestores },
+    { name: 'Gestores Aux.', value: summary.staff_counts.gestores_auxiliares, color: STAFF_COLORS.gestores_auxiliares },
+    { name: 'Atención Usuario', value: summary.staff_counts.atencion_usuario, color: STAFF_COLORS.atencion_usuario },
+    { name: 'Administradores', value: summary.staff_counts.administradores, color: STAFF_COLORS.administradores }
+  ].filter(item => item.value > 0) : [];
+
+  // Calculate total staff (excluding ciudadanos)
+  const totalStaff = summary?.staff_counts ? 
+    summary.staff_counts.coordinadores + 
+    summary.staff_counts.gestores + 
+    summary.staff_counts.gestores_auxiliares + 
+    summary.staff_counts.atencion_usuario + 
+    summary.staff_counts.administradores : 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
