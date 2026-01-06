@@ -39,7 +39,19 @@ export default function DashboardHome() {
     );
   }
 
-  const statCards = [
+  // Stats for ciudadano - only relevant states
+  const ciudadanoStats = [
+    {
+      title: 'Mis Radicados',
+      value: stats?.total || 0,
+      icon: FileText,
+      color: 'bg-emerald-600',
+      testId: 'stat-total'
+    },
+  ];
+
+  // Stats for staff - all states
+  const staffStats = [
     {
       title: 'Total de Peticiones',
       value: stats?.total || 0,
@@ -91,6 +103,8 @@ export default function DashboardHome() {
     },
   ];
 
+  const statCards = user?.role === 'ciudadano' ? ciudadanoStats : staffStats;
+
   return (
     <div className="space-y-8" data-testid="dashboard-home">
       {/* Welcome Section */}
@@ -100,13 +114,13 @@ export default function DashboardHome() {
         </h2>
         <p className="text-slate-600 mt-2">
           {user?.role === 'ciudadano'
-            ? 'Gestiona tus peticiones catastrales desde aquí'
+            ? 'Gestiona tus radicados y haz seguimiento al estado de tus trámites'
             : 'Panel de control de peticiones catastrales - Asomunicipios'}
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${user?.role === 'ciudadano' ? 'lg:grid-cols-1 max-w-md' : 'lg:grid-cols-4'} gap-4`}>
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -150,7 +164,7 @@ export default function DashboardHome() {
             data-testid="view-petitions-button"
           >
             <FileText className="w-4 h-4 mr-2" />
-            Ver Mis Peticiones
+            {user?.role === 'ciudadano' ? 'Ver Mis Radicados' : 'Ver Mis Peticiones'}
           </Button>
           {user?.role !== 'ciudadano' && (
             <Button
@@ -182,13 +196,13 @@ export default function DashboardHome() {
         <CardContent className="pt-6">
           <p className="text-sm text-emerald-900">
             {user?.role === 'ciudadano'
-              ? 'Puedes crear nuevas peticiones y hacer seguimiento al estado de tus trámites desde esta plataforma.'
+              ? 'Puedes crear nuevas peticiones y hacer seguimiento al estado de tus trámites. Si tu trámite es rechazado, podrás cargar documentos para subsanar.'
               : user?.role === 'atencion_usuario'
               ? 'Como personal de atención, puedes revisar, asignar gestores y actualizar el estado de las peticiones.'
               : user?.role === 'gestor' || user?.role === 'gestor_auxiliar'
               ? 'Como gestor, puedes procesar trámites asignados, pedir ayuda a auxiliares y enviar trámites para revisión.'
               : user?.role === 'coordinador'
-              ? 'Como coordinador, puedes revisar, aprobar o devolver trámites, y finalizar procesos.'
+              ? 'Como coordinador, puedes revisar, aprobar o devolver trámites, y finalizar procesos con firma digital.'
               : 'Como administrador, tienes acceso completo para gestionar usuarios y todas las peticiones del sistema.'}
           </p>
         </CardContent>
