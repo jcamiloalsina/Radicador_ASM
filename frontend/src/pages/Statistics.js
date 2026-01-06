@@ -7,7 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
-import { MapPin, FileText, Users, TrendingUp, Calendar, CheckCircle } from 'lucide-react';
+import { MapPin, FileText, Users, TrendingUp, Calendar, CheckCircle, UserCog, Shield } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -20,6 +20,15 @@ const STATUS_COLORS = {
   finalizado: '#10b981',
   rechazado: '#ef4444',
   devuelto: '#f97316'
+};
+
+const STAFF_COLORS = {
+  coordinadores: '#047857',
+  gestores: '#10b981',
+  gestores_auxiliares: '#34d399',
+  atencion_usuario: '#6366f1',
+  administradores: '#8b5cf6',
+  ciudadanos: '#94a3b8'
 };
 
 export default function Statistics() {
