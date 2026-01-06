@@ -2917,7 +2917,7 @@ async def get_cambios_stats(current_user: dict = Depends(get_current_user)):
 GDB_PATH = Path("/app/gdb_data/54003.gdb")
 
 def get_gdb_geometry(codigo_predial: str) -> Optional[dict]:
-    """Get geometry for a property from GDB file"""
+    """Get geometry for a property from GDB file, transformed to WGS84 for web mapping"""
     import geopandas as gpd
     from shapely.geometry import mapping
     
@@ -2939,8 +2939,14 @@ def get_gdb_geometry(codigo_predial: str) -> Optional[dict]:
         if len(match) == 0:
             return None
         
-        # Convert to GeoJSON using shapely mapping
-        geom = match.iloc[0]['geometry']
+        # Get original area and perimeter before transformation
+        area_m2 = float(match.iloc[0]['shape_Area']) if 'shape_Area' in match.columns else None
+        perimetro_m = float(match.iloc[0]['shape_Length']) if 'shape_Length' in match.columns else None
+        
+        # Transform from EPSG:3116 (Colombia Bogotá Zone) to WGS84 (EPSG:4326) for Leaflet
+        match_wgs84 = match.to_crs(epsg=4326)
+        
+        geom = match_wgs84.iloc[0]['geometry']
         if geom is None:
             return None
             
@@ -2951,8 +2957,8 @@ def get_gdb_geometry(codigo_predial: str) -> Optional[dict]:
             "geometry": geojson,
             "properties": {
                 "codigo": codigo_predial,
-                "area_m2": float(match.iloc[0]['shape_Area']) if 'shape_Area' in match.columns else None,
-                "perimetro_m": float(match.iloc[0]['shape_Length']) if 'shape_Length' in match.columns else None,
+                "area_m2": area_m2,
+                "perimetro_m": perimetro_m,
                 "tipo": "Urbano" if is_urban else "Rural"
             }
         }
