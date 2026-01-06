@@ -1675,6 +1675,344 @@ async def get_stats_summary(current_user: dict = Depends(get_current_user)):
     }
 
 
+# ===== PREDIOS ROUTES (DIVIPOLA) =====
+
+async def generate_codigo_predial(municipio: str, zona: str, sector: str, manzana_vereda: str, 
+                                   terreno: str, condicion: str, ph: str) -> str:
+    """Genera el código predial nacional de 30 dígitos"""
+    if municipio not in MUNICIPIOS_DIVIPOLA:
+        raise HTTPException(status_code=400, detail=f"Municipio '{municipio}' no válido")
+    
+    divipola = MUNICIPIOS_DIVIPOLA[municipio]
+    
+    # Construir código de 30 dígitos
+    codigo = (
+        divipola["departamento"].zfill(2) +  # 2 dígitos
+        divipola["municipio"].zfill(3) +     # 3 dígitos
+        zona.zfill(2) +                       # 2 dígitos
+        sector.zfill(2) +                     # 2 dígitos
+        manzana_vereda.zfill(4) +            # 4 dígitos
+        terreno.zfill(4) +                    # 4 dígitos
+        condicion.zfill(4) +                  # 4 dígitos
+        ph.zfill(4) +                         # 4 dígitos
+        "00000"                               # 5 dígitos (unidad predial)
+    )
+    
+    return codigo
+
+async def generate_codigo_homologado(municipio: str) -> str:
+    """Genera un código homologado único de 11 caracteres"""
+    import string
+    import random
+    
+    # Obtener último código para este municipio
+    last_predio = await db.predios.find_one(
+        {"municipio": municipio, "deleted": {"$ne": True}},
+        sort=[("numero_predio", -1)]
+    )
+    
+    if last_predio:
+        next_num = last_predio.get("numero_predio", 0) + 1
+    else:
+        next_num = 1
+    
+    # Generar código: BPP + número + letras aleatorias
+    letters = ''.join(random.choices(string.ascii_uppercase, k=4))
+    codigo = f"BPP{str(next_num).zfill(4)}{letters}"
+    
+    return codigo, next_num
+
+async def get_next_terreno_number(municipio: str, zona: str, sector: str, manzana_vereda: str) -> str:
+    """Obtiene el siguiente número de terreno disponible (incluyendo eliminados)"""
+    # Buscar el máximo terreno usado (incluyendo eliminados para no reutilizar)
+    pipeline = [
+        {"$match": {
+            "municipio": municipio,
+            "zona": zona,
+            "sector": sector,
+            "manzana_vereda": manzana_vereda
+        }},
+        {"$group": {
+            "_id": None,
+            "max_terreno": {"$max": "$terreno_num"}
+        }}
+    ]
+    
+    result = await db.predios.aggregate(pipeline).to_list(1)
+    
+    if result and result[0].get("max_terreno"):
+        next_num = result[0]["max_terreno"] + 1
+    else:
+        next_num = 1
+    
+    return str(next_num).zfill(4), next_num
+
+@api_router.get("/predios/catalogos")
+async def get_predios_catalogos(current_user: dict = Depends(get_current_user)):
+    """Obtiene los catálogos para el formulario de predios"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    return {
+        "municipios": list(MUNICIPIOS_DIVIPOLA.keys()),
+        "destino_economico": DESTINO_ECONOMICO,
+        "tipo_documento": TIPO_DOCUMENTO_PREDIO,
+        "estado_civil": ESTADO_CIVIL_PREDIO,
+        "divipola": MUNICIPIOS_DIVIPOLA
+    }
+
+@api_router.get("/predios")
+async def get_predios(
+    municipio: Optional[str] = None,
+    destino_economico: Optional[str] = None,
+    search: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista todos los predios (solo staff)"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    query = {"deleted": {"$ne": True}}
+    
+    if municipio:
+        query["municipio"] = municipio
+    if destino_economico:
+        query["destino_economico"] = destino_economico
+    if search:
+        query["$or"] = [
+            {"codigo_predial_nacional": {"$regex": search, "$options": "i"}},
+            {"codigo_homologado": {"$regex": search, "$options": "i"}},
+            {"nombre_propietario": {"$regex": search, "$options": "i"}},
+            {"numero_documento": {"$regex": search, "$options": "i"}},
+            {"direccion": {"$regex": search, "$options": "i"}}
+        ]
+    
+    total = await db.predios.count_documents(query)
+    predios = await db.predios.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    return {
+        "total": total,
+        "predios": predios
+    }
+
+@api_router.get("/predios/{predio_id}")
+async def get_predio(predio_id: str, current_user: dict = Depends(get_current_user)):
+    """Obtiene un predio por ID"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    predio = await db.predios.find_one({"id": predio_id, "deleted": {"$ne": True}}, {"_id": 0})
+    if not predio:
+        raise HTTPException(status_code=404, detail="Predio no encontrado")
+    
+    return predio
+
+@api_router.post("/predios")
+async def create_predio(predio_data: PredioCreate, current_user: dict = Depends(get_current_user)):
+    """Crea un nuevo predio"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    r1 = predio_data.r1
+    r2 = predio_data.r2
+    
+    # Obtener siguiente número de terreno
+    terreno, terreno_num = await get_next_terreno_number(
+        r1.municipio, r1.zona, r1.sector, r1.manzana_vereda
+    )
+    
+    # Generar código predial nacional
+    codigo_predial = await generate_codigo_predial(
+        r1.municipio, r1.zona, r1.sector, r1.manzana_vereda,
+        terreno, r1.condicion_predio, r1.predio_horizontal
+    )
+    
+    # Verificar que no exista (incluyendo eliminados)
+    existing = await db.predios.find_one({"codigo_predial_nacional": codigo_predial})
+    if existing:
+        raise HTTPException(status_code=400, detail="Ya existe un predio con este código predial")
+    
+    # Generar código homologado
+    codigo_homologado, numero_predio = await generate_codigo_homologado(r1.municipio)
+    
+    # Obtener código DIVIPOLA
+    divipola = MUNICIPIOS_DIVIPOLA[r1.municipio]
+    
+    # Crear el predio
+    predio = {
+        "id": str(uuid.uuid4()),
+        "departamento": divipola["departamento"],
+        "municipio": r1.municipio,
+        "municipio_codigo": divipola["municipio"],
+        "numero_predio": numero_predio,
+        "codigo_predial_nacional": codigo_predial,
+        "codigo_homologado": codigo_homologado,
+        "zona": r1.zona,
+        "sector": r1.sector,
+        "manzana_vereda": r1.manzana_vereda,
+        "terreno": terreno,
+        "terreno_num": terreno_num,
+        "condicion_predio": r1.condicion_predio,
+        "predio_horizontal": r1.predio_horizontal,
+        
+        # R1 - Información jurídica
+        "tipo_registro": 1,
+        "nombre_propietario": r1.nombre_propietario,
+        "tipo_documento": r1.tipo_documento,
+        "numero_documento": r1.numero_documento,
+        "estado_civil": r1.estado_civil,
+        "direccion": r1.direccion,
+        "comuna": r1.comuna,
+        "destino_economico": r1.destino_economico,
+        "area_terreno": r1.area_terreno,
+        "area_construida": r1.area_construida,
+        "avaluo": r1.avaluo,
+        "tipo_mutacion": r1.tipo_mutacion,
+        "numero_resolucion": r1.numero_resolucion,
+        "fecha_resolucion": r1.fecha_resolucion,
+        
+        # R2 - Información física (si se proporciona)
+        "r2": r2.model_dump() if r2 else None,
+        
+        # Metadata
+        "vigencia": datetime.now().strftime("%m%d%Y"),
+        "created_by": current_user['id'],
+        "created_by_name": current_user['full_name'],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "deleted": False,
+        
+        # Historial
+        "historial": [{
+            "accion": "Predio creado",
+            "usuario": current_user['full_name'],
+            "usuario_id": current_user['id'],
+            "fecha": datetime.now(timezone.utc).isoformat()
+        }]
+    }
+    
+    await db.predios.insert_one(predio)
+    
+    # Remover _id antes de retornar
+    predio.pop("_id", None)
+    
+    return predio
+
+@api_router.patch("/predios/{predio_id}")
+async def update_predio(predio_id: str, update_data: PredioUpdate, current_user: dict = Depends(get_current_user)):
+    """Actualiza un predio existente"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    predio = await db.predios.find_one({"id": predio_id, "deleted": {"$ne": True}}, {"_id": 0})
+    if not predio:
+        raise HTTPException(status_code=404, detail="Predio no encontrado")
+    
+    # Filtrar campos no nulos
+    update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
+    
+    if not update_dict:
+        return predio
+    
+    # Agregar metadata de actualización
+    update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Agregar al historial
+    historial_entry = {
+        "accion": "Predio modificado",
+        "usuario": current_user['full_name'],
+        "usuario_id": current_user['id'],
+        "campos_modificados": list(update_dict.keys()),
+        "fecha": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.predios.update_one(
+        {"id": predio_id},
+        {
+            "$set": update_dict,
+            "$push": {"historial": historial_entry}
+        }
+    )
+    
+    # Retornar predio actualizado
+    updated_predio = await db.predios.find_one({"id": predio_id}, {"_id": 0})
+    return updated_predio
+
+@api_router.delete("/predios/{predio_id}")
+async def delete_predio(predio_id: str, current_user: dict = Depends(get_current_user)):
+    """Elimina un predio (soft delete)"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores y administradores pueden eliminar predios")
+    
+    predio = await db.predios.find_one({"id": predio_id, "deleted": {"$ne": True}}, {"_id": 0})
+    if not predio:
+        raise HTTPException(status_code=404, detail="Predio no encontrado")
+    
+    # Soft delete - NO eliminamos físicamente para evitar reutilizar códigos
+    historial_entry = {
+        "accion": "Predio eliminado",
+        "usuario": current_user['full_name'],
+        "usuario_id": current_user['id'],
+        "fecha": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.predios.update_one(
+        {"id": predio_id},
+        {
+            "$set": {
+                "deleted": True,
+                "deleted_at": datetime.now(timezone.utc).isoformat(),
+                "deleted_by": current_user['id'],
+                "deleted_by_name": current_user['full_name']
+            },
+            "$push": {"historial": historial_entry}
+        }
+    )
+    
+    return {"message": "Predio eliminado exitosamente"}
+
+@api_router.get("/predios/stats/summary")
+async def get_predios_stats(current_user: dict = Depends(get_current_user)):
+    """Obtiene estadísticas de predios"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    total = await db.predios.count_documents({"deleted": {"$ne": True}})
+    
+    # Por municipio
+    pipeline_municipio = [
+        {"$match": {"deleted": {"$ne": True}}},
+        {"$group": {"_id": "$municipio", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    by_municipio = await db.predios.aggregate(pipeline_municipio).to_list(20)
+    
+    # Por destino económico
+    pipeline_destino = [
+        {"$match": {"deleted": {"$ne": True}}},
+        {"$group": {"_id": "$destino_economico", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    by_destino = await db.predios.aggregate(pipeline_destino).to_list(20)
+    
+    # Total avalúo
+    pipeline_avaluo = [
+        {"$match": {"deleted": {"$ne": True}}},
+        {"$group": {"_id": None, "total_avaluo": {"$sum": "$avaluo"}, "total_area": {"$sum": "$area_terreno"}}}
+    ]
+    totals = await db.predios.aggregate(pipeline_avaluo).to_list(1)
+    
+    return {
+        "total_predios": total,
+        "total_avaluo": totals[0]["total_avaluo"] if totals else 0,
+        "total_area_terreno": totals[0]["total_area"] if totals else 0,
+        "by_municipio": [{"municipio": r["_id"], "count": r["count"]} for r in by_municipio],
+        "by_destino": [{"destino": r["_id"], "nombre": DESTINO_ECONOMICO.get(r["_id"], "Desconocido"), "count": r["count"]} for r in by_destino]
+    }
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
