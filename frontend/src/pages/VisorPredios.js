@@ -460,12 +460,19 @@ export default function VisorPredios() {
                       style={geoJSONStyle}
                     >
                       <Popup>
-                        <div className="text-sm">
-                          <p className="font-bold text-emerald-700 mb-1">
+                        <div className="text-sm min-w-[200px]">
+                          <p className="font-bold text-emerald-700 mb-1 text-xs">
+                            Código Predial Nacional
+                          </p>
+                          <p className="font-mono text-xs bg-slate-100 p-1 rounded mb-2">
+                            {selectedPredio?.codigo_predial_nacional}
+                          </p>
+                          <p className="text-xs text-slate-500">Código Homologado:</p>
+                          <p className="text-xs font-medium mb-2">
                             {selectedPredio?.codigo_homologado}
                           </p>
                           <p className="text-xs text-slate-600">
-                            {selectedPredio?.municipio}
+                            {selectedPredio?.municipio} - {selectedPredio?.zona === '00' ? 'Rural' : 'Urbano'}
                           </p>
                           <p className="text-xs mt-1">
                             Área: {formatArea(geometry.properties?.area_m2)}
