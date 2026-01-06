@@ -14,8 +14,7 @@ import CreatePetition from "./pages/CreatePetition";
 import PetitionDetail from "./pages/PetitionDetail";
 import AllPetitions from "./pages/AllPetitions";
 import UserManagement from "./pages/UserManagement";
-import ProductivityReports from "./pages/ProductivityReports";
-import Statistics from "./pages/Statistics";
+import EstadisticasUnificadas from "./pages/EstadisticasUnificadas";
 import Predios from "./pages/Predios";
 
 function App() {
@@ -35,8 +34,7 @@ function App() {
             <Route path="peticiones/:id" element={<PetitionDetail />} />
             <Route path="todas-peticiones" element={<AllPetitions />} />
             <Route path="usuarios" element={<UserManagement />} />
-            <Route path="reportes" element={<ProductivityReports />} />
-            <Route path="estadisticas" element={<Statistics />} />
+            <Route path="estadisticas" element={<EstadisticasUnificadas />} />
             <Route path="predios" element={<Predios />} />
           </Route>
         </Routes>
