@@ -300,6 +300,33 @@ class PredioUpdate(BaseModel):
 
 # ===== UTILITY FUNCTIONS =====
 
+import re
+
+def validate_password(password: str) -> tuple[bool, str]:
+    """
+    Validate password requirements:
+    - Minimum 6 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+    - Special characters are allowed: !@#$%^&*()_+-=[]{}|;':\",./<>?
+    Returns: (is_valid, error_message)
+    """
+    if len(password) < 6:
+        return False, "La contraseña debe tener al menos 6 caracteres"
+    
+    if not re.search(r'[A-Z]', password):
+        return False, "La contraseña debe contener al menos una letra mayúscula"
+    
+    if not re.search(r'[a-z]', password):
+        return False, "La contraseña debe contener al menos una letra minúscula"
+    
+    if not re.search(r'\d', password):
+        return False, "La contraseña debe contener al menos un número"
+    
+    # Allow special characters - password is valid if it passes above checks
+    return True, ""
+
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
