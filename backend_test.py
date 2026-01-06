@@ -637,6 +637,50 @@ class CatastralAPITester:
         
         return False
 
+    def test_citizen_file_upload_and_zip_download(self):
+        """Test citizen file upload and admin ZIP download"""
+        print("\n📁 Testing Citizen File Upload and Admin ZIP Download...")
+        
+        if 'admin' not in self.tokens or 'citizen' not in self.tokens:
+            print("❌ Need both admin and citizen tokens for this test")
+            return False
+        
+        # Create a petition as citizen
+        petition_data = {
+            "nombre_completo": "Ana García Ciudadana",
+            "correo": "ana.garcia@test.com",
+            "telefono": "3001234567",
+            "tipo_tramite": "Certificado catastral especial",
+            "municipio": "Bucarasica"
+        }
+        
+        success, response = self.run_test(
+            "Create petition as citizen",
+            "POST",
+            "petitions",
+            200,
+            data=petition_data,
+            token=self.tokens['citizen'],
+            form_data=True
+        )
+        
+        if success and 'id' in response:
+            petition_id = response['id']
+            print(f"   Created petition: {response.get('radicado', 'Unknown')}")
+            
+            # Upload file as citizen (this should be downloadable in ZIP)
+            upload_success, upload_result = self.test_file_upload_by_staff('citizen', petition_id)
+            
+            if upload_success:
+                # Now try ZIP download as admin
+                download_success = self.test_download_citizen_zip('admin', petition_id)
+                return download_success
+            else:
+                print("   ❌ Citizen file upload failed")
+                return False
+        
+        return False
+
 def main():
     print("🚀 Starting Cadastral Management System API Tests")
     print("=" * 60)
