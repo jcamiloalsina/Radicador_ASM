@@ -617,6 +617,251 @@ async def get_gestores(current_user: dict = Depends(get_current_user)):
     return gestores
 
 
+# ===== PDF EXPORT AND DIGITAL SIGNATURE =====
+
+def generate_petition_pdf(petition_data: dict, user_data: dict, signed_by: str = None) -> bytes:
+    """Generate PDF report for a petition with optional digital signature"""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#047857'),
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#064E3B'),
+        spaceAfter=12,
+        fontName='Helvetica-Bold'
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=12
+    )
+    
+    # Title
+    story.append(Paragraph("ASOCIACIÓN DE MUNICIPIOS DEL CATATUMBO", title_style))
+    story.append(Paragraph("Provincia de Ocaña y Sur del Cesar - ASOMUNICIPIOS", normal_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Radicado
+    story.append(Paragraph(f"<b>Radicado:</b> {petition_data.get('radicado', 'N/A')}", heading_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Status
+    status_names = {
+        'radicado': 'Radicado',
+        'asignado': 'Asignado',
+        'rechazado': 'Rechazado',
+        'revision': 'En Revisión',
+        'devuelto': 'Devuelto',
+        'finalizado': 'Finalizado'
+    }
+    status_label = status_names.get(petition_data.get('estado', ''), petition_data.get('estado', 'N/A'))
+    story.append(Paragraph(f"<b>Estado:</b> {status_label}", normal_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Petition details table
+    story.append(Paragraph("DATOS DEL SOLICITANTE", heading_style))
+    
+    data = [
+        ['Campo', 'Información'],
+        ['Nombre Completo', petition_data.get('nombre_completo', 'N/A')],
+        ['Correo Electrónico', petition_data.get('correo', 'N/A')],
+        ['Teléfono', petition_data.get('telefono', 'N/A')],
+        ['Municipio', petition_data.get('municipio', 'N/A')],
+        ['Tipo de Trámite', petition_data.get('tipo_tramite', 'N/A')],
+    ]
+    
+    table = Table(data, colWidths=[2*inch, 4*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#047857')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+    ]))
+    
+    story.append(table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Notes if any
+    if petition_data.get('notas'):
+        story.append(Paragraph("NOTAS", heading_style))
+        story.append(Paragraph(petition_data.get('notas', ''), normal_style))
+        story.append(Spacer(1, 0.3*inch))
+    
+    # Dates
+    story.append(Paragraph("INFORMACIÓN DE FECHAS", heading_style))
+    created_date = petition_data.get('created_at', '')
+    updated_date = petition_data.get('updated_at', '')
+    
+    if isinstance(created_date, str):
+        created_date = datetime.fromisoformat(created_date).strftime('%d/%m/%Y %H:%M')
+    else:
+        created_date = created_date.strftime('%d/%m/%Y %H:%M') if created_date else 'N/A'
+    
+    if isinstance(updated_date, str):
+        updated_date = datetime.fromisoformat(updated_date).strftime('%d/%m/%Y %H:%M')
+    else:
+        updated_date = updated_date.strftime('%d/%m/%Y %H:%M') if updated_date else 'N/A'
+    
+    story.append(Paragraph(f"<b>Fecha de Radicación:</b> {created_date}", normal_style))
+    story.append(Paragraph(f"<b>Última Actualización:</b> {updated_date}", normal_style))
+    story.append(Spacer(1, 0.5*inch))
+    
+    # Digital signature section
+    if signed_by:
+        story.append(Spacer(1, 0.5*inch))
+        story.append(Paragraph("___________________________", normal_style))
+        story.append(Paragraph(f"<b>Firmado digitalmente por:</b>", normal_style))
+        story.append(Paragraph(f"{signed_by}", normal_style))
+        story.append(Paragraph(f"Fecha: {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}", normal_style))
+    
+    # Footer
+    story.append(Spacer(1, 0.5*inch))
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.grey,
+        alignment=TA_CENTER
+    )
+    story.append(Paragraph(
+        "Este documento ha sido generado por el Sistema de Gestión Catastral de ASOMUNICIPIOS",
+        footer_style
+    ))
+    
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes
+
+
+@api_router.get("/petitions/{petition_id}/export-pdf")
+async def export_petition_pdf(petition_id: str, current_user: dict = Depends(get_current_user)):
+    """Export single petition as PDF"""
+    petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
+    
+    if not petition:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Petición no encontrada")
+    
+    # Check permissions
+    if current_user['role'] == UserRole.CIUDADANO and petition['user_id'] != current_user['id']:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
+    
+    # Get user data
+    user = await db.users.find_one({"id": petition['user_id']}, {"_id": 0, "password": 0})
+    
+    # Generate PDF with digital signature if coordinator or admin
+    signed_by = None
+    if current_user['role'] in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        signed_by = f"{current_user['full_name']} - {current_user['role'].replace('_', ' ').title()}"
+    
+    pdf_bytes = generate_petition_pdf(petition, user, signed_by)
+    
+    # Save to temp file
+    temp_pdf_path = UPLOAD_DIR / f"petition_{petition_id}_{uuid.uuid4()}.pdf"
+    with open(temp_pdf_path, 'wb') as f:
+        f.write(pdf_bytes)
+    
+    return FileResponse(
+        path=temp_pdf_path,
+        filename=f"{petition['radicado']}.pdf",
+        media_type='application/pdf'
+    )
+
+
+@api_router.post("/petitions/export-multiple")
+async def export_multiple_petitions(
+    petition_ids: List[str],
+    current_user: dict = Depends(get_current_user)
+):
+    """Export multiple petitions as PDF"""
+    # Only staff can export multiple
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
+    
+    from reportlab.platypus import PageBreak
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    story = []
+    
+    for idx, petition_id in enumerate(petition_ids):
+        petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
+        if petition:
+            user = await db.users.find_one({"id": petition['user_id']}, {"_id": 0, "password": 0})
+            
+            # Generate petition content
+            styles = getSampleStyleSheet()
+            title_style = ParagraphStyle(
+                'Title',
+                parent=styles['Heading1'],
+                fontSize=16,
+                textColor=colors.HexColor('#047857'),
+                spaceAfter=20,
+                alignment=TA_CENTER
+            )
+            
+            story.append(Paragraph(f"Petición {idx + 1} de {len(petition_ids)}", title_style))
+            story.append(Paragraph(f"Radicado: {petition.get('radicado', 'N/A')}", styles['Heading2']))
+            story.append(Spacer(1, 0.2*inch))
+            
+            # Add basic info
+            info = [
+                ['Solicitante', petition.get('nombre_completo', 'N/A')],
+                ['Tipo de Trámite', petition.get('tipo_tramite', 'N/A')],
+                ['Estado', petition.get('estado', 'N/A')],
+                ['Municipio', petition.get('municipio', 'N/A')],
+            ]
+            
+            table = Table(info, colWidths=[2*inch, 4*inch])
+            table.setStyle(TableStyle([
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+                ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ]))
+            story.append(table)
+            
+            # Add page break between petitions except for the last one
+            if idx < len(petition_ids) - 1:
+                story.append(PageBreak())
+    
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    
+    # Save to temp file
+    temp_pdf_path = UPLOAD_DIR / f"petitions_report_{uuid.uuid4()}.pdf"
+    with open(temp_pdf_path, 'wb') as f:
+        f.write(pdf_bytes)
+    
+    return FileResponse(
+        path=temp_pdf_path,
+        filename=f"reporte_peticiones_{datetime.now().strftime('%Y%m%d')}.pdf",
+        media_type='application/pdf'
+    )
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
