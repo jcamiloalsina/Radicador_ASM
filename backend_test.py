@@ -413,6 +413,192 @@ class CatastralAPITester:
             
         return False
 
+    def test_password_recovery_endpoints(self):
+        """Test password recovery functionality"""
+        print("\n🔐 Testing Password Recovery Endpoints...")
+        
+        # Test 1: POST /api/auth/forgot-password with valid email (should return 503 if SMTP not configured)
+        valid_email_data = {"email": "catastro@asomunicipios.gov.co"}
+        success, response = self.run_test(
+            "Forgot password with valid email",
+            "POST",
+            "auth/forgot-password",
+            503,  # Expected 503 since SMTP is not configured
+            data=valid_email_data
+        )
+        
+        if not success:
+            # If it doesn't return 503, check if it returns 200 (SMTP might be configured)
+            success, response = self.run_test(
+                "Forgot password with valid email (SMTP configured)",
+                "POST", 
+                "auth/forgot-password",
+                200,
+                data=valid_email_data
+            )
+        
+        # Test 2: POST /api/auth/forgot-password with invalid email (should return 404)
+        invalid_email_data = {"email": "nonexistent@test.com"}
+        success, response = self.run_test(
+            "Forgot password with invalid email",
+            "POST",
+            "auth/forgot-password", 
+            404,
+            data=invalid_email_data
+        )
+        
+        # Test 3: GET /api/auth/validate-reset-token with invalid token (should return 404)
+        success, response = self.run_test(
+            "Validate invalid reset token",
+            "GET",
+            "auth/validate-reset-token?token=invalid_token_123",
+            404
+        )
+        
+        # Test 4: POST /api/auth/reset-password with invalid token (should return 404)
+        invalid_reset_data = {
+            "token": "invalid_token_123",
+            "new_password": "NewPassword123!"
+        }
+        success, response = self.run_test(
+            "Reset password with invalid token",
+            "POST",
+            "auth/reset-password",
+            404,
+            data=invalid_reset_data
+        )
+        
+        return True
+
+    def test_dashboard_filtering(self):
+        """Test dashboard filtering by status"""
+        print("\n📊 Testing Dashboard Filtering...")
+        
+        if 'admin' not in self.tokens:
+            print("❌ No admin token available for dashboard testing")
+            return False
+            
+        # Test getting dashboard stats (this should work for filtering)
+        success, response = self.run_test(
+            "Get dashboard stats for filtering",
+            "GET",
+            "petitions/stats/dashboard",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        if success:
+            # Check if response contains expected status counts
+            expected_fields = ['total', 'radicado', 'asignado', 'rechazado', 'revision', 'devuelto', 'finalizado']
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields:
+                print(f"   Dashboard stats available:")
+                print(f"   - Total: {response['total']}")
+                print(f"   - Radicado: {response['radicado']}")
+                print(f"   - Finalizado: {response['finalizado']}")
+                return True
+            else:
+                missing_fields = [field for field in expected_fields if field not in response]
+                print(f"   ❌ Missing fields in dashboard response: {missing_fields}")
+                return False
+        
+        return False
+
+    def test_petition_creation_with_catalogs(self):
+        """Test petition creation with catalog validation"""
+        print("\n📝 Testing Petition Creation with Catalogs...")
+        
+        if 'admin' not in self.tokens:
+            print("❌ No admin token available for petition creation testing")
+            return False
+        
+        # Test with valid catalog values
+        valid_petition_data = {
+            "nombre_completo": "María González Catálogo",
+            "correo": "maria.gonzalez@test.com",
+            "telefono": "3001234567",
+            "tipo_tramite": "Mutación Primera",  # Should be one of the 10 valid options
+            "municipio": "Ábrego"  # Should be one of the 12 valid municipalities
+        }
+        
+        success, response = self.run_test(
+            "Create petition with valid catalog values",
+            "POST",
+            "petitions",
+            200,
+            data=valid_petition_data,
+            token=self.tokens['admin']
+        )
+        
+        if success and 'id' in response:
+            print(f"   Created petition with radicado: {response.get('radicado', 'Unknown')}")
+            
+            # Verify the petition was created with correct catalog values
+            petition_id = response['id']
+            success, petition_detail = self.run_test(
+                "Verify petition catalog values",
+                "GET",
+                f"petitions/{petition_id}",
+                200,
+                token=self.tokens['admin']
+            )
+            
+            if success:
+                if (petition_detail.get('tipo_tramite') == valid_petition_data['tipo_tramite'] and
+                    petition_detail.get('municipio') == valid_petition_data['municipio']):
+                    print(f"   ✅ Catalog values correctly stored")
+                    return True
+                else:
+                    print(f"   ❌ Catalog values not stored correctly")
+                    print(f"   Expected: {valid_petition_data['tipo_tramite']}, {valid_petition_data['municipio']}")
+                    print(f"   Got: {petition_detail.get('tipo_tramite')}, {petition_detail.get('municipio')}")
+                    return False
+        
+        return False
+
+    def test_file_upload_in_documents_section(self):
+        """Test file upload functionality (moved to documents section)"""
+        print("\n📎 Testing File Upload in Documents Section...")
+        
+        if 'admin' not in self.tokens:
+            print("❌ No admin token available for file upload testing")
+            return False
+        
+        # First create a petition to upload files to
+        petition_data = {
+            "nombre_completo": "Pedro Martínez Upload",
+            "correo": "pedro.martinez@test.com",
+            "telefono": "3001234567", 
+            "tipo_tramite": "Certificado catastral",
+            "municipio": "Convención"
+        }
+        
+        success, response = self.run_test(
+            "Create petition for file upload test",
+            "POST",
+            "petitions",
+            200,
+            data=petition_data,
+            token=self.tokens['admin']
+        )
+        
+        if success and 'id' in response:
+            petition_id = response['id']
+            print(f"   Created test petition: {response.get('radicado', 'Unknown')}")
+            
+            # Test file upload by admin (staff) - this should add metadata
+            upload_success, upload_result = self.test_file_upload_by_staff('admin', petition_id)
+            
+            if upload_success:
+                print(f"   ✅ File upload functionality working correctly")
+                return True
+            else:
+                print(f"   ❌ File upload failed")
+                return False
+        
+        return False
+
 def main():
     print("🚀 Starting Cadastral Management System API Tests")
     print("=" * 60)
