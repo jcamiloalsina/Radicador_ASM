@@ -860,6 +860,241 @@ async def export_multiple_petitions(
     )
 
 
+# ===== PRODUCTIVITY REPORTS =====
+
+@api_router.get("/reports/gestor-productivity")
+async def get_gestor_productivity(current_user: dict = Depends(get_current_user)):
+    """Get productivity report for all gestores"""
+    # Only admin, coordinador, and atencion_usuario can view reports
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.ATENCION_USUARIO]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
+    
+    # Get all gestores and auxiliares
+    gestores = await db.users.find(
+        {"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]}},
+        {"_id": 0, "password": 0}
+    ).to_list(1000)
+    
+    productivity_data = []
+    
+    for gestor in gestores:
+        gestor_id = gestor['id']
+        
+        # Total petitions assigned
+        total_assigned = await db.petitions.count_documents({
+            "gestores_asignados": gestor_id
+        })
+        
+        # Completed petitions
+        completed = await db.petitions.count_documents({
+            "gestores_asignados": gestor_id,
+            "estado": PetitionStatus.FINALIZADO
+        })
+        
+        # In process
+        in_process = await db.petitions.count_documents({
+            "gestores_asignados": gestor_id,
+            "estado": {"$in": [PetitionStatus.ASIGNADO, PetitionStatus.REVISION, PetitionStatus.DEVUELTO]}
+        })
+        
+        # Rejected
+        rejected = await db.petitions.count_documents({
+            "gestores_asignados": gestor_id,
+            "estado": PetitionStatus.RECHAZADO
+        })
+        
+        # Calculate average time to complete (for completed petitions)
+        completed_petitions = await db.petitions.find({
+            "gestores_asignados": gestor_id,
+            "estado": PetitionStatus.FINALIZADO
+        }, {"_id": 0, "created_at": 1, "updated_at": 1}).to_list(1000)
+        
+        avg_days = 0
+        if completed_petitions:
+            total_days = 0
+            for petition in completed_petitions:
+                created = petition['created_at']
+                updated = petition['updated_at']
+                
+                if isinstance(created, str):
+                    created = datetime.fromisoformat(created)
+                if isinstance(updated, str):
+                    updated = datetime.fromisoformat(updated)
+                
+                delta = (updated - created).days
+                total_days += delta
+            
+            avg_days = round(total_days / len(completed_petitions), 1) if completed_petitions else 0
+        
+        # Calculate completion rate
+        completion_rate = round((completed / total_assigned * 100), 1) if total_assigned > 0 else 0
+        
+        productivity_data.append({
+            "gestor_id": gestor_id,
+            "gestor_name": gestor['full_name'],
+            "gestor_email": gestor['email'],
+            "gestor_role": gestor['role'],
+            "total_assigned": total_assigned,
+            "completed": completed,
+            "in_process": in_process,
+            "rejected": rejected,
+            "avg_completion_days": avg_days,
+            "completion_rate": completion_rate
+        })
+    
+    # Sort by completion rate descending
+    productivity_data.sort(key=lambda x: x['completion_rate'], reverse=True)
+    
+    return productivity_data
+
+
+@api_router.get("/reports/gestor-productivity/export-pdf")
+async def export_gestor_productivity_pdf(current_user: dict = Depends(get_current_user)):
+    """Export gestor productivity report as PDF"""
+    # Only admin, coordinador, and atencion_usuario can export reports
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.ATENCION_USUARIO]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
+    
+    # Get productivity data
+    gestores = await db.users.find(
+        {"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]}},
+        {"_id": 0, "password": 0}
+    ).to_list(1000)
+    
+    productivity_data = []
+    
+    for gestor in gestores:
+        gestor_id = gestor['id']
+        
+        total_assigned = await db.petitions.count_documents({"gestores_asignados": gestor_id})
+        completed = await db.petitions.count_documents({
+            "gestores_asignados": gestor_id,
+            "estado": PetitionStatus.FINALIZADO
+        })
+        in_process = await db.petitions.count_documents({
+            "gestores_asignados": gestor_id,
+            "estado": {"$in": [PetitionStatus.ASIGNADO, PetitionStatus.REVISION, PetitionStatus.DEVUELTO]}
+        })
+        rejected = await db.petitions.count_documents({
+            "gestores_asignados": gestor_id,
+            "estado": PetitionStatus.RECHAZADO
+        })
+        
+        completion_rate = round((completed / total_assigned * 100), 1) if total_assigned > 0 else 0
+        
+        productivity_data.append({
+            "name": gestor['full_name'],
+            "role": "Gestor" if gestor['role'] == UserRole.GESTOR else "Gestor Auxiliar",
+            "total": total_assigned,
+            "completed": completed,
+            "in_process": in_process,
+            "rejected": rejected,
+            "rate": completion_rate
+        })
+    
+    productivity_data.sort(key=lambda x: x['rate'], reverse=True)
+    
+    # Generate PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Title
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#047857'),
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    story.append(Paragraph("ASOCIACIÓN DE MUNICIPIOS DEL CATATUMBO", title_style))
+    story.append(Paragraph("Reporte de Productividad de Gestores", styles['Heading2']))
+    story.append(Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y')}", styles['Normal']))
+    story.append(Spacer(1, 0.5*inch))
+    
+    # Table data
+    table_data = [
+        ['Gestor', 'Rol', 'Total', 'Finalizados', 'En Proceso', 'Rechazados', 'Tasa (%)']
+    ]
+    
+    for data in productivity_data:
+        table_data.append([
+            data['name'],
+            data['role'],
+            str(data['total']),
+            str(data['completed']),
+            str(data['in_process']),
+            str(data['rejected']),
+            f"{data['rate']}%"
+        ])
+    
+    # Create table
+    col_widths = [1.8*inch, 1*inch, 0.6*inch, 0.8*inch, 0.8*inch, 0.8*inch, 0.7*inch]
+    table = Table(table_data, colWidths=col_widths)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#047857')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+    ]))
+    
+    story.append(table)
+    story.append(Spacer(1, 0.5*inch))
+    
+    # Summary
+    story.append(Paragraph("Resumen General", styles['Heading3']))
+    total_gestores = len(productivity_data)
+    total_tramites = sum(d['total'] for d in productivity_data)
+    total_finalizados = sum(d['completed'] for d in productivity_data)
+    avg_rate = round(sum(d['rate'] for d in productivity_data) / total_gestores, 1) if total_gestores > 0 else 0
+    
+    summary_text = f"""
+    <b>Total de Gestores:</b> {total_gestores}<br/>
+    <b>Total de Trámites Asignados:</b> {total_tramites}<br/>
+    <b>Total Finalizados:</b> {total_finalizados}<br/>
+    <b>Tasa Promedio de Finalización:</b> {avg_rate}%
+    """
+    story.append(Paragraph(summary_text, styles['Normal']))
+    
+    # Footer
+    story.append(Spacer(1, 0.5*inch))
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.grey,
+        alignment=TA_CENTER
+    )
+    story.append(Paragraph(
+        "Reporte generado por el Sistema de Gestión Catastral de ASOMUNICIPIOS",
+        footer_style
+    ))
+    
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    
+    # Save to temp file
+    temp_pdf_path = UPLOAD_DIR / f"productivity_report_{uuid.uuid4()}.pdf"
+    with open(temp_pdf_path, 'wb') as f:
+        f.write(pdf_bytes)
+    
+    return FileResponse(
+        path=temp_pdf_path,
+        filename=f"reporte_productividad_{datetime.now().strftime('%Y%m%d')}.pdf",
+        media_type='application/pdf'
+    )
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
