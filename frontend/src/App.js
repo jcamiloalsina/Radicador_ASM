@@ -11,6 +11,7 @@ import MyPetitions from "./pages/MyPetitions";
 import CreatePetition from "./pages/CreatePetition";
 import PetitionDetail from "./pages/PetitionDetail";
 import AllPetitions from "./pages/AllPetitions";
+import UserManagement from "./pages/UserManagement";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Route path="peticiones/nueva" element={<CreatePetition />} />
             <Route path="peticiones/:id" element={<PetitionDetail />} />
             <Route path="todas-peticiones" element={<AllPetitions />} />
+            <Route path="usuarios" element={<UserManagement />} />
           </Route>
         </Routes>
       </BrowserRouter>
