@@ -37,19 +37,21 @@ export default function Register() {
       <div className="hidden lg:flex flex-col justify-between bg-emerald-900 p-12 text-white relative overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src="https://images.pexels.com/photos/8408699/pexels-photo-8408699.jpeg"
-            alt="Modern Green Glass Corporate Building"
-            className="w-full h-full object-cover opacity-30"
+            src="https://images.unsplash.com/photo-1662140246046-fc44f41e4362?q=85&w=1920"
+            alt="Mapa Catastral"
+            className="w-full h-full object-cover opacity-20"
           />
         </div>
         <div className="relative z-10">
           <img 
             src="https://customer-assets.emergentagent.com/job_28ae97d1-3b3d-446d-842a-30fce089309a/artifacts/3sbor4tr_HorizontalBlancoCorto_ConFondo.png" 
             alt="Asomunicipios Logo" 
-            className="w-48 mb-4"
+            className="w-56 mb-4"
+            data-testid="register-logo"
           />
-          <h2 className="text-2xl font-bold font-outfit">Asociación de Municipios del Catatumbo</h2>
-          <p className="text-emerald-100 mt-2 text-sm">Provincia de Ocaña y Sur del Cesar - Asomunicipios</p>
+          <h2 className="text-2xl font-bold font-outfit leading-tight">Asociación de Municipios del Catatumbo</h2>
+          <p className="text-emerald-100 mt-2 text-sm leading-relaxed">Provincia de Ocaña y Sur del Cesar</p>
+          <p className="text-emerald-200 mt-1 text-xs font-semibold">ASOMUNICIPIOS</p>
         </div>
         <div className="relative z-10">
           <p className="text-emerald-100 text-sm">
