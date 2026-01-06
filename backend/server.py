@@ -139,6 +139,163 @@ class Petition(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+# ===== PREDIO MODELS (DIVIPOLA) =====
+
+# Catálogo de municipios con código DIVIPOLA
+MUNICIPIOS_DIVIPOLA = {
+    "Ábrego": {"departamento": "54", "municipio": "003"},
+    "Bucarasica": {"departamento": "54", "municipio": "109"},
+    "Cáchira": {"departamento": "54", "municipio": "128"},
+    "Convención": {"departamento": "54", "municipio": "206"},
+    "El Carmen": {"departamento": "54", "municipio": "245"},
+    "El Tarra": {"departamento": "54", "municipio": "250"},
+    "Hacarí": {"departamento": "54", "municipio": "344"},
+    "La Playa": {"departamento": "54", "municipio": "398"},
+    "Río de Oro": {"departamento": "47", "municipio": "545"},  # Cesar
+    "San Calixto": {"departamento": "54", "municipio": "670"},
+    "Sardinata": {"departamento": "54", "municipio": "720"},
+    "Teorama": {"departamento": "54", "municipio": "800"}
+}
+
+# Catálogo de destino económico
+DESTINO_ECONOMICO = {
+    "A": "Habitacional",
+    "B": "Industrial",
+    "C": "Comercial",
+    "D": "Agropecuario",
+    "E": "Minero",
+    "F": "Recreacional",
+    "G": "Salubridad",
+    "H": "Institucional",
+    "I": "Educativo",
+    "J": "Religioso",
+    "K": "Cultural",
+    "L": "Lote",
+    "M": "Pecuario",
+    "N": "Agrícola",
+    "O": "Uso Público",
+    "P": "Forestal",
+    "Q": "Mixto Comercial-Habitacional",
+    "R": "Servicios Especiales",
+    "S": "Institucional Público",
+    "0": "Sin clasificar"
+}
+
+# Catálogo de tipo de documento
+TIPO_DOCUMENTO_PREDIO = {
+    "C": "Cédula de Ciudadanía",
+    "E": "Cédula de Extranjería",
+    "N": "NIT",
+    "T": "Tarjeta de Identidad",
+    "P": "Pasaporte",
+    "X": "Sin documento / Entidad"
+}
+
+# Catálogo de estado civil
+ESTADO_CIVIL_PREDIO = {
+    "S": "Soltero/a",
+    "E": "Casado/a con sociedad conyugal",
+    "D": "Casado/a sin sociedad conyugal",
+    "V": "Separación de bienes",
+    "U": "Unión marital de hecho"
+}
+
+class PredioR1Create(BaseModel):
+    """Registro R1 - Información Jurídica del Predio"""
+    municipio: str
+    zona: str = "00"  # 00=Rural, 01+=Urbano
+    sector: str = "01"
+    manzana_vereda: str = "0000"
+    terreno: str = "0001"
+    condicion_predio: str = "0000"
+    predio_horizontal: str = "0000"
+    
+    # Propietario
+    nombre_propietario: str
+    tipo_documento: str
+    numero_documento: str
+    estado_civil: Optional[str] = None
+    
+    # Ubicación y características
+    direccion: str
+    comuna: str = "0"
+    destino_economico: str
+    area_terreno: float
+    area_construida: float = 0
+    avaluo: float
+    
+    # Mutación
+    tipo_mutacion: Optional[str] = None
+    numero_resolucion: Optional[str] = None
+    fecha_resolucion: Optional[str] = None
+
+class PredioR2Create(BaseModel):
+    """Registro R2 - Información Física del Predio"""
+    matricula_inmobiliaria: Optional[str] = None
+    
+    # Zona 1
+    zona_fisica_1: float = 0
+    zona_economica_1: float = 0
+    area_terreno_1: float = 0
+    
+    # Zona 2
+    zona_fisica_2: float = 0
+    zona_economica_2: float = 0
+    area_terreno_2: float = 0
+    
+    # Construcción 1
+    habitaciones_1: int = 0
+    banos_1: int = 0
+    locales_1: int = 0
+    pisos_1: int = 1
+    tipificacion_1: float = 0
+    uso_1: int = 0
+    puntaje_1: float = 0
+    area_construida_1: float = 0
+    
+    # Construcción 2
+    habitaciones_2: int = 0
+    banos_2: int = 0
+    locales_2: int = 0
+    pisos_2: int = 0
+    tipificacion_2: float = 0
+    uso_2: int = 0
+    puntaje_2: float = 0
+    area_construida_2: float = 0
+
+class PredioCreate(BaseModel):
+    r1: PredioR1Create
+    r2: Optional[PredioR2Create] = None
+
+class PredioUpdate(BaseModel):
+    # R1 fields
+    nombre_propietario: Optional[str] = None
+    tipo_documento: Optional[str] = None
+    numero_documento: Optional[str] = None
+    estado_civil: Optional[str] = None
+    direccion: Optional[str] = None
+    comuna: Optional[str] = None
+    destino_economico: Optional[str] = None
+    area_terreno: Optional[float] = None
+    area_construida: Optional[float] = None
+    avaluo: Optional[float] = None
+    tipo_mutacion: Optional[str] = None
+    numero_resolucion: Optional[str] = None
+    fecha_resolucion: Optional[str] = None
+    
+    # R2 fields
+    matricula_inmobiliaria: Optional[str] = None
+    zona_fisica_1: Optional[float] = None
+    zona_economica_1: Optional[float] = None
+    area_terreno_1: Optional[float] = None
+    habitaciones_1: Optional[int] = None
+    banos_1: Optional[int] = None
+    locales_1: Optional[int] = None
+    pisos_1: Optional[int] = None
+    puntaje_1: Optional[float] = None
+    area_construida_1: Optional[float] = None
+
+
 # ===== UTILITY FUNCTIONS =====
 
 def hash_password(password: str) -> str:
