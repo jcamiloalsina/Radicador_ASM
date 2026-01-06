@@ -12,6 +12,7 @@ import CreatePetition from "./pages/CreatePetition";
 import PetitionDetail from "./pages/PetitionDetail";
 import AllPetitions from "./pages/AllPetitions";
 import UserManagement from "./pages/UserManagement";
+import ProductivityReports from "./pages/ProductivityReports";
 
 function App() {
   return (
