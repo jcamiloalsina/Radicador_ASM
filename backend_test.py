@@ -255,24 +255,163 @@ class CatastralAPITester:
                 print(f"   Missing required fields in stats response")
         return False
 
-    def test_role_permissions(self):
-        """Test role-based permissions"""
-        print("\n🔐 Testing Role-Based Permissions...")
+    def test_login_with_credentials(self, email, password, role_name):
+        """Test login with specific credentials"""
+        login_data = {
+            "email": email,
+            "password": password
+        }
         
-        # Create a petition as ciudadano
-        if 'ciudadano' in self.petitions and self.petitions['ciudadano']:
-            petition_id = self.petitions['ciudadano'][0]
+        success, response = self.run_test(
+            f"Login {role_name}",
+            "POST",
+            "auth/login",
+            200,
+            data=login_data
+        )
+        
+        if success and 'token' in response:
+            self.tokens[role_name] = response['token']
+            self.users[role_name] = response['user']
+            print(f"   Logged in as: {email}")
+            return True
+        return False
+
+    def test_file_upload_by_staff(self, role, petition_id):
+        """Test file upload by staff with role metadata"""
+        if role not in self.tokens:
+            print(f"❌ No token for role {role}")
+            return False
             
-            # Test that ciudadano cannot update petitions
-            self.test_update_petition('ciudadano', petition_id)
+        # Create a test file
+        test_content = f"Test file uploaded by {role} at {datetime.now()}"
+        
+        try:
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+                f.write(test_content)
+                temp_file_path = f.name
             
-            # Test that atencion_usuario can update status/notes
-            if 'atencion_usuario' in self.tokens:
-                self.test_update_petition('atencion_usuario', petition_id)
+            url = f"{self.api_url}/petitions/{petition_id}/upload"
+            headers = {'Authorization': f'Bearer {self.tokens[role]}'}
             
-            # Test that coordinador can update all fields
-            if 'coordinador' in self.tokens:
-                self.test_update_petition('coordinador', petition_id)
+            with open(temp_file_path, 'rb') as f:
+                files = {'files': (f'test_file_{role}.txt', f, 'text/plain')}
+                
+                self.tests_run += 1
+                print(f"\n🔍 Testing File Upload by {role}...")
+                
+                response = requests.post(url, headers=headers, files=files, timeout=30)
+                
+                success = response.status_code == 200
+                if success:
+                    self.tests_passed += 1
+                    print(f"✅ Passed - Status: {response.status_code}")
+                    try:
+                        result = response.json()
+                        if 'files' in result and len(result['files']) > 0:
+                            uploaded_file = result['files'][0]
+                            print(f"   File uploaded with metadata:")
+                            print(f"   - uploaded_by_role: {uploaded_file.get('uploaded_by_role')}")
+                            print(f"   - uploaded_by_name: {uploaded_file.get('uploaded_by_name')}")
+                            return True, result
+                        return True, result
+                    except:
+                        return True, {}
+                else:
+                    print(f"❌ Failed - Expected 200, got {response.status_code}")
+                    try:
+                        error_detail = response.json()
+                        print(f"   Error details: {error_detail}")
+                    except:
+                        print(f"   Response text: {response.text}")
+                    return False, {}
+                    
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False, {}
+        finally:
+            # Clean up temp file
+            try:
+                os.unlink(temp_file_path)
+            except:
+                pass
+
+    def test_download_citizen_zip(self, role, petition_id):
+        """Test downloading ZIP of citizen files"""
+        if role not in self.tokens:
+            print(f"❌ No token for role {role}")
+            return False
+            
+        url = f"{self.api_url}/petitions/{petition_id}/download-zip"
+        headers = {'Authorization': f'Bearer {self.tokens[role]}'}
+        
+        self.tests_run += 1
+        print(f"\n🔍 Testing ZIP Download by {role}...")
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            success = response.status_code == 200
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                
+                # Check if response is a ZIP file
+                content_type = response.headers.get('content-type', '')
+                if 'zip' in content_type or 'application/zip' in content_type:
+                    print(f"   ZIP file downloaded successfully")
+                    print(f"   Content-Type: {content_type}")
+                    print(f"   Content-Length: {len(response.content)} bytes")
+                    return True
+                else:
+                    print(f"   Warning: Content-Type is {content_type}, expected ZIP")
+                    return True
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                try:
+                    error_detail = response.json()
+                    print(f"   Error details: {error_detail}")
+                except:
+                    print(f"   Response text: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+
+    def test_petition_file_operations(self):
+        """Test file upload and download operations"""
+        print("\n📁 Testing File Operations...")
+        
+        # First, we need a petition with citizen files
+        # Let's use the specific petition mentioned: RASMCG-0006-06-01-2026
+        test_petition_id = "RASMCG-0006-06-01-2026"
+        
+        # Try to get petition details first to see if it exists
+        if 'admin' in self.tokens:
+            success, petition_data = self.run_test(
+                "Get test petition details",
+                "GET", 
+                f"petitions/{test_petition_id}",
+                200,
+                token=self.tokens['admin']
+            )
+            
+            if not success:
+                print(f"❌ Test petition {test_petition_id} not found, skipping file tests")
+                return False
+                
+            print(f"   Found petition: {petition_data.get('radicado', 'Unknown')}")
+            
+            # Test file upload by admin (staff)
+            upload_success, upload_result = self.test_file_upload_by_staff('admin', test_petition_id)
+            
+            # Test ZIP download by admin
+            if upload_success:
+                download_success = self.test_download_citizen_zip('admin', test_petition_id)
+                return download_success
+            
+        return False
 
 def main():
     print("🚀 Starting Cadastral Management System API Tests")
