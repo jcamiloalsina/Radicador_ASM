@@ -1394,16 +1394,22 @@ def main():
     # REVIEW REQUEST TESTS - Testing specific features mentioned in review
     print("\n🎯 Testing Features from Review Request...")
     
-    # Test 1: Predios Data Import Verification (11,267 properties from Ábrego)
+    # Test 1: Reimported Predios Data Structure Verification
+    tester.test_predios_reimported_data_structure()
+    
+    # Test 2: Predios Approval System Verification
+    tester.test_predios_approval_system_verification()
+    
+    # Test 3: Predios Data Import Verification (11,269 properties from Ábrego)
     tester.test_predios_data_import_verification()
     
-    # Test 2: Approval System for Property Changes
+    # Test 4: Approval System for Property Changes
     tester.test_approval_system_endpoints()
     
-    # Test 3: Unified Statistics Page
+    # Test 5: Unified Statistics Page
     tester.test_unified_statistics_endpoints()
     
-    # Test 4: Excel Export
+    # Test 6: Excel Export
     tester.test_export_excel_endpoint()
     
     # ADDITIONAL TESTS (from previous functionality)
