@@ -1126,49 +1126,49 @@ class CatastralAPITester:
         return summary_success and municipality_success and tramite_success and gestor_success and productivity_success
 
 def main():
-    print("🚀 Starting Cadastral Management System API Tests")
+    print("🚀 Starting Asomunicipios Cadastral Management System API Tests")
     print("=" * 60)
     
     tester = CatastralAPITester()
     
-    # Test with specific credentials provided by user
+    # Test with specific credentials provided in review request
     print("\n👤 Testing Authentication with Provided Credentials...")
     
-    # Test admin login
+    # Test admin login (Coordinador/Admin)
     admin_success = tester.test_login_with_credentials(
         "catastro@asomunicipios.gov.co", 
         "Asm*123*", 
         "admin"
     )
     
-    # Test citizen login  
-    citizen_success = tester.test_login_with_credentials(
-        "ciudadano.prueba@test.com",
-        "Test123!",
-        "citizen"
+    # Test gestor login
+    gestor_success = tester.test_login_with_credentials(
+        "gestor.prueba@test.com",
+        "Gestor123!",
+        "gestor"
     )
     
     if not admin_success:
         print("❌ Admin login failed, cannot continue with most tests")
         return 1
         
-    if not citizen_success:
-        print("⚠️ Citizen login failed, but continuing with admin tests")
+    if not gestor_success:
+        print("⚠️ Gestor login failed, but continuing with admin tests")
     
-    # NEW FUNCTIONALITY TESTS - As requested in review
-    print("\n🆕 Testing New Functionalities from Review Request...")
+    # REVIEW REQUEST TESTS - Testing specific features mentioned in review
+    print("\n🎯 Testing Features from Review Request...")
     
-    # Test 1: Predios Eliminados Endpoint
-    tester.test_predios_eliminados_endpoint()
+    # Test 1: Predios Data Import Verification (11,267 properties from Ábrego)
+    tester.test_predios_data_import_verification()
     
-    # Test 2: Export Excel Endpoint
+    # Test 2: Approval System for Property Changes
+    tester.test_approval_system_endpoints()
+    
+    # Test 3: Unified Statistics Page
+    tester.test_unified_statistics_endpoints()
+    
+    # Test 4: Excel Export
     tester.test_export_excel_endpoint()
-    
-    # Test 3: Password Validation with Special Characters
-    tester.test_password_validation_special_chars()
-    
-    # Test 4: Terreno Info Endpoint
-    tester.test_terreno_info_endpoint()
     
     # Test 5: Password Recovery Endpoints (existing)
     tester.test_password_recovery_endpoints()
