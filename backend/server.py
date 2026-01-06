@@ -2368,160 +2368,6 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
     
     c.save()
     return buffer.getvalue()
-    for line in lines:
-        c.drawCentredString(width/2, y, line)
-        y -= 10
-    
-    y -= 15
-    
-    # === ENTIDAD EMISORA ===
-    c.setFont("Helvetica-Bold", 10)
-    c.drawCentredString(width/2, y, "LA ASOCIACIÓN DE MUNICIPIOS DEL CATATUMBO")
-    y -= 12
-    c.drawCentredString(width/2, y, "PROVINCIA DE OCAÑA Y SUR DEL CESAR – ASOMUNICIPIOS")
-    y -= 15
-    
-    c.setFont("Helvetica", 9)
-    c.drawCentredString(width/2, y, "certifica que el siguiente predio se encuentra inscrito en la base de datos catastral")
-    y -= 12
-    c.drawCentredString(width/2, y, "con la siguiente información:")
-    y -= 25
-    
-    # === INFORMACIÓN CATASTRAL DEL PREDIO ===
-    c.setFillColor(colors.HexColor('#047857'))
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(left_margin, y, "INFORMACIÓN CATASTRAL DEL PREDIO")
-    c.setFillColor(colors.black)
-    y -= 15
-    
-    c.setFont("Helvetica", 9)
-    c.drawString(left_margin, y, f"Predio No.: {predio.get('numero_predio', '01')}")
-    y -= 20
-    
-    # === INFORMACIÓN JURÍDICA ===
-    c.setFillColor(colors.HexColor('#047857'))
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(left_margin, y, "INFORMACIÓN JURÍDICA")
-    c.setFillColor(colors.black)
-    y -= 15
-    
-    c.setFont("Helvetica", 9)
-    propietarios = predio.get('propietarios', [])
-    if propietarios:
-        for i, prop in enumerate(propietarios, 1):
-            c.setFont("Helvetica-Bold", 9)
-            c.drawString(left_margin, y, f"Propietario {i}:")
-            y -= 12
-            c.setFont("Helvetica", 9)
-            c.drawString(left_margin + 20, y, f"Nombre: {prop.get('nombre_propietario', '')}")
-            y -= 12
-            c.drawString(left_margin + 20, y, f"Tipo de documento: {prop.get('tipo_documento', '')}")
-            y -= 12
-            c.drawString(left_margin + 20, y, f"Número de documento: {prop.get('numero_documento', '')}")
-            y -= 15
-    else:
-        c.drawString(left_margin, y, f"Nombre del propietario: {predio.get('nombre_propietario', 'N/A')}")
-        y -= 12
-    
-    # Matrícula inmobiliaria
-    matricula = ''
-    r2_registros = predio.get('r2_registros', [])
-    if r2_registros:
-        matricula = r2_registros[0].get('matricula_inmobiliaria', '')
-    c.drawString(left_margin, y, f"Matrícula Inmobiliaria: {matricula}")
-    y -= 20
-    
-    # === INFORMACIÓN FÍSICA ===
-    c.setFillColor(colors.HexColor('#047857'))
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(left_margin, y, "INFORMACIÓN FÍSICA")
-    c.setFillColor(colors.black)
-    y -= 15
-    
-    c.setFont("Helvetica", 9)
-    c.drawString(left_margin, y, f"Departamento: {predio.get('departamento', '54 - NORTE DE SANTANDER')}")
-    y -= 12
-    c.drawString(left_margin, y, f"Municipio: {predio.get('municipio', '')}")
-    y -= 12
-    c.drawString(left_margin, y, f"Número predial: {predio.get('codigo_predial_nacional', '')}")
-    y -= 12
-    c.drawString(left_margin, y, f"Número predial anterior: {predio.get('codigo_homologado', '')}")
-    y -= 12
-    c.drawString(left_margin, y, f"Dirección: {predio.get('direccion', '')}")
-    y -= 12
-    
-    # Área formateada
-    area_terreno = predio.get('area_terreno', 0)
-    if area_terreno >= 10000:
-        ha = int(area_terreno // 10000)
-        m2 = int(area_terreno % 10000)
-        area_str = f"{ha} Ha {m2} m²"
-    else:
-        area_str = f"{area_terreno} m²"
-    c.drawString(left_margin, y, f"Área terreno: {area_str}")
-    y -= 12
-    c.drawString(left_margin, y, f"Área construida: {predio.get('area_construida', 0)} m²")
-    y -= 20
-    
-    # === INFORMACIÓN ECONÓMICA ===
-    c.setFillColor(colors.HexColor('#047857'))
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(left_margin, y, "INFORMACIÓN ECONÓMICA")
-    c.setFillColor(colors.black)
-    y -= 15
-    
-    c.setFont("Helvetica", 9)
-    avaluo = predio.get('avaluo', 0)
-    avaluo_str = f"$ {avaluo:,.0f}".replace(',', '.')
-    c.drawString(left_margin, y, f"Avalúo catastral: {avaluo_str}")
-    y -= 25
-    
-    # === FECHA DE EXPEDICIÓN ===
-    c.drawString(left_margin, y, f"El presente certificado se expide a favor del interesado el {fecha_str}.")
-    y -= 40
-    
-    # === FIRMA ===
-    c.drawCentredString(width/2, y, "_" * 50)
-    y -= 15
-    c.setFont("Helvetica-Bold", 9)
-    c.drawCentredString(width/2, y, firmante.get('full_name', ''))
-    y -= 12
-    c.setFont("Helvetica", 9)
-    c.drawCentredString(width/2, y, firmante.get('cargo', 'SUBDIRECTOR(A) FINANCIERO(A) Y ADMINISTRATIVO(A)'))
-    y -= 25
-    
-    # === NOTAS LEGALES ===
-    c.setFont("Helvetica-Bold", 8)
-    c.drawString(left_margin, y, "NOTA:")
-    y -= 10
-    
-    c.setFont("Helvetica", 7)
-    notas = [
-        "La presente información no sirve como prueba para establecer actos constitutivos de posesión.",
-        "",
-        "De conformidad con el artículo 2.2.2.2.8 del Decreto 148 de 2020, Inscripción o incorporación catastral.",
-        "La información catastral resultado de los procesos de formación, actualización o conservación se inscribirá",
-        "o incorporará en la base catastral con la fecha del acto administrativo que lo ordena.",
-        "",
-        "Adicionalmente de conformidad con el artículo 29 de la resolución No. 1149 de 2021 emanada del Instituto",
-        "Geográfico Agustín Codazzi, \"Efecto jurídico de la inscripción catastral. La inscripción en el catastro",
-        "no constituye título de dominio, ni sanea los vicios de que adolezca la titulación presentada o la posesión",
-        "del interesado, y no puede alegarse como excepción contra el que pretenda tener mejor derecho a la propiedad",
-        "o posesión del predio.\".",
-        "",
-        "La base catastral de Asomunicipios sólo incluye información de los municipios habilitados dentro del esquema",
-        "asociativo (Ábrego, Bucarasica, Convención, Cáchira, El Carmen, El Tarra, Hacarí, La Playa de Belén,",
-        "San Calixto, Sardinata y Teorama en Norte de Santander, y Río de Oro, en el Cesar).",
-        "",
-        "Ante cualquier inquietud, puede escribir al correo electrónico: comunicaciones@asomunicipios.gov.co"
-    ]
-    
-    for nota in notas:
-        c.drawString(left_margin, y, nota)
-        y -= 9
-    
-    c.save()
-    return buffer.getvalue()
 
 
 @api_router.get("/predios/{predio_id}/certificado")
@@ -2549,14 +2395,17 @@ async def generar_certificado_catastral_endpoint(predio_id: str, current_user: d
     }
     await db.certificados.insert_one(certificado_record)
     
-    # Datos del firmante
+    # Firmante siempre es Dalgie Esperanza Torrado Rizo
     firmante = {
-        "full_name": current_user['full_name'],
-        "cargo": "SUBDIRECTOR(A) FINANCIERO(A) Y ADMINISTRATIVO(A)"
+        "full_name": "DALGIE ESPERANZA TORRADO RIZO",
+        "cargo": "Subdirectora Financiera y Administrativa"
     }
     
+    # Quien proyecta es el usuario actual
+    proyectado_por = current_user['full_name']
+    
     # Generar PDF con campo editable para número
-    pdf_bytes = generate_certificado_catastral(predio, firmante)
+    pdf_bytes = generate_certificado_catastral(predio, firmante, proyectado_por)
     
     # Guardar temporalmente
     temp_path = UPLOAD_DIR / f"certificado_{predio_id}_{uuid.uuid4()}.pdf"
