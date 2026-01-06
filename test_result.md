@@ -167,6 +167,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "Campos mostrados como disabled con fondo gris en sección 'Datos del Solicitante (No editables)'"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Non-editable fields working perfectly. Found 'Datos del Solicitante (No editables)' section with all three fields (nombre, correo, telefono) properly disabled with gray background. Admin can edit other fields but not personal data."
 
   - task: "Botón subir archivos para personal"
     implemented: true
@@ -179,6 +182,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "Botón 'Subir Archivos' visible para roles no-ciudadano"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Staff upload button working correctly. 'Subir Archivos' button visible for admin, opens upload dialog with file input and confirmation button. Citizens cannot see this button."
 
   - task: "Botón descargar ZIP archivos ciudadano"
     implemented: true
@@ -191,6 +197,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "Botón 'Descargar ZIP (Ciudadano)' visible solo para personal cuando hay archivos del ciudadano"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Download ZIP button working correctly. 'Descargar ZIP (Ciudadano)' button visible for admin when citizen files exist. Citizens cannot see this button (proper access control)."
 
   - task: "Visualización diferenciada de archivos (Ciudadano vs Personal)"
     implemented: true
@@ -203,6 +212,21 @@ frontend:
       - working: true
         agent: "main"
         comment: "Archivos muestran badge 'Ciudadano' (azul) o 'Personal' (verde) según quien lo subió"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: File badges working perfectly. Found 2 'Ciudadano' badges (blue) and 2 'Personal' badges (green). Staff files show 'Subido por: Administrador Asomunicipios' with date. Citizens can see all files including staff uploads with proper metadata."
+
+  - task: "Vista de ciudadano - subir más archivos"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/PetitionDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: Citizen upload functionality working correctly. 'Subir Más' button visible for citizens, opens upload dialog with file input and confirmation. Citizens can see staff files but cannot access admin functions (edit, staff upload, ZIP download)."
 
 metadata:
   created_by: "main_agent"
