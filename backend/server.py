@@ -1478,6 +1478,16 @@ async def get_stats_summary(current_user: dict = Depends(get_current_user)):
     total_users = await db.users.count_documents({})
     total_gestores = await db.users.count_documents({"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]}})
     
+    # Staff counts by role
+    staff_counts = {
+        "coordinadores": await db.users.count_documents({"role": UserRole.COORDINADOR}),
+        "gestores": await db.users.count_documents({"role": UserRole.GESTOR}),
+        "gestores_auxiliares": await db.users.count_documents({"role": UserRole.GESTOR_AUXILIAR}),
+        "atencion_usuario": await db.users.count_documents({"role": UserRole.ATENCION_USUARIO}),
+        "administradores": await db.users.count_documents({"role": UserRole.ADMINISTRADOR}),
+        "ciudadanos": await db.users.count_documents({"role": UserRole.CIUDADANO})
+    }
+    
     # Status counts
     status_counts = {
         "radicado": await db.petitions.count_documents({"estado": PetitionStatus.RADICADO}),
@@ -1501,6 +1511,7 @@ async def get_stats_summary(current_user: dict = Depends(get_current_user)):
         "total_petitions": total_petitions,
         "total_users": total_users,
         "total_gestores": total_gestores,
+        "staff_counts": staff_counts,
         "status_counts": status_counts,
         "completion_rate": completion_rate,
         "recent_petitions_30_days": recent_petitions
