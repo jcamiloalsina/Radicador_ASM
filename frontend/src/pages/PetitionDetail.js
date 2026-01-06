@@ -380,6 +380,44 @@ export default function PetitionDetail() {
         <CardContent className="space-y-6">
           {editing ? (
             <div className="space-y-4">
+              {/* Campos no editables - datos del solicitante */}
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <p className="text-sm font-medium text-slate-600 mb-3">Datos del Solicitante (No editables)</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="nombre_completo" className="text-slate-500">Nombre Completo</Label>
+                    <Input
+                      id="nombre_completo"
+                      value={editData.nombre_completo}
+                      disabled
+                      className="bg-slate-100 text-slate-700 cursor-not-allowed"
+                      data-testid="edit-nombre-disabled"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="correo" className="text-slate-500">Correo Electrónico</Label>
+                    <Input
+                      id="correo"
+                      value={editData.correo}
+                      disabled
+                      className="bg-slate-100 text-slate-700 cursor-not-allowed"
+                      data-testid="edit-correo-disabled"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="telefono" className="text-slate-500">Teléfono</Label>
+                    <Input
+                      id="telefono"
+                      value={editData.telefono}
+                      disabled
+                      className="bg-slate-100 text-slate-700 cursor-not-allowed"
+                      data-testid="edit-telefono-disabled"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Campos editables solo para coordinador/admin */}
               {canEditAllFields && (
                 <>
                   <div>
