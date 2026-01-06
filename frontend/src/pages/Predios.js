@@ -1365,6 +1365,22 @@ export default function Predios() {
                   </CardContent>
                 </Card>
               )}
+              
+              {/* Mapa del Predio (Opción C) */}
+              <Card>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Map className="w-4 h-4" /> Ubicación Geográfica
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <PredioMap 
+                    codigoPredial={selectedPredio.codigo_predial_nacional}
+                    predioData={selectedPredio}
+                    height={250}
+                  />
+                </CardContent>
+              </Card>
             </div>
           )}
         </DialogContent>
