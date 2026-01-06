@@ -246,13 +246,15 @@ class CatastralAPITester:
         )
         
         if success:
-            required_fields = ['total', 'pendientes', 'en_revision', 'aprobadas', 'rechazadas']
+            # Updated to match actual API response format
+            required_fields = ['total', 'radicado', 'asignado', 'rechazado', 'revision', 'devuelto', 'finalizado']
             has_all_fields = all(field in response for field in required_fields)
             if has_all_fields:
-                print(f"   Stats: Total={response['total']}, Pendientes={response['pendientes']}")
+                print(f"   Stats: Total={response['total']}, Radicado={response['radicado']}, Finalizado={response['finalizado']}")
                 return True
             else:
-                print(f"   Missing required fields in stats response")
+                missing_fields = [field for field in required_fields if field not in response]
+                print(f"   Missing required fields in stats response: {missing_fields}")
         return False
 
     def test_login_with_credentials(self, email, password, role_name):
