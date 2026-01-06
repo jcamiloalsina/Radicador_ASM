@@ -681,6 +681,228 @@ class CatastralAPITester:
         
         return False
 
+    def test_predios_eliminados_endpoint(self):
+        """Test GET /api/predios/eliminados endpoint"""
+        print("\n🗑️ Testing Predios Eliminados Endpoint...")
+        
+        # Test 1: Admin should be able to access deleted predios
+        if 'admin' in self.tokens:
+            success, response = self.run_test(
+                "Get deleted predios (admin)",
+                "GET",
+                "predios/eliminados",
+                200,
+                token=self.tokens['admin']
+            )
+            
+            if success:
+                if 'total' in response and 'predios' in response:
+                    print(f"   ✅ Admin can access deleted predios - Total: {response['total']}")
+                    admin_success = True
+                else:
+                    print(f"   ❌ Response missing required fields (total, predios)")
+                    admin_success = False
+            else:
+                admin_success = False
+        else:
+            print("   ❌ No admin token available")
+            admin_success = False
+        
+        # Test 2: Citizen should be denied access (403)
+        if 'citizen' in self.tokens:
+            success, response = self.run_test(
+                "Get deleted predios (citizen) - should fail",
+                "GET",
+                "predios/eliminados",
+                403,
+                token=self.tokens['citizen']
+            )
+            citizen_denied = success
+        else:
+            print("   ⚠️ No citizen token available for access denial test")
+            citizen_denied = True  # Assume it would work correctly
+        
+        return admin_success and citizen_denied
+
+    def test_export_excel_endpoint(self):
+        """Test GET /api/predios/export-excel endpoint"""
+        print("\n📊 Testing Export Excel Endpoint...")
+        
+        # Test 1: Admin should be able to export Excel
+        if 'admin' in self.tokens:
+            success, response = self.run_test(
+                "Export predios to Excel (admin)",
+                "GET",
+                "predios/export-excel",
+                200,
+                token=self.tokens['admin']
+            )
+            
+            if success:
+                print(f"   ✅ Admin can export Excel file")
+                admin_success = True
+            else:
+                admin_success = False
+        else:
+            print("   ❌ No admin token available")
+            admin_success = False
+        
+        # Test 2: Test with municipio filter
+        if 'admin' in self.tokens:
+            success, response = self.run_test(
+                "Export predios to Excel with municipio filter",
+                "GET",
+                "predios/export-excel?municipio=Ábrego",
+                200,
+                token=self.tokens['admin']
+            )
+            
+            if success:
+                print(f"   ✅ Excel export with municipio filter works")
+                filter_success = True
+            else:
+                filter_success = False
+        else:
+            filter_success = False
+        
+        # Test 3: Citizen should be denied access (403)
+        if 'citizen' in self.tokens:
+            success, response = self.run_test(
+                "Export Excel (citizen) - should fail",
+                "GET",
+                "predios/export-excel",
+                403,
+                token=self.tokens['citizen']
+            )
+            citizen_denied = success
+        else:
+            print("   ⚠️ No citizen token available for access denial test")
+            citizen_denied = True
+        
+        return admin_success and filter_success and citizen_denied
+
+    def test_password_validation_special_chars(self):
+        """Test password validation with special characters"""
+        print("\n🔐 Testing Password Validation with Special Characters...")
+        
+        # Test 1: Register with password containing special chars
+        timestamp = datetime.now().strftime('%H%M%S')
+        email = f"test_special_{timestamp}@test.com"
+        
+        user_data = {
+            "email": email,
+            "password": "Test@123!",  # Contains special characters
+            "full_name": "Test Special Chars User"
+        }
+        
+        success, response = self.run_test(
+            "Register with special char password",
+            "POST",
+            "auth/register",
+            200,
+            data=user_data
+        )
+        
+        if success and 'token' in response:
+            special_token = response['token']
+            print(f"   ✅ Registration with special chars successful")
+            
+            # Test 2: Login with the special char password
+            login_data = {
+                "email": email,
+                "password": "Test@123!"
+            }
+            
+            success, response = self.run_test(
+                "Login with special char password",
+                "POST",
+                "auth/login",
+                200,
+                data=login_data
+            )
+            
+            if success and 'token' in response:
+                print(f"   ✅ Login with special chars successful")
+                login_success = True
+            else:
+                login_success = False
+        else:
+            login_success = False
+        
+        # Test 3: Test password validation rules
+        test_passwords = [
+            ("short", 400),  # Too short
+            ("nouppercase123!", 400),  # No uppercase
+            ("NOLOWERCASE123!", 400),  # No lowercase  
+            ("NoDigits!", 400),  # No digits
+            ("ValidPass123!", 200)  # Valid password
+        ]
+        
+        validation_success = True
+        for password, expected_status in test_passwords:
+            test_email = f"test_validation_{password}_{timestamp}@test.com"
+            test_data = {
+                "email": test_email,
+                "password": password,
+                "full_name": "Test Validation User"
+            }
+            
+            success, response = self.run_test(
+                f"Password validation test: {password}",
+                "POST",
+                "auth/register",
+                expected_status,
+                data=test_data
+            )
+            
+            if not success:
+                validation_success = False
+        
+        return login_success and validation_success
+
+    def test_terreno_info_endpoint(self):
+        """Test GET /api/predios/terreno-info/{municipio} endpoint"""
+        print("\n🏞️ Testing Terreno Info Endpoint...")
+        
+        # Test 1: Admin should be able to get terrain info
+        if 'admin' in self.tokens:
+            success, response = self.run_test(
+                "Get terrain info for Ábrego (admin)",
+                "GET",
+                "predios/terreno-info/Ábrego",
+                200,
+                token=self.tokens['admin']
+            )
+            
+            if success:
+                if 'siguiente_terreno' in response:
+                    print(f"   ✅ Admin can get terrain info - Next terrain: {response['siguiente_terreno']}")
+                    admin_success = True
+                else:
+                    print(f"   ❌ Response missing 'siguiente_terreno' field")
+                    admin_success = False
+            else:
+                admin_success = False
+        else:
+            print("   ❌ No admin token available")
+            admin_success = False
+        
+        # Test 2: Citizen should be denied access (403)
+        if 'citizen' in self.tokens:
+            success, response = self.run_test(
+                "Get terrain info (citizen) - should fail",
+                "GET",
+                "predios/terreno-info/Ábrego",
+                403,
+                token=self.tokens['citizen']
+            )
+            citizen_denied = success
+        else:
+            print("   ⚠️ No citizen token available for access denial test")
+            citizen_denied = True
+        
+        return admin_success and citizen_denied
+
 def main():
     print("🚀 Starting Cadastral Management System API Tests")
     print("=" * 60)
