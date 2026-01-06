@@ -525,6 +525,48 @@ async def upload_petition_files(
     
     return {"message": "Archivos subidos exitosamente", "files": saved_files}
 
+
+@api_router.get("/petitions/{petition_id}/download-zip")
+async def download_citizen_files_as_zip(petition_id: str, current_user: dict = Depends(get_current_user)):
+    """Download all files uploaded by citizen as a ZIP file"""
+    # Only staff can download citizen files
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
+    
+    petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
+    if not petition:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Petición no encontrada")
+    
+    # Filter files uploaded by citizen
+    citizen_files = []
+    for archivo in petition.get('archivos', []):
+        uploaded_by_role = archivo.get('uploaded_by_role', 'ciudadano')
+        if uploaded_by_role == UserRole.CIUDADANO or not archivo.get('uploaded_by_role'):
+            # If no uploaded_by_role, assume it's from citizen (backward compatibility)
+            citizen_files.append(archivo)
+    
+    if not citizen_files:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No hay archivos del ciudadano para descargar")
+    
+    import zipfile
+    
+    # Create ZIP file
+    zip_filename = f"{petition['radicado']}_archivos_ciudadano.zip"
+    zip_path = UPLOAD_DIR / zip_filename
+    
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for archivo in citizen_files:
+            file_path = Path(archivo['path'])
+            if file_path.exists():
+                # Add file to ZIP with original name
+                zipf.write(file_path, archivo['original_name'])
+    
+    return FileResponse(
+        path=zip_path,
+        filename=zip_filename,
+        media_type='application/zip'
+    )
+
 @api_router.post("/petitions/{petition_id}/assign-gestor")
 async def assign_gestor(
     petition_id: str,
