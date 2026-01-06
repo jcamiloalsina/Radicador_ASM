@@ -513,7 +513,7 @@ async def assign_gestor(
 
 @api_router.patch("/petitions/{petition_id}")
 async def update_petition(petition_id: str, update_data: PetitionUpdate, current_user: dict = Depends(get_current_user)):
-    # Only staff can update petitions
+    # Citizens cannot update petitions
     if current_user['role'] == UserRole.CIUDADANO:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para actualizar peticiones")
     
@@ -521,7 +521,24 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
     if not petition:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Petición no encontrada")
     
-    update_dict = update_data.model_dump(exclude_none=True)
+    # Determine what fields can be updated based on role
+    update_dict = {}
+    
+    if current_user['role'] in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        # Coordinador and Admin can update all fields
+        update_dict = update_data.model_dump(exclude_none=True)
+    elif current_user['role'] == UserRole.ATENCION_USUARIO:
+        # Atención al usuario can update status, notes, and can finalize/reject
+        if update_data.estado:
+            update_dict['estado'] = update_data.estado
+        if update_data.notas:
+            update_dict['notas'] = update_data.notas
+    elif current_user['role'] in [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]:
+        # Gestores can only update notes and send to revision
+        if update_data.notas:
+            update_dict['notas'] = update_data.notas
+        if update_data.estado in [PetitionStatus.REVISION, PetitionStatus.RECHAZADO]:
+            update_dict['estado'] = update_data.estado
     
     if update_dict:
         update_dict['updated_at'] = datetime.now(timezone.utc).isoformat()
