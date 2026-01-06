@@ -146,6 +146,50 @@ export default function Predios() {
     }
   };
 
+  const fetchCambiosStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/predios/cambios/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCambiosStats(res.data);
+    } catch (error) {
+      console.log('Stats no disponibles');
+    }
+  };
+
+  const fetchCambiosPendientes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/predios/cambios/pendientes`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCambiosPendientes(res.data.cambios);
+      setShowPendientesDialog(true);
+    } catch (error) {
+      toast.error('Error al cargar cambios pendientes');
+    }
+  };
+
+  const handleAprobarRechazar = async (cambioId, aprobado, comentario = '') => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/predios/cambios/aprobar`, {
+        cambio_id: cambioId,
+        aprobado,
+        comentario
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(aprobado ? 'Cambio aprobado exitosamente' : 'Cambio rechazado');
+      fetchCambiosPendientes();
+      fetchCambiosStats();
+      fetchPredios();
+    } catch (error) {
+      toast.error('Error al procesar el cambio');
+    }
+  };
+
   const handleExportExcel = async () => {
     try {
       const token = localStorage.getItem('token');
