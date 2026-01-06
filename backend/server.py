@@ -133,7 +133,7 @@ class Petition(BaseModel):
     notas: str = ""
     gestor_id: Optional[str] = None
     gestores_asignados: List[str] = []
-    archivos: List[str] = []
+    archivos: List[dict] = []
     historial: List[dict] = []
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
