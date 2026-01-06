@@ -1925,7 +1925,7 @@ async def export_predios_excel(
     municipio: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
-    """Exporta predios a Excel en formato compatible con el original"""
+    """Exporta predios a Excel en formato EXACTO al archivo original R1-R2"""
     if current_user['role'] == UserRole.CIUDADANO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
@@ -1939,19 +1939,6 @@ async def export_predios_excel(
     # Crear workbook
     wb = Workbook()
     
-    # === HOJA R1 ===
-    ws_r1 = wb.active
-    ws_r1.title = "REGISTRO_R1"
-    
-    # Headers R1
-    headers_r1 = [
-        "DEPARTAMENTO", "MUNICIPIO", "NUMERO_DEL_PREDIO", "CODIGO_PREDIAL_NACIONAL", 
-        "CODIGO_HOMOLOGADO", "TIPO_DE_REGISTRO", "NUMERO_DE_ORDEN", "TOTAL_REGISTROS",
-        "NOMBRE", "ESTADO_CIVIL", "TIPO_DOCUMENTO", "NUMERO_DOCUMENTO", "DIRECCION",
-        "COMUNA", "DESTINO_ECONOMICO", "AREA_TERRENO", "AREA_CONSTRUIDA", "AVALUO",
-        "VIGENCIA", "TIPO_MUTACIÓN", "NO. RESOLUCIÓN", "FECHA_RESOLUCIÓN"
-    ]
-    
     # Estilos
     header_font = Font(bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="047857", end_color="047857", fill_type="solid")
@@ -1962,7 +1949,19 @@ async def export_predios_excel(
         bottom=Side(style='thin')
     )
     
-    # Escribir headers
+    # === HOJA REGISTRO_R1 (Propietarios) ===
+    ws_r1 = wb.active
+    ws_r1.title = "REGISTRO_R1"
+    
+    # Headers R1 - EXACTO al original
+    headers_r1 = [
+        "DEPARTAMENTO", "MUNICIPIO", "NUMERO_DEL_PREDIO", "CODIGO_PREDIAL_NACIONAL", 
+        "CODIGO_HOMOLOGADO", "TIPO_DE_REGISTRO", "NUMERO_DE_ORDEN", "TOTAL_REGISTROS",
+        "NOMBRE", "ESTADO_CIVIL", "TIPO_DOCUMENTO", "NUMERO_DOCUMENTO", "DIRECCION",
+        "COMUNA", "DESTINO_ECONOMICO", "AREA_TERRENO", "AREA_CONSTRUIDA", "AVALUO",
+        "VIGENCIA", "TIPO_MUTACIÓN", "NO. RESOLUCIÓN", "FECHA_RESOLUCIÓN"
+    ]
+    
     for col, header in enumerate(headers_r1, 1):
         cell = ws_r1.cell(row=1, column=col, value=header)
         cell.font = header_font
@@ -1970,7 +1969,7 @@ async def export_predios_excel(
         cell.border = thin_border
         cell.alignment = Alignment(horizontal='center')
     
-    # Escribir datos R1 - usando la nueva estructura 'propietarios'
+    # Escribir datos R1
     row = 2
     for predio in predios:
         propietarios = predio.get('propietarios', [])
@@ -1980,6 +1979,7 @@ async def export_predios_excel(
                            'numero_documento': predio.get('numero_documento', ''),
                            'estado_civil': predio.get('estado_civil', '')}]
         
+        total_props = len(propietarios)
         for idx, prop in enumerate(propietarios, 1):
             ws_r1.cell(row=row, column=1, value=predio.get('departamento', ''))
             ws_r1.cell(row=row, column=2, value=predio.get('municipio', ''))
@@ -1987,8 +1987,8 @@ async def export_predios_excel(
             ws_r1.cell(row=row, column=4, value=predio.get('codigo_predial_nacional', ''))
             ws_r1.cell(row=row, column=5, value=predio.get('codigo_homologado', ''))
             ws_r1.cell(row=row, column=6, value='1')
-            ws_r1.cell(row=row, column=7, value=str(idx))
-            ws_r1.cell(row=row, column=8, value=str(len(propietarios)))
+            ws_r1.cell(row=row, column=7, value=str(idx).zfill(2))
+            ws_r1.cell(row=row, column=8, value=str(total_props).zfill(2))
             ws_r1.cell(row=row, column=9, value=prop.get('nombre_propietario', ''))
             ws_r1.cell(row=row, column=10, value=prop.get('estado_civil', ''))
             ws_r1.cell(row=row, column=11, value=prop.get('tipo_documento', ''))
@@ -2005,14 +2005,24 @@ async def export_predios_excel(
             ws_r1.cell(row=row, column=22, value=predio.get('fecha_resolucion', ''))
             row += 1
     
-    # === HOJA R2 ===
+    # === HOJA REGISTRO_R2 (Físico - con zonas en columnas horizontales) ===
     ws_r2 = wb.create_sheet(title="REGISTRO_R2")
     
+    # Headers R2 - EXACTO al original con zonas en columnas horizontales
     headers_r2 = [
         "DEPARTAMENTO", "MUNICIPIO", "NUMERO_DEL_PREDIO", "CODIGO_PREDIAL_NACIONAL",
-        "CODIGO_HOMOLOGADO", "TIPO_DE_REGISTRO", "NUMERO_DE_ORDEN", "TOTAL_REGISTROS",
-        "MATRICULA_INMOBILIARIA", "ZONA_FISICA", "ZONA_ECONOMICA", "AREA_TERRENO",
-        "HABITACIONES", "BANOS", "LOCALES", "PISOS", "USO", "PUNTAJE", "AREA_CONSTRUIDA"
+        "TIPO_DE_REGISTRO", "NUMERO_DE_ORDEN", "TOTAL_REGISTROS", "MATRICULA_INMOBILIARIA",
+        # Zona 1
+        "ZONA_FISICA_1", "ZONA_ECONOMICA_1", "AREA_TERRENO_1",
+        # Zona 2
+        "ZONA_FISICA_2", "ZONA_ECONOMICA_2", "AREA_TERRENO_2",
+        # Construcción 1
+        "HABITACIONES_1", "BANOS_1", "LOCALES_1", "PISOS_1", "TIPIFICACION_1", "USO_1", "PUNTAJE_1", "AREA_CONSTRUIDA_1",
+        # Construcción 2
+        "HABITACIONES_2", "BANOS_2", "LOCALES_2", "PISOS_2", "TIPIFICACION_2", "USO_2", "PUNTAJE_2", "AREA_CONSTRUIDA_2",
+        # Construcción 3
+        "HABITACIONES_3", "BANOS_3", "LOCALES_3", "PISOS_3", "TIPIFICACION_3", "USO_3", "PUNTAJE_3", "AREA_CONSTRUIDA_3",
+        "VIGENCIA"
     ]
     
     for col, header in enumerate(headers_r2, 1):
@@ -2022,36 +2032,72 @@ async def export_predios_excel(
         cell.border = thin_border
         cell.alignment = Alignment(horizontal='center')
     
-    # Escribir datos R2 - usando la nueva estructura 'r2_registros'
+    # Escribir datos R2 - Una fila por registro R2 con zonas en columnas
     row = 2
     for predio in predios:
         r2_registros = predio.get('r2_registros', [])
+        total_r2 = len(r2_registros) if r2_registros else 0
         
-        for r2_idx, r2 in enumerate(r2_registros):
-            zonas = r2.get('zonas', [])
-            total_zonas = len(zonas) if zonas else 1
+        for r2_idx, r2 in enumerate(r2_registros, 1):
+            ws_r2.cell(row=row, column=1, value=predio.get('departamento', ''))
+            ws_r2.cell(row=row, column=2, value=predio.get('municipio', ''))
+            ws_r2.cell(row=row, column=3, value=predio.get('numero_predio', ''))
+            ws_r2.cell(row=row, column=4, value=predio.get('codigo_predial_nacional', ''))
+            ws_r2.cell(row=row, column=5, value='2')
+            ws_r2.cell(row=row, column=6, value=str(r2_idx).zfill(2))
+            ws_r2.cell(row=row, column=7, value=str(total_r2).zfill(2))
+            ws_r2.cell(row=row, column=8, value=r2.get('matricula_inmobiliaria', ''))
             
-            for z_idx, zona in enumerate(zonas):
-                ws_r2.cell(row=row, column=1, value=predio.get('departamento', ''))
-                ws_r2.cell(row=row, column=2, value=predio.get('municipio', ''))
-                ws_r2.cell(row=row, column=3, value=predio.get('numero_predio', ''))
-                ws_r2.cell(row=row, column=4, value=predio.get('codigo_predial_nacional', ''))
-                ws_r2.cell(row=row, column=5, value=predio.get('codigo_homologado', ''))
-                ws_r2.cell(row=row, column=6, value='2')
-                ws_r2.cell(row=row, column=7, value=str(z_idx + 1))
-                ws_r2.cell(row=row, column=8, value=str(total_zonas))
-                ws_r2.cell(row=row, column=9, value=r2.get('matricula_inmobiliaria', ''))
-                ws_r2.cell(row=row, column=10, value=zona.get('zona_fisica', 0))
-                ws_r2.cell(row=row, column=11, value=zona.get('zona_economica', 0))
-                ws_r2.cell(row=row, column=12, value=zona.get('area_terreno', 0))
-                ws_r2.cell(row=row, column=13, value=zona.get('habitaciones', 0))
-                ws_r2.cell(row=row, column=14, value=zona.get('banos', 0))
-                ws_r2.cell(row=row, column=15, value=zona.get('locales', 0))
-                ws_r2.cell(row=row, column=16, value=zona.get('pisos', 1))
-                ws_r2.cell(row=row, column=17, value=zona.get('uso', 0))
-                ws_r2.cell(row=row, column=18, value=zona.get('puntaje', 0))
-                ws_r2.cell(row=row, column=19, value=zona.get('area_construida', 0))
-                row += 1
+            zonas = r2.get('zonas', [])
+            
+            # Zona 1 (columnas 9-11)
+            if len(zonas) >= 1:
+                ws_r2.cell(row=row, column=9, value=zonas[0].get('zona_fisica', ''))
+                ws_r2.cell(row=row, column=10, value=zonas[0].get('zona_economica', ''))
+                ws_r2.cell(row=row, column=11, value=zonas[0].get('area_terreno', 0))
+            
+            # Zona 2 (columnas 12-14)
+            if len(zonas) >= 2:
+                ws_r2.cell(row=row, column=12, value=zonas[1].get('zona_fisica', ''))
+                ws_r2.cell(row=row, column=13, value=zonas[1].get('zona_economica', ''))
+                ws_r2.cell(row=row, column=14, value=zonas[1].get('area_terreno', 0))
+            
+            # Construcción 1 (columnas 15-22)
+            if len(zonas) >= 1:
+                ws_r2.cell(row=row, column=15, value=zonas[0].get('habitaciones', 0))
+                ws_r2.cell(row=row, column=16, value=zonas[0].get('banos', 0))
+                ws_r2.cell(row=row, column=17, value=zonas[0].get('locales', 0))
+                ws_r2.cell(row=row, column=18, value=zonas[0].get('pisos', 0))
+                ws_r2.cell(row=row, column=19, value=zonas[0].get('tipificacion', ''))
+                ws_r2.cell(row=row, column=20, value=zonas[0].get('uso', ''))
+                ws_r2.cell(row=row, column=21, value=zonas[0].get('puntaje', 0))
+                ws_r2.cell(row=row, column=22, value=zonas[0].get('area_construida', 0))
+            
+            # Construcción 2 (columnas 23-30)
+            if len(zonas) >= 2:
+                ws_r2.cell(row=row, column=23, value=zonas[1].get('habitaciones', 0))
+                ws_r2.cell(row=row, column=24, value=zonas[1].get('banos', 0))
+                ws_r2.cell(row=row, column=25, value=zonas[1].get('locales', 0))
+                ws_r2.cell(row=row, column=26, value=zonas[1].get('pisos', 0))
+                ws_r2.cell(row=row, column=27, value=zonas[1].get('tipificacion', ''))
+                ws_r2.cell(row=row, column=28, value=zonas[1].get('uso', ''))
+                ws_r2.cell(row=row, column=29, value=zonas[1].get('puntaje', 0))
+                ws_r2.cell(row=row, column=30, value=zonas[1].get('area_construida', 0))
+            
+            # Construcción 3 (columnas 31-38)
+            if len(zonas) >= 3:
+                ws_r2.cell(row=row, column=31, value=zonas[2].get('habitaciones', 0))
+                ws_r2.cell(row=row, column=32, value=zonas[2].get('banos', 0))
+                ws_r2.cell(row=row, column=33, value=zonas[2].get('locales', 0))
+                ws_r2.cell(row=row, column=34, value=zonas[2].get('pisos', 0))
+                ws_r2.cell(row=row, column=35, value=zonas[2].get('tipificacion', ''))
+                ws_r2.cell(row=row, column=36, value=zonas[2].get('uso', ''))
+                ws_r2.cell(row=row, column=37, value=zonas[2].get('puntaje', 0))
+                ws_r2.cell(row=row, column=38, value=zonas[2].get('area_construida', 0))
+            
+            # Vigencia
+            ws_r2.cell(row=row, column=39, value=predio.get('vigencia', datetime.now().year))
+            row += 1
     
     # Ajustar anchos de columna
     for ws in [ws_r1, ws_r2]:
