@@ -1242,9 +1242,9 @@ async def export_petition_pdf(petition_id: str, current_user: dict = Depends(get
     # Get user data
     user = await db.users.find_one({"id": petition['user_id']}, {"_id": 0, "password": 0})
     
-    # Generate PDF with digital signature if coordinator, admin, or atencion_usuario
+    # Generate PDF with digital signature if coordinator or admin
     signed_by = None
-    if current_user['role'] in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR, UserRole.ATENCION_USUARIO]:
+    if current_user['role'] in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
         signed_by = f"{current_user['full_name']} - {current_user['role'].replace('_', ' ').title()}"
     
     pdf_bytes = generate_petition_pdf(petition, user, signed_by)
