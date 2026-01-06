@@ -112,23 +112,20 @@ export default function PredioMap({
     return `${Math.round(area)} m²`;
   };
 
+  // Estilo de polígonos - Cyan/Blanco para visibilidad en satélite
   const geoJSONStyle = {
-    color: '#047857',
+    color: '#00FFFF', // Cyan brillante para el borde
     weight: 3,
-    opacity: 0.9,
-    fillColor: '#10b981',
-    fillOpacity: 0.3
+    opacity: 1,
+    fillColor: '#FFFFFF', // Blanco para el relleno
+    fillOpacity: 0.25
   };
 
-  const tileLayer = showSatellite 
-    ? {
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        attribution: '&copy; Esri'
-      }
-    : {
-        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        attribution: '&copy; OpenStreetMap contributors'
-      };
+  // Satélite por defecto
+  const tileLayer = {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri'
+  };
 
   if (loading) {
     return (
