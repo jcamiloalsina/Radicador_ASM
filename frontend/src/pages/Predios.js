@@ -439,6 +439,13 @@ export default function Predios() {
           <p className="text-sm text-slate-500">Sistema de información catastral - Código Nacional Catastral</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          {/* Botón de cambios pendientes - solo para coordinadores */}
+          {user && ['coordinador', 'administrador'].includes(user.role) && cambiosStats?.total_pendientes > 0 && (
+            <Button variant="outline" onClick={fetchCambiosPendientes} className="border-amber-300 bg-amber-50 hover:bg-amber-100">
+              <Bell className="w-4 h-4 mr-2 text-amber-600" />
+              Pendientes ({cambiosStats.total_pendientes})
+            </Button>
+          )}
           <Button variant="outline" onClick={fetchPrediosEliminados}>
             <AlertTriangle className="w-4 h-4 mr-2" />
             Eliminados
@@ -453,6 +460,17 @@ export default function Predios() {
           </Button>
         </div>
       </div>
+
+      {/* Info banner para gestores */}
+      {necesitaAprobacion && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+          <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-blue-800">Sistema de Aprobación Activo</p>
+            <p className="text-xs text-blue-600">Los cambios que realice (crear, modificar, eliminar) quedarán pendientes hasta que un Coordinador los apruebe.</p>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <Card className="border-slate-200">
