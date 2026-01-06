@@ -422,6 +422,17 @@ export default function Predios() {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value || 0);
   };
 
+  // Formato de área: X ha X.XXX m²
+  const formatAreaHectareas = (m2) => {
+    if (!m2 || m2 === 0) return '0 m²';
+    const hectareas = Math.floor(m2 / 10000);
+    const metros = m2 % 10000;
+    if (hectareas > 0) {
+      return `${hectareas} ha ${metros.toLocaleString('es-CO')} m²`;
+    }
+    return `${m2.toLocaleString('es-CO')} m²`;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
