@@ -494,12 +494,46 @@ export default function Predios() {
           
           <Tabs defaultValue="ubicacion" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="ubicacion">Ubicación Código Nacional Catastral</TabsTrigger>
+              <TabsTrigger value="ubicacion">Código Nacional Catastral</TabsTrigger>
               <TabsTrigger value="propietario">Propietario (R1)</TabsTrigger>
               <TabsTrigger value="fisico">Físico (R2)</TabsTrigger>
             </TabsList>
             
             <TabsContent value="ubicacion" className="space-y-4 mt-4">
+              {/* Info del terreno disponible */}
+              {terrenoInfo && (
+                <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-emerald-800 mb-2 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Información de Terreno para esta Manzana
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div>
+                      <span className="text-slate-500">Predios activos:</span>
+                      <p className="font-bold text-emerald-700">{terrenoInfo.total_activos}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Último terreno usado:</span>
+                      <p className="font-bold text-slate-800">{terrenoInfo.ultimo_terreno}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Próximo terreno:</span>
+                      <p className="font-bold text-emerald-700 text-lg">{terrenoInfo.siguiente_terreno}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Eliminados (no reutilizables):</span>
+                      <p className="font-bold text-red-600">{terrenoInfo.terrenos_no_reutilizables}</p>
+                    </div>
+                  </div>
+                  {terrenoInfo.terrenos_eliminados?.length > 0 && (
+                    <div className="mt-2 text-xs text-red-600">
+                      <span className="font-medium">Terrenos eliminados: </span>
+                      {terrenoInfo.terrenos_eliminados.map(t => t.numero).join(', ')}
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Municipio *</Label>
@@ -513,11 +547,6 @@ export default function Predios() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {formData.municipio && catalogos?.codigo_nacional?.[formData.municipio] && (
-                    <p className="text-xs text-slate-500 mt-1">
-                      Código Código Nacional Catastral: {catalogos.codigo_nacional[formData.municipio].departamento}-{catalogos.codigo_nacional[formData.municipio].municipio}
-                    </p>
-                  )}
                 </div>
                 <div>
                   <Label>Zona (00=Rural, 01+=Urbano) *</Label>
