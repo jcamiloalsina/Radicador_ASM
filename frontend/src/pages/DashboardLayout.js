@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { Button } from '../components/ui/button';
-import { LogOut, FileText, Activity, Users, Menu, X, UserCog, BarChart3, PieChart } from 'lucide-react';
+import { LogOut, FileText, Activity, Users, Menu, X, UserCog, BarChart3, PieChart, MapPin } from 'lucide-react';
 import { useState } from 'react';
 
 export default function DashboardLayout() {
@@ -44,6 +44,7 @@ export default function DashboardLayout() {
 
   if (user.role !== 'ciudadano') {
     menuItems.push({ path: '/dashboard/todas-peticiones', label: 'Todas las Peticiones', icon: Users });
+    menuItems.push({ path: '/dashboard/predios', label: 'Gestión de Predios', icon: MapPin });
   }
 
   if (['administrador', 'coordinador', 'atencion_usuario'].includes(user.role)) {
