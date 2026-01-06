@@ -1,0 +1,161 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "Gestoría Catastral Pro",
+      "tone": "Professional, Authoritative, Efficient, Transparent",
+      "archetype": "Swiss & High-Contrast (Modified for Corporate Green)",
+      "principles": [
+        "Clarity over Decoration: Data must be legible instantly.",
+        "Green as Authority: Use Emerald tones to convey trust, not just nature.",
+        "Paper-Like Realism: Surfaces should feel like high-quality stationery (subtle borders, soft shadows).",
+        "Feedback is King: Every action (submit, update) needs immediate visual confirmation."
+      ]
+    },
+    "typography": {
+      "font_family": {
+        "headings": "Outfit, sans-serif",
+        "body": "Public Sans, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "scale": {
+        "h1": "text-4xl font-bold tracking-tight lg:text-5xl",
+        "h2": "text-3xl font-semibold tracking-tight",
+        "h3": "text-2xl font-semibold tracking-tight",
+        "p": "leading-7 [&:not(:first-child)]:mt-6",
+        "small": "text-sm font-medium leading-none"
+      },
+      "imports": [
+        "@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Public+Sans:wght@300;400;500;600&display=swap');"
+      ]
+    },
+    "colors": {
+      "palette": {
+        "primary": {
+          "DEFAULT": "#047857",
+          "foreground": "#FFFFFF",
+          "hover": "#065F46",
+          "active": "#064E3B"
+        },
+        "secondary": {
+          "DEFAULT": "#F1F5F9",
+          "foreground": "#0F172A"
+        },
+        "accent": {
+          "DEFAULT": "#10B981",
+          "foreground": "#FFFFFF"
+        },
+        "background": "#F8FAFC",
+        "surface": "#FFFFFF",
+        "border": "#E2E8F0",
+        "muted": "#64748B",
+        "status": {
+          "success": "#10B981",
+          "warning": "#F59E0B",
+          "error": "#EF4444",
+          "info": "#3B82F6"
+        }
+      },
+      "gradients": {
+        "brand": "bg-gradient-to-br from-emerald-800 to-emerald-600",
+        "surface": "bg-gradient-to-b from-white to-slate-50"
+      }
+    },
+    "spacing": {
+      "container_padding": "p-6 md:p-8 lg:p-12",
+      "section_gap": "gap-8",
+      "component_gap": "gap-4"
+    },
+    "radius": {
+      "default": "0.3rem",
+      "button": "0.3rem",
+      "card": "0.5rem"
+    },
+    "shadows": {
+      "card": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+      "dropdown": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05)"
+    }
+  },
+  "assets": {
+    "images": {
+      "auth_background": {
+        "url": "https://images.pexels.com/photos/8408699/pexels-photo-8408699.jpeg",
+        "alt": "Modern Green Glass Corporate Building",
+        "usage": "Split screen layout for Login/Register pages. Left side cover."
+      },
+      "dashboard_texture": {
+        "url": "https://images.pexels.com/photos/34268927/pexels-photo-34268927.jpeg",
+        "alt": "Abstract Green Topographic Lines",
+        "usage": "Subtle background overlay for the sidebar or header area (low opacity)."
+      },
+      "placeholder_logo": {
+        "url": "https://via.placeholder.com/150x50?text=GESTORIA+CATASTRAL",
+        "alt": "Logo Placeholder",
+        "usage": "Header and Sidebar logo until user uploads corporate image."
+      }
+    },
+    "icons": {
+      "library": "lucide-react",
+      "preferred_set": ["FileText", "Users", "Activity", "CheckCircle", "XCircle", "Clock", "Search", "Settings", "LogOut", "Menu"]
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm rounded-[0.3rem] font-medium transition-all active:scale-95",
+      "secondary": "bg-white border border-slate-200 hover:bg-slate-50 text-slate-900 shadow-sm rounded-[0.3rem] font-medium",
+      "ghost": "hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800"
+    },
+    "cards": {
+      "base": "bg-white border border-slate-200 shadow-sm rounded-lg p-6",
+      "interactive": "hover:shadow-md transition-shadow cursor-pointer border-slate-200 hover:border-emerald-200"
+    },
+    "inputs": {
+      "base": "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    },
+    "badges": {
+      "pending": "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100",
+      "approved": "bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-100",
+      "rejected": "bg-red-100 text-red-800 border-red-200 hover:bg-red-100"
+    }
+  },
+  "layouts": {
+    "auth": {
+      "structure": "grid grid-cols-1 lg:grid-cols-2 h-screen w-full",
+      "left_panel": "hidden lg:flex flex-col justify-between bg-emerald-900 p-12 text-white relative overflow-hidden",
+      "right_panel": "flex items-center justify-center p-8 bg-slate-50"
+    },
+    "dashboard": {
+      "structure": "flex h-screen overflow-hidden bg-slate-50",
+      "sidebar": "hidden md:flex w-64 flex-col bg-emerald-900 text-white border-r border-emerald-800",
+      "main": "flex-1 flex flex-col overflow-y-auto",
+      "header": "h-16 border-b border-slate-200 bg-white flex items-center px-6 justify-between"
+    }
+  },
+  "instructions_to_main_agent": {
+    "general": [
+      "Use 'Outfit' for all Headings (h1-h3) and 'Public Sans' for body text.",
+      "Ensure all interactive elements have `data-testid` attributes.",
+      "Use the defined Emerald Green palette strictly. Do not use default Tailwind blues.",
+      "Implement the 'Auth' layout with the provided building image on the left.",
+      "For the 'Radicación' form, use a multi-step or clear single-column layout to avoid overwhelming the user.",
+      "The 'Coordinator' dashboard should have a dense table view for managing many requests.",
+      "The 'Citizen' dashboard should focus on big status cards and a clear 'New Request' button."
+    ],
+    "files_to_modify": [
+      "/app/frontend/src/index.css (Add font imports and override CSS variables)",
+      "/app/frontend/tailwind.config.js (Extend colors with Emerald palette)",
+      "/app/frontend/src/App.jsx (Setup routes and layouts)"
+    ],
+    "accessibility": [
+      "Ensure contrast ratio of 4.5:1 for normal text.",
+      "Focus rings must be visible (use ring-emerald-600).",
+      "All images must have alt text."
+    ]
+  },
+  "universal_guidelines": [
+    "Do not use gradients for text.",
+    "Avoid 'Inter' font for headings.",
+    "Use 'sonner' for toast notifications.",
+    "Components must use named exports.",
+    "Pages must use default exports."
+  ]
+}
