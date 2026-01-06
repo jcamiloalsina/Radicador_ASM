@@ -285,7 +285,7 @@ export default function Predios() {
   const handleUpdate = async () => {
     try {
       const token = localStorage.getItem('token');
-      const payload = {
+      const updateData = {
         nombre_propietario: formData.nombre_propietario,
         tipo_documento: formData.tipo_documento,
         numero_documento: formData.numero_documento,
@@ -301,13 +301,25 @@ export default function Predios() {
         matricula_inmobiliaria: formData.matricula_inmobiliaria || null
       };
       
-      await axios.patch(`${API}/predios/${selectedPredio.id}`, payload, {
+      // Usar sistema de aprobación
+      const res = await axios.post(`${API}/predios/cambios/proponer`, {
+        predio_id: selectedPredio.id,
+        tipo_cambio: 'modificacion',
+        datos_propuestos: updateData,
+        justificacion: 'Modificación de datos del predio'
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      toast.success('Predio actualizado exitosamente');
+      if (res.data.requiere_aprobacion) {
+        toast.success('Modificación propuesta. Pendiente de aprobación del coordinador.');
+      } else {
+        toast.success('Predio actualizado exitosamente');
+      }
+      
       setShowEditDialog(false);
       fetchPredios();
+      fetchCambiosStats();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al actualizar predio');
     }
@@ -318,11 +330,25 @@ export default function Predios() {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${API}/predios/${predio.id}`, {
+      
+      // Usar sistema de aprobación
+      const res = await axios.post(`${API}/predios/cambios/proponer`, {
+        predio_id: predio.id,
+        tipo_cambio: 'eliminacion',
+        datos_propuestos: { codigo_homologado: predio.codigo_homologado, nombre_propietario: predio.nombre_propietario },
+        justificacion: 'Eliminación de predio'
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success('Predio eliminado exitosamente');
+      
+      if (res.data.requiere_aprobacion) {
+        toast.success('Eliminación propuesta. Pendiente de aprobación del coordinador.');
+      } else {
+        toast.success('Predio eliminado exitosamente');
+      }
+      
       fetchPredios();
+      fetchCambiosStats();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al eliminar predio');
     }
