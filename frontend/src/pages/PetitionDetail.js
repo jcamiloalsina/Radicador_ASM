@@ -7,9 +7,10 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { ArrowLeft, Save, Mail, Phone, MapPin, FileText, Calendar } from 'lucide-react';
+import { ArrowLeft, Save, Mail, Phone, MapPin, FileText, Calendar, Upload, Download, UserPlus, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -22,18 +23,18 @@ export default function PetitionDetail() {
   const [petition, setPetition] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [editData, setEditData] = useState({
-    estado: '',
-    notas: '',
-    nombre_completo: '',
-    correo: '',
-    telefono: '',
-    tipo_tramite: '',
-    municipio: ''
-  });
+  const [editData, setEditData] = useState({});
+  const [files, setFiles] = useState([]);
+  const [gestores, setGestores] = useState([]);
+  const [selectedGestor, setSelectedGestor] = useState('');
+  const [showGestorDialog, setShowGestorDialog] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
 
   useEffect(() => {
     fetchPetition();
+    if (user?.role !== 'ciudadano') {
+      fetchGestores();
+    }
   }, [id]);
 
   const fetchPetition = async () => {
@@ -57,9 +58,18 @@ export default function PetitionDetail() {
     }
   };
 
+  const fetchGestores = async () => {
+    try {
+      const response = await axios.get(`${API}/gestores`);
+      setGestores(response.data);
+    } catch (error) {
+      console.error('Error fetching gestores:', error);
+    }
+  };
+
   const handleUpdate = async () => {
     try {
-      const updatePayload = user.role === 'coordinador' ? editData : {
+      const updatePayload = user.role === 'coordinador' || user.role === 'administrador' ? editData : {
         estado: editData.estado,
         notas: editData.notas
       };
@@ -72,14 +82,62 @@ export default function PetitionDetail() {
     }
   };
 
+  const handleFileUpload = async () => {
+    if (files.length === 0) {
+      toast.error('Selecciona al menos un archivo');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      await axios.post(`${API}/petitions/${id}/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      toast.success('Archivos subidos exitosamente');
+      setFiles([]);
+      setShowUploadDialog(false);
+      fetchPetition();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al subir archivos');
+    }
+  };
+
+  const handleAssignGestor = async () => {
+    if (!selectedGestor) {
+      toast.error('Selecciona un gestor');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/petitions/${id}/assign-gestor`, {
+        petition_id: id,
+        gestor_id: selectedGestor,
+        is_auxiliar: false
+      });
+      toast.success('Gestor asignado exitosamente');
+      setShowGestorDialog(false);
+      fetchPetition();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al asignar gestor');
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
-      pendiente: { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-      en_revision: { label: 'En Revisión', className: 'bg-blue-100 text-blue-800 border-blue-200' },
-      aprobada: { label: 'Aprobada', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-      rechazada: { label: 'Rechazada', className: 'bg-red-100 text-red-800 border-red-200' },
+      radicado: { label: 'Radicado', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+      asignado: { label: 'Asignado', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+      rechazado: { label: 'Rechazado', className: 'bg-red-100 text-red-800 border-red-200' },
+      revision: { label: 'En Revisión', className: 'bg-purple-100 text-purple-800 border-purple-200' },
+      devuelto: { label: 'Devuelto', className: 'bg-orange-100 text-orange-800 border-orange-200' },
+      finalizado: { label: 'Finalizado', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
     };
-    const config = statusConfig[status] || statusConfig.pendiente;
+    const config = statusConfig[status] || statusConfig.radicado;
     return <Badge className={config.className} data-testid="petition-status-badge">{config.label}</Badge>;
   };
 
@@ -93,6 +151,10 @@ export default function PetitionDetail() {
     });
   };
 
+  const canEdit = user?.role !== 'ciudadano';
+  const canEditAllFields = ['coordinador', 'administrador'].includes(user?.role);
+  const canAssignGestor = ['atencion_usuario', 'gestor', 'coordinador', 'administrador'].includes(user?.role);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -104,9 +166,6 @@ export default function PetitionDetail() {
   if (!petition) {
     return null;
   }
-
-  const canEdit = user?.role !== 'ciudadano';
-  const canEditAllFields = user?.role === 'coordinador';
 
   return (
     <div className="max-w-4xl mx-auto space-y-6" data-testid="petition-detail-page">
@@ -125,8 +184,8 @@ export default function PetitionDetail() {
         <CardHeader className="bg-gradient-to-br from-emerald-800 to-emerald-600 text-white rounded-t-lg">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <CardTitle className="text-2xl font-outfit" data-testid="petition-title">
-                Petición #{petition.id.substring(0, 8)}
+              <CardTitle className="text-2xl font-outfit" data-testid="petition-radicado">
+                {petition.radicado}
               </CardTitle>
               <p className="text-emerald-100 text-sm mt-1">Detalles completos de la petición</p>
             </div>
@@ -135,21 +194,76 @@ export default function PetitionDetail() {
         </CardHeader>
       </Card>
 
+      {/* Actions */}
+      {canEdit && !editing && (
+        <div className="flex gap-3 flex-wrap">
+          <Button
+            onClick={() => setEditing(true)}
+            className="bg-emerald-700 hover:bg-emerald-800 text-white"
+            data-testid="edit-button"
+          >
+            Editar
+          </Button>
+          {canAssignGestor && (
+            <Dialog open={showGestorDialog} onOpenChange={setShowGestorDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" data-testid="assign-gestor-button">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Asignar Gestor
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Asignar Gestor</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <Select value={selectedGestor} onValueChange={setSelectedGestor}>
+                    <SelectTrigger data-testid="gestor-select">
+                      <SelectValue placeholder="Selecciona un gestor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {gestores.map((gestor) => (
+                        <SelectItem key={gestor.id} value={gestor.id}>
+                          {gestor.full_name} ({gestor.role === 'gestor' ? 'Gestor' : 'Gestor Auxiliar'})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleAssignGestor} className="w-full" data-testid="confirm-assign-button">
+                    Asignar
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      )}
+
+      {/* Gestores Asignados */}
+      {petition.gestores_asignados && petition.gestores_asignados.length > 0 && (
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-slate-900 font-outfit">Gestores Asignados</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {petition.gestores_asignados.map((gestorId, idx) => {
+                const gestor = gestores.find(g => g.id === gestorId);
+                return gestor ? (
+                  <Badge key={idx} className="bg-blue-100 text-blue-800" data-testid={`gestor-badge-${idx}`}>
+                    {gestor.full_name}
+                  </Badge>
+                ) : null;
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Information Card */}
       <Card className="border-slate-200">
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-slate-900 font-outfit">Información del Solicitante</CardTitle>
-            {canEdit && !editing && (
-              <Button
-                onClick={() => setEditing(true)}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white"
-                data-testid="edit-button"
-              >
-                Editar
-              </Button>
-            )}
-          </div>
+          <CardTitle className="text-slate-900 font-outfit">Información del Solicitante</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {editing ? (
@@ -211,10 +325,12 @@ export default function PetitionDetail() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pendiente">Pendiente</SelectItem>
-                    <SelectItem value="en_revision">En Revisión</SelectItem>
-                    <SelectItem value="aprobada">Aprobada</SelectItem>
-                    <SelectItem value="rechazada">Rechazada</SelectItem>
+                    <SelectItem value="radicado">Radicado</SelectItem>
+                    <SelectItem value="asignado">Asignado</SelectItem>
+                    <SelectItem value="rechazado">Rechazado</SelectItem>
+                    <SelectItem value="revision">En Revisión</SelectItem>
+                    <SelectItem value="devuelto">Devuelto</SelectItem>
+                    <SelectItem value="finalizado">Finalizado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -327,6 +443,64 @@ export default function PetitionDetail() {
                 </div>
               </div>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Files Card */}
+      <Card className="border-slate-200">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-slate-900 font-outfit">Documentos Adjuntos</CardTitle>
+            {petition.user_id === user?.id && (
+              <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" data-testid="upload-more-button">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Subir Más
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Subir Archivos</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <Input
+                      type="file"
+                      multiple
+                      onChange={(e) => setFiles(Array.from(e.target.files))}
+                      data-testid="upload-files-input"
+                    />
+                    {files.length > 0 && (
+                      <div className="space-y-2">
+                        {files.map((file, idx) => (
+                          <div key={idx} className="text-sm text-slate-700">{file.name}</div>
+                        ))}
+                      </div>
+                    )}
+                    <Button onClick={handleFileUpload} className="w-full" data-testid="confirm-upload-button">
+                      Subir Archivos
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {petition.archivos && petition.archivos.length > 0 ? (
+            <div className="space-y-2">
+              {petition.archivos.map((archivo, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-md" data-testid={`file-${idx}`}>
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm text-slate-700">{archivo.original_name}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No hay archivos adjuntos</p>
           )}
         </CardContent>
       </Card>
