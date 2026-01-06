@@ -383,34 +383,6 @@ export default function PetitionDetail() {
               {canEditAllFields && (
                 <>
                   <div>
-                    <Label htmlFor="nombre_completo">Nombre Completo</Label>
-                    <Input
-                      id="nombre_completo"
-                      value={editData.nombre_completo}
-                      onChange={(e) => setEditData({ ...editData, nombre_completo: e.target.value })}
-                      data-testid="edit-nombre"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="correo">Correo Electrónico</Label>
-                    <Input
-                      id="correo"
-                      type="email"
-                      value={editData.correo}
-                      onChange={(e) => setEditData({ ...editData, correo: e.target.value })}
-                      data-testid="edit-correo"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="telefono">Teléfono</Label>
-                    <Input
-                      id="telefono"
-                      value={editData.telefono}
-                      onChange={(e) => setEditData({ ...editData, telefono: e.target.value })}
-                      data-testid="edit-telefono"
-                    />
-                  </div>
-                  <div>
                     <Label htmlFor="tipo_tramite">Tipo de Trámite</Label>
                     <Input
                       id="tipo_tramite"
