@@ -1096,20 +1096,6 @@ export default function Predios() {
                     </CardContent>
                   </Card>
                 ))}
-                              const comentario = window.prompt('Motivo del rechazo:');
-                              if (comentario !== null) {
-                                handleAprobarRechazar(cambio.id, false, comentario);
-                              }
-                            }}
-                          >
-                            <XCircle className="w-4 h-4 mr-1" />
-                            Rechazar
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
               </div>
             )}
           </div>
