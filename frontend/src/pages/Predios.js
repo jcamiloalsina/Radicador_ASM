@@ -777,6 +777,74 @@ export default function Predios() {
         </DialogContent>
       </Dialog>
 
+      {/* Deleted Predios Dialog */}
+      <Dialog open={showDeletedDialog} onOpenChange={setShowDeletedDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-outfit flex items-center gap-2 text-red-700">
+              <AlertTriangle className="w-5 h-5" />
+              Predios Eliminados
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500">
+              Los siguientes predios han sido eliminados del sistema. Sus números de terreno no pueden ser reutilizados.
+            </p>
+            
+            {prediosEliminados.length === 0 ? (
+              <div className="py-8 text-center text-slate-500">
+                No hay predios eliminados
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-red-50">
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Código</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Propietario</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Municipio</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Terreno</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Fecha Eliminación</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-700">Eliminado Por</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {prediosEliminados.map((predio) => (
+                      <tr key={predio.id} className="border-b border-slate-100 hover:bg-red-50/50">
+                        <td className="py-3 px-4">
+                          <p className="font-medium text-slate-900">{predio.codigo_homologado}</p>
+                        </td>
+                        <td className="py-3 px-4 text-slate-700">{predio.nombre_propietario}</td>
+                        <td className="py-3 px-4 text-slate-700">{predio.municipio}</td>
+                        <td className="py-3 px-4">
+                          <Badge variant="destructive">{predio.terreno}</Badge>
+                        </td>
+                        <td className="py-3 px-4 text-slate-500">
+                          {predio.deleted_at ? new Date(predio.deleted_at).toLocaleDateString('es-CO') : 'N/A'}
+                        </td>
+                        <td className="py-3 px-4 text-slate-500">{predio.deleted_by_name || 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg text-sm">
+              <p className="font-semibold text-amber-800">Importante:</p>
+              <p className="text-amber-700">
+                Los números de terreno de predios eliminados no pueden ser reutilizados para mantener la integridad del sistema catastral.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={() => setShowDeletedDialog(false)}>Cerrar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Detail Dialog */}
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
