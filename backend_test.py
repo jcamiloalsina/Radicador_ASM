@@ -726,6 +726,9 @@ def main():
     # Test 4: File Upload in Documents Section
     tester.test_file_upload_in_documents_section()
     
+    # Test 5: Citizen File Upload and ZIP Download
+    tester.test_citizen_file_upload_and_zip_download()
+    
     # Test file operations with the specific petition mentioned
     print("\n📁 Testing File Upload and Download Operations...")
     
