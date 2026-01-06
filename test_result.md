@@ -121,6 +121,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Endpoint /petitions/{id}/upload permite subir archivos con metadata de quien lo sube (role, name, date)"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: File upload by admin successful. Metadata includes uploaded_by_role='administrador', uploaded_by_name='Administrador Asomunicipios', upload_date. Tested with petition RASMCG-0006-06-01-2026"
 
   - task: "Descarga ZIP de archivos del ciudadano"
     implemented: true
