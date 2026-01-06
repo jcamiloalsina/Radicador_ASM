@@ -274,6 +274,117 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     }
 
 
+# ===== PASSWORD RECOVERY =====
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest):
+    """Send password reset email"""
+    user = await db.users.find_one({"email": request.email}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No existe una cuenta con ese correo")
+    
+    # Check if SMTP is configured
+    if not SMTP_USER or not SMTP_PASSWORD:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="El servicio de correo no está configurado")
+    
+    # Generate reset token (valid for 1 hour)
+    reset_token = str(uuid.uuid4())
+    expiration = datetime.now(timezone.utc) + timedelta(hours=1)
+    
+    # Store reset token in database
+    await db.password_resets.delete_many({"email": request.email})  # Remove old tokens
+    await db.password_resets.insert_one({
+        "email": request.email,
+        "token": reset_token,
+        "expires_at": expiration.isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Get frontend URL from environment or use default
+    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+    reset_link = f"{frontend_url}/reset-password?token={reset_token}"
+    
+    # Send email
+    email_body = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #047857; padding: 20px; border-radius: 8px 8px 0 0;">
+            <h1 style="color: white; margin: 0;">ASOMUNICIPIOS</h1>
+            <p style="color: #d1fae5; margin: 5px 0 0 0;">Sistema de Gestión Catastral</p>
+        </div>
+        <div style="background-color: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px;">
+            <h2 style="color: #1e293b; margin-top: 0;">Recuperación de Contraseña</h2>
+            <p style="color: #475569;">Hola <strong>{user['full_name']}</strong>,</p>
+            <p style="color: #475569;">Hemos recibido una solicitud para restablecer la contraseña de tu cuenta.</p>
+            <p style="color: #475569;">Haz clic en el siguiente botón para crear una nueva contraseña:</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{reset_link}" style="background-color: #047857; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">Restablecer Contraseña</a>
+            </div>
+            <p style="color: #64748b; font-size: 14px;">Este enlace expirará en 1 hora.</p>
+            <p style="color: #64748b; font-size: 14px;">Si no solicitaste este cambio, puedes ignorar este correo.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+            <p style="color: #94a3b8; font-size: 12px; margin: 0;">Este es un mensaje automático, por favor no responda a este correo.</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    try:
+        await send_email(request.email, "Recuperación de Contraseña - ASOMUNICIPIOS", email_body)
+    except Exception as e:
+        logging.error(f"Failed to send reset email: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al enviar el correo")
+    
+    return {"message": "Se ha enviado un enlace de recuperación a tu correo"}
+
+@api_router.get("/auth/validate-reset-token")
+async def validate_reset_token(token: str):
+    """Validate password reset token"""
+    reset_record = await db.password_resets.find_one({"token": token}, {"_id": 0})
+    
+    if not reset_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Token inválido")
+    
+    expires_at = datetime.fromisoformat(reset_record['expires_at'])
+    if datetime.now(timezone.utc) > expires_at:
+        await db.password_resets.delete_one({"token": token})
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El token ha expirado")
+    
+    return {"valid": True}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(request: ResetPasswordRequest):
+    """Reset password with token"""
+    reset_record = await db.password_resets.find_one({"token": request.token}, {"_id": 0})
+    
+    if not reset_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Token inválido")
+    
+    expires_at = datetime.fromisoformat(reset_record['expires_at'])
+    if datetime.now(timezone.utc) > expires_at:
+        await db.password_resets.delete_one({"token": request.token})
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El token ha expirado")
+    
+    # Update password
+    new_hashed_password = hash_password(request.new_password)
+    await db.users.update_one(
+        {"email": reset_record['email']},
+        {"$set": {"password": new_hashed_password}}
+    )
+    
+    # Delete used token
+    await db.password_resets.delete_one({"token": request.token})
+    
+    return {"message": "Contraseña actualizada exitosamente"}
+
+
 # ===== USER MANAGEMENT ROUTES =====
 
 @api_router.get("/users", response_model=List[User])
