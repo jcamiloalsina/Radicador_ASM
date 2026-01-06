@@ -16,6 +16,7 @@ import AllPetitions from "./pages/AllPetitions";
 import UserManagement from "./pages/UserManagement";
 import EstadisticasUnificadas from "./pages/EstadisticasUnificadas";
 import Predios from "./pages/Predios";
+import VisorPredios from "./pages/VisorPredios";
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
             <Route path="usuarios" element={<UserManagement />} />
             <Route path="estadisticas" element={<EstadisticasUnificadas />} />
             <Route path="predios" element={<Predios />} />
+            <Route path="visor-predios" element={<VisorPredios />} />
           </Route>
         </Routes>
       </BrowserRouter>
