@@ -1836,6 +1836,269 @@ async def get_predios(
         "predios": predios
     }
 
+@api_router.get("/predios/stats/summary")
+async def get_predios_stats(current_user: dict = Depends(get_current_user)):
+    """Obtiene estadísticas de predios"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    total = await db.predios.count_documents({"deleted": {"$ne": True}})
+    
+    # Por municipio
+    pipeline_municipio = [
+        {"$match": {"deleted": {"$ne": True}}},
+        {"$group": {"_id": "$municipio", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    by_municipio = await db.predios.aggregate(pipeline_municipio).to_list(20)
+    
+    # Por destino económico
+    pipeline_destino = [
+        {"$match": {"deleted": {"$ne": True}}},
+        {"$group": {"_id": "$destino_economico", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    by_destino = await db.predios.aggregate(pipeline_destino).to_list(20)
+    
+    # Total avalúo
+    pipeline_avaluo = [
+        {"$match": {"deleted": {"$ne": True}}},
+        {"$group": {"_id": None, "total_avaluo": {"$sum": "$avaluo"}, "total_area": {"$sum": "$area_terreno"}}}
+    ]
+    totals = await db.predios.aggregate(pipeline_avaluo).to_list(1)
+    
+    return {
+        "total_predios": total,
+        "total_avaluo": totals[0]["total_avaluo"] if totals else 0,
+        "total_area_terreno": totals[0]["total_area"] if totals else 0,
+        "by_municipio": [{"municipio": r["_id"], "count": r["count"]} for r in by_municipio],
+        "by_destino": [{"destino": r["_id"], "nombre": DESTINO_ECONOMICO.get(r["_id"], "Desconocido"), "count": r["count"]} for r in by_destino]
+    }
+
+@api_router.get("/predios/eliminados")
+async def get_predios_eliminados(
+    skip: int = 0,
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista todos los predios eliminados (staff only)"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    query = {"deleted": True}
+    
+    total = await db.predios.count_documents(query)
+    predios = await db.predios.find(query, {"_id": 0}).sort("deleted_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    return {
+        "total": total,
+        "predios": predios
+    }
+
+@api_router.get("/predios/export-excel")
+async def export_predios_excel(
+    municipio: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Exporta predios a Excel en formato compatible con el original"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    # Query
+    query = {"deleted": {"$ne": True}}
+    if municipio:
+        query["municipio"] = municipio
+    
+    predios = await db.predios.find(query, {"_id": 0}).to_list(50000)
+    
+    # Crear workbook
+    wb = Workbook()
+    
+    # === HOJA R1 ===
+    ws_r1 = wb.active
+    ws_r1.title = "REGISTRO_R1"
+    
+    # Headers R1
+    headers_r1 = [
+        "DEPARTAMENTO", "MUNICIPIO", "NUMERO_DEL_PREDIO", "CODIGO_PREDIAL_NACIONAL", 
+        "CODIGO_HOMOLOGADO", "TIPO_DE_REGISTRO", "NUMERO_DE_ORDEN", "TOTAL_REGISTROS",
+        "NOMBRE", "ESTADO_CIVIL", "TIPO_DOCUMENTO", "NUMERO_DOCUMENTO", "DIRECCION",
+        "COMUNA", "DESTINO_ECONOMICO", "AREA_TERRENO", "AREA_CONSTRUIDA", "AVALUO",
+        "VIGENCIA", "TIPO_MUTACIÓN", "NO. RESOLUCIÓN", "FECHA_RESOLUCIÓN"
+    ]
+    
+    # Estilos
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="047857", end_color="047857", fill_type="solid")
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Escribir headers
+    for col, header in enumerate(headers_r1, 1):
+        cell = ws_r1.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = thin_border
+        cell.alignment = Alignment(horizontal='center')
+    
+    # Escribir datos R1
+    row = 2
+    for predio in predios:
+        r1_list = predio.get('r1_info', [])
+        if not r1_list:
+            r1_list = [{}]
+        
+        for idx, r1 in enumerate(r1_list, 1):
+            ws_r1.cell(row=row, column=1, value=predio.get('departamento', ''))
+            ws_r1.cell(row=row, column=2, value=predio.get('municipio', ''))
+            ws_r1.cell(row=row, column=3, value=predio.get('terreno', ''))
+            ws_r1.cell(row=row, column=4, value=predio.get('codigo_predial_nacional', ''))
+            ws_r1.cell(row=row, column=5, value=predio.get('codigo_homologado', ''))
+            ws_r1.cell(row=row, column=6, value='1')  # Tipo registro
+            ws_r1.cell(row=row, column=7, value=str(idx))  # Número de orden
+            ws_r1.cell(row=row, column=8, value=str(len(r1_list)))  # Total registros
+            ws_r1.cell(row=row, column=9, value=r1.get('nombre_propietario', predio.get('nombre_propietario', '')))
+            ws_r1.cell(row=row, column=10, value=r1.get('estado_civil', ''))
+            ws_r1.cell(row=row, column=11, value=r1.get('tipo_documento', predio.get('tipo_documento', '')))
+            ws_r1.cell(row=row, column=12, value=r1.get('numero_documento', predio.get('numero_documento', '')))
+            ws_r1.cell(row=row, column=13, value=r1.get('direccion', predio.get('direccion', '')))
+            ws_r1.cell(row=row, column=14, value=predio.get('comuna', ''))
+            ws_r1.cell(row=row, column=15, value=predio.get('destino_economico', ''))
+            ws_r1.cell(row=row, column=16, value=predio.get('area_terreno', 0))
+            ws_r1.cell(row=row, column=17, value=predio.get('area_construida', 0))
+            ws_r1.cell(row=row, column=18, value=predio.get('avaluo', 0))
+            ws_r1.cell(row=row, column=19, value=datetime.now().year)
+            ws_r1.cell(row=row, column=20, value=predio.get('tipo_mutacion', ''))
+            ws_r1.cell(row=row, column=21, value=predio.get('numero_resolucion', ''))
+            ws_r1.cell(row=row, column=22, value=predio.get('fecha_resolucion', ''))
+            row += 1
+    
+    # === HOJA R2 ===
+    ws_r2 = wb.create_sheet(title="REGISTRO_R2")
+    
+    headers_r2 = [
+        "DEPARTAMENTO", "MUNICIPIO", "NUMERO_DEL_PREDIO", "CODIGO_PREDIAL_NACIONAL",
+        "CODIGO_HOMOLOGADO", "TIPO_DE_REGISTRO", "NUMERO_DE_ORDEN", "TOTAL_REGISTROS",
+        "MATRICULA_INMOBILIARIA", "ZONA_FISICA", "ZONA_ECONOMICA", "AREA_TERRENO",
+        "HABITACIONES", "BANOS", "LOCALES", "PISOS", "PUNTAJE", "AREA_CONSTRUIDA"
+    ]
+    
+    for col, header in enumerate(headers_r2, 1):
+        cell = ws_r2.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = thin_border
+        cell.alignment = Alignment(horizontal='center')
+    
+    row = 2
+    for predio in predios:
+        r2 = predio.get('r2_info', {})
+        if r2:
+            ws_r2.cell(row=row, column=1, value=predio.get('departamento', ''))
+            ws_r2.cell(row=row, column=2, value=predio.get('municipio', ''))
+            ws_r2.cell(row=row, column=3, value=predio.get('terreno', ''))
+            ws_r2.cell(row=row, column=4, value=predio.get('codigo_predial_nacional', ''))
+            ws_r2.cell(row=row, column=5, value=predio.get('codigo_homologado', ''))
+            ws_r2.cell(row=row, column=6, value='2')
+            ws_r2.cell(row=row, column=7, value='1')
+            ws_r2.cell(row=row, column=8, value='1')
+            ws_r2.cell(row=row, column=9, value=r2.get('matricula_inmobiliaria', ''))
+            ws_r2.cell(row=row, column=10, value=r2.get('zona_fisica_1', 0))
+            ws_r2.cell(row=row, column=11, value=r2.get('zona_economica_1', 0))
+            ws_r2.cell(row=row, column=12, value=r2.get('area_terreno_1', 0))
+            ws_r2.cell(row=row, column=13, value=r2.get('habitaciones_1', 0))
+            ws_r2.cell(row=row, column=14, value=r2.get('banos_1', 0))
+            ws_r2.cell(row=row, column=15, value=r2.get('locales_1', 0))
+            ws_r2.cell(row=row, column=16, value=r2.get('pisos_1', 1))
+            ws_r2.cell(row=row, column=17, value=r2.get('puntaje_1', 0))
+            ws_r2.cell(row=row, column=18, value=r2.get('area_construida_1', 0))
+            row += 1
+    
+    # Ajustar anchos de columna
+    for ws in [ws_r1, ws_r2]:
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Guardar en buffer
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    
+    # Generar nombre de archivo
+    fecha = datetime.now().strftime('%Y%m%d')
+    filename = f"Predios_{municipio or 'Todos'}_{fecha}.xlsx"
+    
+    return StreamingResponse(
+        buffer,
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
+
+@api_router.get("/predios/terreno-info/{municipio}")
+async def get_terreno_info(
+    municipio: str,
+    zona: str = "00",
+    sector: str = "01", 
+    manzana_vereda: str = "0000",
+    current_user: dict = Depends(get_current_user)
+):
+    """Obtiene información sobre el siguiente terreno disponible en una manzana"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    # Buscar todos los terrenos en esta manzana (incluyendo eliminados)
+    query = {
+        "municipio": municipio,
+        "zona": zona,
+        "sector": sector,
+        "manzana_vereda": manzana_vereda
+    }
+    
+    predios = await db.predios.find(query, {"_id": 0, "terreno": 1, "terreno_num": 1, "deleted": 1, "codigo_homologado": 1}).to_list(10000)
+    
+    # Clasificar terrenos
+    terrenos_activos = []
+    terrenos_eliminados = []
+    
+    for p in predios:
+        terreno_num = p.get('terreno_num', 0)
+        if p.get('deleted'):
+            terrenos_eliminados.append({
+                "numero": p.get('terreno'),
+                "codigo": p.get('codigo_homologado')
+            })
+        else:
+            terrenos_activos.append(terreno_num)
+    
+    # Encontrar el máximo terreno usado
+    max_terreno = max(terrenos_activos + [t.get('terreno_num', 0) for t in predios], default=0)
+    siguiente_terreno = max_terreno + 1
+    
+    return {
+        "municipio": municipio,
+        "zona": zona,
+        "sector": sector,
+        "manzana_vereda": manzana_vereda,
+        "total_activos": len(terrenos_activos),
+        "ultimo_terreno": str(max_terreno).zfill(4) if max_terreno > 0 else "N/A",
+        "siguiente_terreno": str(siguiente_terreno).zfill(4),
+        "terrenos_eliminados": terrenos_eliminados,
+        "terrenos_no_reutilizables": len(terrenos_eliminados)
+    }
+
 @api_router.get("/predios/{predio_id}")
 async def get_predio(predio_id: str, current_user: dict = Depends(get_current_user)):
     """Obtiene un predio por ID"""
