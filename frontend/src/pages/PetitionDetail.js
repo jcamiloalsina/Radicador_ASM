@@ -536,52 +536,85 @@ export default function PetitionDetail() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-slate-900 font-outfit">Documentos Adjuntos</CardTitle>
-            {petition.user_id === user?.id && (
-              <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" data-testid="upload-more-button">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Subir Más
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Subir Archivos</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <Input
-                      type="file"
-                      multiple
-                      onChange={(e) => setFiles(Array.from(e.target.files))}
-                      data-testid="upload-files-input"
-                    />
-                    {files.length > 0 && (
-                      <div className="space-y-2">
-                        {files.map((file, idx) => (
-                          <div key={idx} className="text-sm text-slate-700">{file.name}</div>
-                        ))}
-                      </div>
-                    )}
-                    <Button onClick={handleFileUpload} className="w-full" data-testid="confirm-upload-button">
-                      Subir Archivos
+            <div className="flex gap-2">
+              {petition.user_id === user?.id && (
+                <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" data-testid="upload-more-button">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Subir Más
                     </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Subir Archivos</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <Input
+                        type="file"
+                        multiple
+                        onChange={(e) => setFiles(Array.from(e.target.files))}
+                        data-testid="upload-files-input"
+                      />
+                      {files.length > 0 && (
+                        <div className="space-y-2">
+                          {files.map((file, idx) => (
+                            <div key={idx} className="text-sm text-slate-700">{file.name}</div>
+                          ))}
+                        </div>
+                      )}
+                      <Button onClick={handleFileUpload} className="w-full" data-testid="confirm-upload-button">
+                        Subir Archivos
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+              {user?.role !== 'ciudadano' && petition.archivos && petition.archivos.some(a => !a.uploaded_by_role || a.uploaded_by_role === 'ciudadano') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const url = `${API}/petitions/${id}/download-zip`;
+                    window.open(url, '_blank');
+                    toast.success('Descargando ZIP...');
+                  }}
+                  data-testid="download-zip-button"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Descargar ZIP (Ciudadano)
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           {petition.archivos && petition.archivos.length > 0 ? (
             <div className="space-y-2">
-              {petition.archivos.map((archivo, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-md" data-testid={`file-${idx}`}>
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm text-slate-700">{archivo.original_name}</span>
+              {petition.archivos.map((archivo, idx) => {
+                const uploadedByRole = archivo.uploaded_by_role || 'ciudadano';
+                const isCitizen = uploadedByRole === 'ciudadano';
+                const badgeColor = isCitizen ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800';
+                const roleLabel = isCitizen ? 'Ciudadano' : 'Personal';
+                
+                return (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-md border border-slate-200" data-testid={`file-${idx}`}>
+                    <div className="flex items-center gap-3 flex-1">
+                      <FileText className="w-4 h-4 text-slate-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-slate-700">{archivo.original_name}</p>
+                        {archivo.uploaded_by_name && (
+                          <p className="text-xs text-slate-500">
+                            Subido por: {archivo.uploaded_by_name}
+                            {archivo.upload_date && ` - ${new Date(archivo.upload_date).toLocaleDateString('es-ES')}`}
+                          </p>
+                        )}
+                      </div>
+                      <Badge className={badgeColor}>{roleLabel}</Badge>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-slate-500">No hay archivos adjuntos</p>
