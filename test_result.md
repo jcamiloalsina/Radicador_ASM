@@ -101,3 +101,126 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  Sistema de gestión catastral para Asomunicipios. Funcionalidades requeridas:
+  1. Personal (coordinador, gestores, atención al usuario) puede cargar archivos en peticiones
+  2. Ciudadanos cargan archivos individuales, personal puede descargar todos como ZIP
+  3. Los campos nombre, correo y teléfono no deben ser editables
+  4. Información sobre espacio de almacenamiento y migración de BD
+
+backend:
+  - task: "Upload de archivos por personal (coordinador, gestor, atencion_usuario)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Endpoint /petitions/{id}/upload permite subir archivos con metadata de quien lo sube (role, name, date)"
+
+  - task: "Descarga ZIP de archivos del ciudadano"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Endpoint /petitions/{id}/download-zip filtra y descarga solo archivos subidos por ciudadanos como ZIP"
+
+  - task: "Modelo Petition corregido para archivos como dict"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Cambiado archivos de List[str] a List[dict] para permitir metadata de archivos"
+
+frontend:
+  - task: "Campos no editables (nombre, correo, telefono) en formulario de edición"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/PetitionDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Campos mostrados como disabled con fondo gris en sección 'Datos del Solicitante (No editables)'"
+
+  - task: "Botón subir archivos para personal"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/PetitionDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Botón 'Subir Archivos' visible para roles no-ciudadano"
+
+  - task: "Botón descargar ZIP archivos ciudadano"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/PetitionDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Botón 'Descargar ZIP (Ciudadano)' visible solo para personal cuando hay archivos del ciudadano"
+
+  - task: "Visualización diferenciada de archivos (Ciudadano vs Personal)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/PetitionDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Archivos muestran badge 'Ciudadano' (azul) o 'Personal' (verde) según quien lo subió"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Upload de archivos por personal"
+    - "Descarga ZIP de archivos del ciudadano"
+    - "Campos no editables en formulario"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      He implementado y verificado las siguientes funcionalidades:
+      1. Personal puede subir archivos (probado con curl y screenshot)
+      2. Descarga ZIP funciona correctamente (probado con curl, devuelve ZIP con archivos del ciudadano)
+      3. Campos nombre, correo, telefono aparecen deshabilitados en formulario de edición (verificado con screenshot)
+      4. Los archivos muestran badge diferenciado (Ciudadano/Personal)
+      
+      Credenciales de prueba:
+      - Admin: catastro@asomunicipios.gov.co / Asm*123*
+      - Ciudadano: ciudadano.prueba@test.com / Test123!
+      
+      Petición de prueba con archivos: RASMCG-0006-06-01-2026
