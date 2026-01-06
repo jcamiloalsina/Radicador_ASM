@@ -1214,11 +1214,11 @@ export default function Predios() {
                       )}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-6">
                     {selectedPredio.r2_registros.map((r2, r2Idx) => (
                       <div key={r2Idx} className={r2Idx > 0 ? 'border-t pt-4' : ''}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Badge variant="outline">Registro {r2Idx + 1}</Badge>
+                        <div className="flex items-center gap-2 mb-4">
+                          <Badge variant="outline" className="bg-emerald-50">Registro {r2Idx + 1}</Badge>
                           {r2.matricula_inmobiliaria && (
                             <span className="text-sm text-slate-600">
                               Matrícula: <strong>{r2.matricula_inmobiliaria}</strong>
@@ -1226,41 +1226,73 @@ export default function Predios() {
                           )}
                         </div>
                         
-                        {/* Zonas del R2 */}
                         {r2.zonas && r2.zonas.length > 0 && (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm border rounded-lg">
-                              <thead>
-                                <tr className="bg-slate-50 border-b">
-                                  <th className="py-2 px-3 text-left">Zona</th>
-                                  <th className="py-2 px-3 text-center">Z. Física</th>
-                                  <th className="py-2 px-3 text-center">Z. Económica</th>
-                                  <th className="py-2 px-3 text-right">Área Terreno</th>
-                                  <th className="py-2 px-3 text-center">Hab</th>
-                                  <th className="py-2 px-3 text-center">Baños</th>
-                                  <th className="py-2 px-3 text-center">Locales</th>
-                                  <th className="py-2 px-3 text-center">Pisos</th>
-                                  <th className="py-2 px-3 text-center">Puntaje</th>
-                                  <th className="py-2 px-3 text-right">Área Const.</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {r2.zonas.map((zona, zIdx) => (
-                                  <tr key={zIdx} className="border-b last:border-b-0 hover:bg-slate-50">
-                                    <td className="py-2 px-3 font-medium">{zona.zona_numero}</td>
-                                    <td className="py-2 px-3 text-center">{zona.zona_fisica}</td>
-                                    <td className="py-2 px-3 text-center">{zona.zona_economica}</td>
-                                    <td className="py-2 px-3 text-right">{zona.area_terreno?.toLocaleString()} m²</td>
-                                    <td className="py-2 px-3 text-center">{zona.habitaciones}</td>
-                                    <td className="py-2 px-3 text-center">{zona.banos}</td>
-                                    <td className="py-2 px-3 text-center">{zona.locales}</td>
-                                    <td className="py-2 px-3 text-center">{zona.pisos}</td>
-                                    <td className="py-2 px-3 text-center">{zona.puntaje}</td>
-                                    <td className="py-2 px-3 text-right">{zona.area_construida?.toLocaleString()} m²</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                          <div className="space-y-4">
+                            {/* Tabla 1: Zonas Físicas, Económicas y Área Terreno */}
+                            <div>
+                              <p className="text-sm font-semibold text-slate-700 mb-2">Información de Zonas y Terreno</p>
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm border rounded-lg">
+                                  <thead>
+                                    <tr className="bg-emerald-50 border-b">
+                                      <th className="py-2 px-3 text-left">Registro</th>
+                                      <th className="py-2 px-3 text-center">Zona Física</th>
+                                      <th className="py-2 px-3 text-center">Zona Económica</th>
+                                      <th className="py-2 px-3 text-right">Área Terreno</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {r2.zonas.map((zona, zIdx) => (
+                                      <tr key={zIdx} className="border-b last:border-b-0 hover:bg-slate-50">
+                                        <td className="py-2 px-3 font-medium">{zona.zona_numero}</td>
+                                        <td className="py-2 px-3 text-center">{zona.zona_fisica}</td>
+                                        <td className="py-2 px-3 text-center">{zona.zona_economica}</td>
+                                        <td className="py-2 px-3 text-right font-medium">
+                                          {formatAreaHectareas(zona.area_terreno)}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                            
+                            {/* Tabla 2: Construcción */}
+                            <div>
+                              <p className="text-sm font-semibold text-slate-700 mb-2">Información de Construcción</p>
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm border rounded-lg">
+                                  <thead>
+                                    <tr className="bg-blue-50 border-b">
+                                      <th className="py-2 px-3 text-left">Registro</th>
+                                      <th className="py-2 px-3 text-center">Habitaciones</th>
+                                      <th className="py-2 px-3 text-center">Baños</th>
+                                      <th className="py-2 px-3 text-center">Locales</th>
+                                      <th className="py-2 px-3 text-center">Pisos</th>
+                                      <th className="py-2 px-3 text-center">Uso</th>
+                                      <th className="py-2 px-3 text-center">Puntaje</th>
+                                      <th className="py-2 px-3 text-right">Área Construida</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {r2.zonas.map((zona, zIdx) => (
+                                      <tr key={zIdx} className="border-b last:border-b-0 hover:bg-slate-50">
+                                        <td className="py-2 px-3 font-medium">{zona.zona_numero}</td>
+                                        <td className="py-2 px-3 text-center">{zona.habitaciones}</td>
+                                        <td className="py-2 px-3 text-center">{zona.banos}</td>
+                                        <td className="py-2 px-3 text-center">{zona.locales}</td>
+                                        <td className="py-2 px-3 text-center">{zona.pisos}</td>
+                                        <td className="py-2 px-3 text-center">{zona.uso || '-'}</td>
+                                        <td className="py-2 px-3 text-center">{zona.puntaje}</td>
+                                        <td className="py-2 px-3 text-right font-medium">
+                                          {formatAreaHectareas(zona.area_construida)}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
