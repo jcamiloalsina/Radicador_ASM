@@ -996,48 +996,106 @@ export default function Predios() {
                 {cambiosPendientes.map((cambio) => (
                   <Card key={cambio.id} className="border-l-4 border-l-amber-400">
                     <CardContent className="pt-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant={
-                              cambio.tipo_cambio === 'creacion' ? 'default' :
-                              cambio.tipo_cambio === 'modificacion' ? 'secondary' : 'destructive'
-                            }>
-                              {cambio.tipo_cambio === 'creacion' ? 'Nuevo Predio' :
-                               cambio.tipo_cambio === 'modificacion' ? 'Modificación' : 'Eliminación'}
-                            </Badge>
-                            <span className="text-xs text-slate-500">
-                              {new Date(cambio.fecha_propuesta).toLocaleString('es-CO')}
-                            </span>
+                      <div className="space-y-4">
+                        {/* Header */}
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant={
+                                cambio.tipo_cambio === 'creacion' ? 'default' :
+                                cambio.tipo_cambio === 'modificacion' ? 'secondary' : 'destructive'
+                              }>
+                                {cambio.tipo_cambio === 'creacion' ? 'Nuevo Predio' :
+                                 cambio.tipo_cambio === 'modificacion' ? 'Modificación' : 'Eliminación'}
+                              </Badge>
+                              <span className="text-xs text-slate-500">
+                                {new Date(cambio.fecha_propuesta).toLocaleString('es-CO')}
+                              </span>
+                            </div>
+                            
+                            {cambio.predio_actual && (
+                              <p className="text-sm"><strong>Predio actual:</strong> {cambio.predio_actual.codigo_homologado} - {cambio.predio_actual.nombre_propietario}</p>
+                            )}
+                            <p className="text-sm"><strong>Propuesto por:</strong> {cambio.propuesto_por_nombre} ({cambio.propuesto_por_rol})</p>
+                            {cambio.justificacion && (
+                              <p className="text-sm text-slate-600"><strong>Justificación:</strong> {cambio.justificacion}</p>
+                            )}
                           </div>
                           
-                          <div className="text-sm space-y-1">
-                            {cambio.predio_actual && (
-                              <p><strong>Predio:</strong> {cambio.predio_actual.codigo_homologado} - {cambio.predio_actual.nombre_propietario}</p>
-                            )}
-                            {cambio.datos_propuestos.nombre_propietario && (
-                              <p><strong>Propietario:</strong> {cambio.datos_propuestos.nombre_propietario}</p>
-                            )}
-                            {cambio.datos_propuestos.municipio && (
-                              <p><strong>Municipio:</strong> {cambio.datos_propuestos.municipio}</p>
-                            )}
-                            <p><strong>Propuesto por:</strong> {cambio.propuesto_por_nombre} ({cambio.propuesto_por_rol})</p>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              className="bg-emerald-600 hover:bg-emerald-700"
+                              onClick={() => handleAprobarRechazar(cambio.id, true, 'Aprobado')}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Aprobar
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => {
+                                const comentario = window.prompt('Motivo del rechazo:');
+                                if (comentario !== null) {
+                                  handleAprobarRechazar(cambio.id, false, comentario);
+                                }
+                              }}
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Rechazar
+                            </Button>
                           </div>
                         </div>
-                        
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            className="bg-emerald-600 hover:bg-emerald-700"
-                            onClick={() => handleAprobarRechazar(cambio.id, true, 'Aprobado')}
-                          >
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            Aprobar
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => {
+
+                        {/* Datos propuestos expandibles */}
+                        <details className="bg-slate-50 rounded-lg p-3">
+                          <summary className="cursor-pointer font-medium text-sm text-slate-700 flex items-center gap-2">
+                            <Eye className="w-4 h-4" />
+                            Ver datos propuestos
+                          </summary>
+                          <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                            {cambio.datos_propuestos.municipio && (
+                              <div><span className="text-slate-500">Municipio:</span> <strong>{cambio.datos_propuestos.municipio}</strong></div>
+                            )}
+                            {cambio.datos_propuestos.nombre_propietario && (
+                              <div><span className="text-slate-500">Propietario:</span> <strong>{cambio.datos_propuestos.nombre_propietario}</strong></div>
+                            )}
+                            {cambio.datos_propuestos.direccion && (
+                              <div><span className="text-slate-500">Dirección:</span> <strong>{cambio.datos_propuestos.direccion}</strong></div>
+                            )}
+                            {cambio.datos_propuestos.destino_economico && (
+                              <div><span className="text-slate-500">Destino:</span> <strong>{cambio.datos_propuestos.destino_economico}</strong></div>
+                            )}
+                            {cambio.datos_propuestos.area_terreno !== undefined && (
+                              <div><span className="text-slate-500">Área Terreno:</span> <strong>{cambio.datos_propuestos.area_terreno?.toLocaleString()} m²</strong></div>
+                            )}
+                            {cambio.datos_propuestos.area_construida !== undefined && (
+                              <div><span className="text-slate-500">Área Construida:</span> <strong>{cambio.datos_propuestos.area_construida?.toLocaleString()} m²</strong></div>
+                            )}
+                            {cambio.datos_propuestos.avaluo !== undefined && (
+                              <div><span className="text-slate-500">Avalúo:</span> <strong className="text-emerald-700">{formatCurrency(cambio.datos_propuestos.avaluo)}</strong></div>
+                            )}
+                            {cambio.datos_propuestos.tipo_documento && (
+                              <div><span className="text-slate-500">Tipo Doc:</span> <strong>{cambio.datos_propuestos.tipo_documento}</strong></div>
+                            )}
+                            {cambio.datos_propuestos.numero_documento && (
+                              <div><span className="text-slate-500">Nro. Doc:</span> <strong>{cambio.datos_propuestos.numero_documento}</strong></div>
+                            )}
+                            {/* Mostrar todos los campos adicionales */}
+                            {Object.entries(cambio.datos_propuestos)
+                              .filter(([key]) => !['municipio', 'nombre_propietario', 'direccion', 'destino_economico', 'area_terreno', 'area_construida', 'avaluo', 'tipo_documento', 'numero_documento', 'codigo_homologado'].includes(key))
+                              .map(([key, value]) => (
+                                value !== null && value !== undefined && value !== '' && (
+                                  <div key={key}><span className="text-slate-500">{key.replace(/_/g, ' ')}:</span> <strong>{String(value)}</strong></div>
+                                )
+                              ))
+                            }
+                          </div>
+                        </details>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
                               const comentario = window.prompt('Motivo del rechazo:');
                               if (comentario !== null) {
                                 handleAprobarRechazar(cambio.id, false, comentario);
