@@ -3075,6 +3075,142 @@ async def get_gdb_layers(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Error listando capas: {str(e)}")
 
 
+@api_router.post("/gdb/upload")
+async def upload_gdb_file(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload a new GDB file to update the geographic database. Only authorized gestors can do this."""
+    # Check if user is an authorized gestor
+    user_db = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
+    
+    if not user_db:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Only gestors with puede_actualizar_gdb permission or coordinador/admin can upload
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        if current_user['role'] != UserRole.GESTOR or not user_db.get('puede_actualizar_gdb', False):
+            raise HTTPException(
+                status_code=403, 
+                detail="No tiene permiso para actualizar la base gráfica. Contacte al coordinador."
+            )
+    
+    # Validate file
+    if not file.filename.endswith('.zip'):
+        raise HTTPException(status_code=400, detail="El archivo debe ser un .zip que contenga el .gdb")
+    
+    try:
+        import zipfile
+        import shutil
+        
+        # Save uploaded file temporarily
+        temp_zip = UPLOAD_DIR / f"temp_gdb_{uuid.uuid4()}.zip"
+        with open(temp_zip, 'wb') as f:
+            content = await file.read()
+            f.write(content)
+        
+        # Backup current GDB if exists
+        if GDB_PATH.exists():
+            backup_path = Path(f"/app/gdb_data/backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+            shutil.move(str(GDB_PATH), str(backup_path))
+            logger.info(f"GDB backup created at {backup_path}")
+        
+        # Extract new GDB
+        gdb_data_dir = Path("/app/gdb_data")
+        gdb_data_dir.mkdir(exist_ok=True)
+        
+        with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
+            zip_ref.extractall(gdb_data_dir)
+        
+        # Find the .gdb directory in extracted content
+        gdb_found = None
+        for item in gdb_data_dir.iterdir():
+            if item.suffix == '.gdb' and item.is_dir():
+                gdb_found = item
+                break
+        
+        if not gdb_found:
+            # Check nested directories
+            for item in gdb_data_dir.iterdir():
+                if item.is_dir():
+                    for subitem in item.iterdir():
+                        if subitem.suffix == '.gdb' and subitem.is_dir():
+                            gdb_found = subitem
+                            break
+        
+        if not gdb_found:
+            raise HTTPException(status_code=400, detail="No se encontró un archivo .gdb válido en el zip")
+        
+        # Rename to standard path if needed
+        if gdb_found != GDB_PATH:
+            if GDB_PATH.exists():
+                shutil.rmtree(str(GDB_PATH))
+            shutil.move(str(gdb_found), str(GDB_PATH))
+        
+        # Clean up
+        temp_zip.unlink()
+        
+        # Log the action
+        await db.gdb_updates.insert_one({
+            "id": str(uuid.uuid4()),
+            "uploaded_by": current_user['id'],
+            "uploaded_by_name": current_user['full_name'],
+            "filename": file.filename,
+            "fecha": datetime.now(timezone.utc).isoformat()
+        })
+        
+        # Get new stats
+        import geopandas as gpd
+        r_terreno = gpd.read_file(str(GDB_PATH), layer='R_TERRENO_1')
+        u_terreno = gpd.read_file(str(GDB_PATH), layer='U_TERRENO_1')
+        
+        return {
+            "message": "Base gráfica actualizada exitosamente",
+            "predios_rurales": len(r_terreno),
+            "predios_urbanos": len(u_terreno),
+            "total_geometrias": len(r_terreno) + len(u_terreno)
+        }
+        
+    except zipfile.BadZipFile:
+        raise HTTPException(status_code=400, detail="El archivo no es un ZIP válido")
+    except Exception as e:
+        logger.error(f"Error uploading GDB: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {str(e)}")
+
+
+@api_router.patch("/users/{user_id}/gdb-permission")
+async def update_user_gdb_permission(
+    user_id: str,
+    puede_actualizar: bool,
+    current_user: dict = Depends(get_current_user)
+):
+    """Allow coordinador to grant/revoke GDB update permission to a gestor"""
+    # Only coordinador or admin can grant this permission
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden asignar este permiso")
+    
+    # Find user
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Only gestors can have this permission
+    if user['role'] != UserRole.GESTOR:
+        raise HTTPException(status_code=400, detail="Este permiso solo aplica para gestores")
+    
+    # Update permission
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"puede_actualizar_gdb": puede_actualizar}}
+    )
+    
+    return {
+        "message": f"Permiso {'otorgado' if puede_actualizar else 'revocado'} exitosamente",
+        "user_id": user_id,
+        "puede_actualizar_gdb": puede_actualizar
+    }
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
