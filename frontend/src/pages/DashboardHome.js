@@ -112,7 +112,9 @@ export default function DashboardHome() {
         <CardContent className="space-y-3">
           {user?.role === 'ciudadano' && (
             <Button
-              onClick={() => navigate('/dashboard/peticiones/nueva')}
+              onClick={() => {
+                navigate('/dashboard/peticiones/nueva');
+              }}
               className="w-full md:w-auto bg-emerald-700 hover:bg-emerald-800 text-white"
               data-testid="create-petition-button"
             >
