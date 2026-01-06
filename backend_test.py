@@ -1406,20 +1406,25 @@ class CatastralAPITester:
         )
         
         layers_success = False
-        if success and isinstance(response, list):
-            print(f"   ✅ Found {len(response)} GDB layers")
-            if len(response) > 0:
-                layer = response[0]
-                if 'nombre' in layer and 'tipo_geometria' in layer:
-                    print(f"   - Sample layer: {layer['nombre']} ({layer['tipo_geometria']})")
-                    layers_success = True
+        if success:
+            # Check if response has 'capas' key with array
+            if 'capas' in response and isinstance(response['capas'], list):
+                layers_list = response['capas']
+                print(f"   ✅ Found {len(layers_list)} GDB layers")
+                if len(layers_list) > 0:
+                    layer = layers_list[0]
+                    if 'nombre' in layer and 'tipo_geometria' in layer:
+                        print(f"   - Sample layer: {layer['nombre']} ({layer['tipo_geometria']})")
+                        layers_success = True
+                    else:
+                        print(f"   ❌ Layer missing required fields (nombre, tipo_geometria)")
                 else:
-                    print(f"   ❌ Layer missing required fields (nombre, tipo_geometria)")
+                    print(f"   ⚠️ No layers found in GDB")
+                    layers_success = True  # Empty list is valid
             else:
-                print(f"   ⚠️ No layers found in GDB")
-                layers_success = True  # Empty list is valid
+                print(f"   ❌ Response missing 'capas' field or invalid format")
         else:
-            print(f"   ❌ Failed to get GDB layers or invalid response format")
+            print(f"   ❌ Failed to get GDB layers")
         
         # Test 3: GET /api/predios/codigo/{codigo}/geometria with real codes
         rural_code = "540030008000000010027000000000"
