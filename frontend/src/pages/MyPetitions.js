@@ -105,16 +105,14 @@ export default function MyPetitions() {
           </h2>
           <p className="text-slate-600 mt-1">{pageDescription}</p>
         </div>
-        {user?.role === 'ciudadano' && (
-          <Button
-            onClick={() => navigate('/dashboard/peticiones/nueva')}
-            className="bg-emerald-700 hover:bg-emerald-800 text-white"
-            data-testid="new-petition-button"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Petición
-          </Button>
-        )}
+        <Button
+          onClick={() => navigate('/dashboard/peticiones/nueva')}
+          className="bg-emerald-700 hover:bg-emerald-800 text-white"
+          data-testid="new-petition-button"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Petición
+        </Button>
       </div>
 
       {/* Search */}
