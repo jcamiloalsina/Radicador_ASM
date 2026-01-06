@@ -1719,10 +1719,10 @@ async def get_stats_summary(current_user: dict = Depends(get_current_user)):
 async def generate_codigo_predial(municipio: str, zona: str, sector: str, manzana_vereda: str, 
                                    terreno: str, condicion: str, ph: str) -> str:
     """Genera el código predial nacional de 30 dígitos"""
-    if municipio not in MUNICIPIOS_Código Nacional Catastral:
+    if municipio not in MUNICIPIOS_DIVIPOLA:
         raise HTTPException(status_code=400, detail=f"Municipio '{municipio}' no válido")
     
-    divipola = MUNICIPIOS_Código Nacional Catastral[municipio]
+    divipola = MUNICIPIOS_DIVIPOLA[municipio]
     
     # Construir código de 30 dígitos
     codigo = (
@@ -1793,11 +1793,11 @@ async def get_predios_catalogos(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     return {
-        "municipios": list(MUNICIPIOS_Código Nacional Catastral.keys()),
+        "municipios": list(MUNICIPIOS_DIVIPOLA.keys()),
         "destino_economico": DESTINO_ECONOMICO,
         "tipo_documento": TIPO_DOCUMENTO_PREDIO,
         "estado_civil": ESTADO_CIVIL_PREDIO,
-        "divipola": MUNICIPIOS_Código Nacional Catastral
+        "divipola": MUNICIPIOS_DIVIPOLA
     }
 
 @api_router.get("/predios")
@@ -1877,7 +1877,7 @@ async def create_predio(predio_data: PredioCreate, current_user: dict = Depends(
     codigo_homologado, numero_predio = await generate_codigo_homologado(r1.municipio)
     
     # Obtener código Código Nacional Catastral
-    divipola = MUNICIPIOS_Código Nacional Catastral[r1.municipio]
+    divipola = MUNICIPIOS_DIVIPOLA[r1.municipio]
     
     # Crear el predio
     predio = {
