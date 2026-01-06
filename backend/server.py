@@ -2571,6 +2571,144 @@ async def get_cambios_stats(current_user: dict = Depends(get_current_user)):
     }
 
 
+# ===== GEOGRAPHIC DATABASE (GDB) INTEGRATION =====
+
+GDB_PATH = Path("/app/gdb_data/54003.gdb")
+
+def get_gdb_geometry(codigo_predial: str) -> Optional[dict]:
+    """Get geometry for a property from GDB file"""
+    import geopandas as gpd
+    import json
+    
+    if not GDB_PATH.exists():
+        return None
+    
+    # Determine if rural (R) or urban (U) based on code structure
+    # Code format: 540030008000000010027000000000
+    # Position 6-8 (sector): 000 = rural, 001+ = urban
+    try:
+        sector = codigo_predial[5:8]
+        is_urban = sector != "000"
+        layer = "U_TERRENO_1" if is_urban else "R_TERRENO_1"
+        
+        # Read the layer and filter by code
+        gdf = gpd.read_file(str(GDB_PATH), layer=layer)
+        match = gdf[gdf['codigo'] == codigo_predial]
+        
+        if len(match) == 0:
+            return None
+        
+        # Convert to GeoJSON
+        geom = match.iloc[0]['geometry']
+        if geom is None:
+            return None
+            
+        geojson = json.loads(geom.to_json())
+        
+        return {
+            "type": "Feature",
+            "geometry": geojson,
+            "properties": {
+                "codigo": codigo_predial,
+                "area_m2": match.iloc[0]['shape_Area'] if 'shape_Area' in match.columns else None,
+                "perimetro_m": match.iloc[0]['shape_Length'] if 'shape_Length' in match.columns else None,
+                "tipo": "Urbano" if is_urban else "Rural"
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error reading GDB geometry: {e}")
+        return None
+
+
+@api_router.get("/predios/{predio_id}/geometria")
+async def get_predio_geometry(predio_id: str, current_user: dict = Depends(get_current_user)):
+    """Get geographic geometry for a property"""
+    # Only staff can access geometry
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    # Get predio from database
+    predio = await db.predios.find_one({"id": predio_id}, {"_id": 0})
+    if not predio:
+        raise HTTPException(status_code=404, detail="Predio no encontrado")
+    
+    codigo = predio.get("codigo_predial_nacional")
+    if not codigo:
+        raise HTTPException(status_code=404, detail="Predio sin código catastral")
+    
+    geometry = get_gdb_geometry(codigo)
+    if not geometry:
+        raise HTTPException(status_code=404, detail="Geometría no disponible para este predio")
+    
+    return geometry
+
+
+@api_router.get("/predios/codigo/{codigo_predial}/geometria")
+async def get_geometry_by_code(codigo_predial: str, current_user: dict = Depends(get_current_user)):
+    """Get geographic geometry directly by cadastral code"""
+    # Only staff can access geometry
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    geometry = get_gdb_geometry(codigo_predial)
+    if not geometry:
+        raise HTTPException(status_code=404, detail="Geometría no disponible para este código")
+    
+    return geometry
+
+
+@api_router.get("/gdb/stats")
+async def get_gdb_stats(current_user: dict = Depends(get_current_user)):
+    """Get statistics about available geographic data"""
+    import geopandas as gpd
+    
+    # Only staff can access stats
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    if not GDB_PATH.exists():
+        raise HTTPException(status_code=404, detail="Base de datos geográfica no disponible")
+    
+    try:
+        # Count records in each layer
+        r_terreno = gpd.read_file(str(GDB_PATH), layer='R_TERRENO_1')
+        u_terreno = gpd.read_file(str(GDB_PATH), layer='U_TERRENO_1')
+        
+        return {
+            "gdb_disponible": True,
+            "predios_rurales": len(r_terreno),
+            "predios_urbanos": len(u_terreno),
+            "total_geometrias": len(r_terreno) + len(u_terreno),
+            "capas": ["R_TERRENO_1", "U_TERRENO_1"]
+        }
+    except Exception as e:
+        logger.error(f"Error reading GDB stats: {e}")
+        raise HTTPException(status_code=500, detail=f"Error leyendo base de datos geográfica: {str(e)}")
+
+
+@api_router.get("/gdb/capas")
+async def get_gdb_layers(current_user: dict = Depends(get_current_user)):
+    """List all available layers in the GDB"""
+    import pyogrio
+    
+    # Only staff can access
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    if not GDB_PATH.exists():
+        raise HTTPException(status_code=404, detail="Base de datos geográfica no disponible")
+    
+    try:
+        layers = pyogrio.list_layers(str(GDB_PATH))
+        return {
+            "capas": [{"nombre": layer[0], "tipo_geometria": layer[1]} for layer in layers],
+            "total": len(layers)
+        }
+    except Exception as e:
+        logger.error(f"Error listing GDB layers: {e}")
+        raise HTTPException(status_code=500, detail=f"Error listando capas: {str(e)}")
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
