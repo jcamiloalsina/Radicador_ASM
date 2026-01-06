@@ -263,20 +263,59 @@ export default function VisorPredios() {
             </CardContent>
           </Card>
 
+          {/* Botón Actualizar Base Gráfica - Solo gestores autorizados */}
+          {user?.role === 'gestor' && user?.puede_actualizar_gdb && (
+            <Card className="border-amber-200 bg-amber-50">
+              <CardContent className="py-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">
+                    <p className="font-medium text-amber-800">Actualizar Base Gráfica</p>
+                    <p className="text-xs text-amber-600">Subir archivo .gdb.zip actualizado</p>
+                  </div>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept=".zip"
+                      onChange={handleUploadGdb}
+                      className="hidden"
+                      disabled={uploadingGdb}
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="border-amber-500 text-amber-700 hover:bg-amber-100"
+                      disabled={uploadingGdb}
+                      asChild
+                    >
+                      <span>
+                        {uploadingGdb ? 'Subiendo...' : 'Subir GDB'}
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Detalle del Predio */}
           {selectedPredio && (
             <Card>
               <CardHeader className="py-3 bg-emerald-50">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-emerald-700" />
-                  {selectedPredio.codigo_homologado}
+                <CardTitle className="text-sm flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-emerald-700" />
+                    <span className="text-emerald-800">Código Predial Nacional</span>
+                  </div>
+                  <p className="font-mono text-xs text-emerald-700 pl-6">
+                    {selectedPredio.codigo_predial_nacional}
+                  </p>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
-                <div className="space-y-2 text-sm">
-                  <p className="text-xs text-slate-500">Código Predial Nacional</p>
-                  <p className="font-mono text-xs bg-slate-100 p-2 rounded">
-                    {selectedPredio.codigo_predial_nacional}
+                <div className="space-y-1 text-sm">
+                  <p className="text-xs text-slate-500">Código Homologado (Anterior)</p>
+                  <p className="font-medium text-slate-700">
+                    {selectedPredio.codigo_homologado}
                   </p>
                 </div>
 
