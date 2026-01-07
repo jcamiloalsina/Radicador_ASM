@@ -59,15 +59,16 @@ export default function DashboardLayout() {
       <div className="hidden md:flex w-64 flex-col bg-emerald-900 text-white border-r border-emerald-800">
         <div className="p-6 border-b border-emerald-800">
           <img 
-            src="https://customer-assets.emergentagent.com/job_28ae97d1-3b3d-446d-842a-30fce089309a/artifacts/3sbor4tr_HorizontalBlancoCorto_ConFondo.png" 
+            src="/logo_asomunicipios.jpeg" 
             alt="Asomunicipios Logo" 
-            className="w-full mb-3"
+            className="w-full mb-3 rounded"
             data-testid="sidebar-logo"
           />
-          <h2 className="text-sm font-bold font-outfit leading-tight" data-testid="sidebar-title">
+          <h2 className="text-xs font-bold font-outfit leading-tight text-center" data-testid="sidebar-title">
             Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar
           </h2>
-          <p className="text-emerald-100 text-xs mt-2">{getRoleName(user.role)}</p>
+          <p className="text-emerald-200 text-xs mt-1 text-center font-semibold">– ASOMUNICIPIOS –</p>
+          <p className="text-emerald-100 text-xs mt-2 text-center">{getRoleName(user.role)}</p>
         </div>
 
         <nav className="flex-1 p-4 space-y-2" data-testid="sidebar-nav">
@@ -117,11 +118,12 @@ export default function DashboardLayout() {
             <div className="p-6 border-b border-emerald-800 flex justify-between items-start">
               <div className="flex-1">
                 <img 
-                  src="https://customer-assets.emergentagent.com/job_28ae97d1-3b3d-446d-842a-30fce089309a/artifacts/3sbor4tr_HorizontalBlancoCorto_ConFondo.png" 
+                  src="/logo_asomunicipios.jpeg" 
                   alt="Asomunicipios Logo" 
-                  className="w-full mb-2"
+                  className="w-full mb-2 rounded"
                 />
-                <h2 className="text-xs font-bold font-outfit leading-tight">Asociación de Municipios del Catatumbo</h2>
+                <h2 className="text-xs font-bold font-outfit leading-tight text-center">Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar</h2>
+                <p className="text-emerald-200 text-xs mt-1 text-center">– ASOMUNICIPIOS –</p>
                 <p className="text-emerald-100 text-xs mt-1">{getRoleName(user.role)}</p>
               </div>
               <button onClick={() => setSidebarOpen(false)} className="text-white ml-2">
