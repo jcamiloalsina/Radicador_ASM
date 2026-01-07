@@ -90,8 +90,20 @@ export default function EstadisticasUnificadas() {
   const handleExportPDF = async () => {
     try {
       const token = localStorage.getItem('token');
-      window.open(`${API}/reports/gestor-productivity/export-pdf`, '_blank');
-      toast.success('Descargando reporte PDF...');
+      const response = await fetch(`${API}/reports/gestor-productivity/export-pdf`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!response.ok) throw new Error('Error al generar PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Reporte_Productividad_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Reporte PDF descargado');
     } catch (error) {
       toast.error('Error al exportar PDF');
     }
