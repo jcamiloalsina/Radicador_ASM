@@ -659,14 +659,7 @@ export default function Predios() {
           </Button>
           {!showDashboard && (
             <>
-              <Button variant="outline" onClick={handleExportExcel}>
-                <Download className="w-4 h-4 mr-2" />
-                Exportar Excel
-              </Button>
-              <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Predio
-              </Button>
+              {/* Los botones Exportar y Nuevo están abajo */}
             </>
           )}
         </div>
