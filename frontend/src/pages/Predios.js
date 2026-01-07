@@ -721,21 +721,12 @@ export default function Predios() {
           <p className="text-sm text-slate-500">Sistema de información catastral - Código Nacional Catastral</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {/* Botón de cambios pendientes - solo para coordinadores */}
-          {user && ['coordinador', 'administrador'].includes(user.role) && cambiosStats?.total_pendientes > 0 && (
-            <Button variant="outline" onClick={fetchCambiosPendientes} className="border-amber-300 bg-amber-50 hover:bg-amber-100">
-              <Bell className="w-4 h-4 mr-2 text-amber-600" />
-              Pendientes ({cambiosStats.total_pendientes})
-            </Button>
-          )}
-          <Button variant="outline" onClick={fetchPrediosEliminados}>
-            <AlertTriangle className="w-4 h-4 mr-2" />
-            Eliminados
-          </Button>
+          {/* Botón Exportar Excel - solo cuando está dentro de un municipio */}
           {!showDashboard && (
-            <>
-              {/* Los botones Exportar y Nuevo están abajo */}
-            </>
+            <Button variant="outline" onClick={handleExportExcel}>
+              <Download className="w-4 h-4 mr-2" />
+              Exportar Excel
+            </Button>
           )}
         </div>
       </div>
