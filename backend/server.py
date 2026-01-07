@@ -2111,6 +2111,24 @@ async def import_predios_excel(
     """Importa predios desde archivo Excel R1-R2 con soporte de vigencia"""
     import openpyxl
     
+    # Helper para convertir números con formato de coma decimal
+    def parse_number(value, default=0):
+        if value is None:
+            return default
+        if isinstance(value, (int, float)):
+            return float(value)
+        try:
+            # Convertir string, reemplazando coma por punto
+            s = str(value).strip().replace('$', '').replace(' ', '')
+            # Si tiene punto y coma, el punto es separador de miles
+            if '.' in s and ',' in s:
+                s = s.replace('.', '').replace(',', '.')
+            elif ',' in s:
+                s = s.replace(',', '.')
+            return float(s) if s else default
+        except:
+            return default
+    
     # Solo coordinador o admin pueden importar
     if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
         raise HTTPException(status_code=403, detail="Solo coordinadores pueden importar datos")
