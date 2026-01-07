@@ -48,6 +48,10 @@ export default function DashboardLayout() {
     menuItems.push({ path: '/dashboard/visor-predios', label: 'Visor de Predios', icon: Map });
   }
 
+  if (['administrador', 'coordinador'].includes(user.role)) {
+    menuItems.push({ path: '/dashboard/pendientes', label: 'Pendientes', icon: Clock });
+  }
+
   if (['administrador', 'coordinador', 'atencion_usuario'].includes(user.role)) {
     menuItems.push({ path: '/dashboard/usuarios', label: 'Gestión de Usuarios', icon: UserCog });
     menuItems.push({ path: '/dashboard/estadisticas', label: 'Estadísticas y Reportes', icon: BarChart3 });
