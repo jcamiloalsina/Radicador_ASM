@@ -155,9 +155,49 @@ export default function AllPetitions() {
         </CardContent>
       </Card>
 
-      {/* Results Count */}
-      <div className="text-sm text-slate-600" data-testid="results-count">
-        Mostrando {filteredPetitions.length} de {petitions.length} peticiones
+      {/* Results Count and Export */}
+      <div className="flex justify-between items-center">
+        <div className="text-sm text-slate-600" data-testid="results-count">
+          Mostrando {filteredPetitions.length} de {petitions.length} peticiones
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+          onClick={async () => {
+            try {
+              const token = localStorage.getItem('token');
+              let url = `${API}/reports/listado-tramites/export-pdf`;
+              const params = new URLSearchParams();
+              if (statusFilter && statusFilter !== 'todos') {
+                params.append('estado', statusFilter);
+              }
+              if (params.toString()) {
+                url += `?${params.toString()}`;
+              }
+              
+              const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              
+              if (!response.ok) throw new Error('Error al generar PDF');
+              
+              const blob = await response.blob();
+              const downloadUrl = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = downloadUrl;
+              a.download = `Listado_Tramites_${new Date().toISOString().split('T')[0]}.pdf`;
+              a.click();
+              window.URL.revokeObjectURL(downloadUrl);
+              toast.success('Listado de trámites descargado');
+            } catch (error) {
+              toast.error('Error al exportar listado de trámites');
+            }
+          }}
+        >
+          <FileText className="w-4 h-4 mr-2" />
+          Exportar Listado PDF
+        </Button>
       </div>
 
       {/* Petitions List */}
