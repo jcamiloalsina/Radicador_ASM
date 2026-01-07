@@ -140,13 +140,13 @@ export default function Pendientes() {
                         {getTipoCambioLabel(cambio.tipo_cambio)}
                       </Badge>
                       <span className="text-sm text-slate-500">
-                        {new Date(cambio.fecha_solicitud).toLocaleDateString('es-CO', {
+                        {cambio.fecha_propuesta ? new Date(cambio.fecha_propuesta).toLocaleDateString('es-CO', {
                           day: '2-digit',
                           month: 'short',
                           year: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit'
-                        })}
+                        }) : 'Sin fecha'}
                       </span>
                     </div>
                     
@@ -155,21 +155,21 @@ export default function Pendientes() {
                         <Building className="w-4 h-4 text-slate-400" />
                         <div>
                           <p className="text-xs text-slate-500">Código Predial</p>
-                          <p className="font-mono text-sm">{cambio.datos_nuevos?.codigo_predial_nacional || 'N/A'}</p>
+                          <p className="font-mono text-sm">{cambio.datos_propuestos?.codigo_predial_nacional || cambio.predio_actual?.codigo_homologado || 'Nuevo'}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-slate-400" />
                         <div>
                           <p className="text-xs text-slate-500">Municipio</p>
-                          <p className="text-sm">{cambio.datos_nuevos?.municipio || 'N/A'}</p>
+                          <p className="text-sm">{cambio.datos_propuestos?.municipio || cambio.predio_actual?.municipio || 'N/A'}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-slate-400" />
                         <div>
                           <p className="text-xs text-slate-500">Solicitado por</p>
-                          <p className="text-sm">{cambio.solicitado_por_nombre}</p>
+                          <p className="text-sm">{cambio.propuesto_por_nombre || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
