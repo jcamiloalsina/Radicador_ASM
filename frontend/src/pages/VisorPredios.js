@@ -537,12 +537,43 @@ export default function VisorPredios() {
                   attribution={tileLayers[mapType].attribution}
                 />
                 
+                {/* Mostrar todas las geometrías filtradas */}
+                {allGeometries && allGeometries.features && (
+                  <GeoJSON
+                    key={`all-${filterMunicipio}-${filterZona}-${allGeometries.total}`}
+                    data={allGeometries}
+                    style={(feature) => ({
+                      color: feature.properties?.tipo === 'Urbano' ? '#FF6B35' : '#00FFFF',
+                      weight: 2,
+                      opacity: 0.8,
+                      fillColor: feature.properties?.tipo === 'Urbano' ? '#FF6B35' : '#00FFFF',
+                      fillOpacity: 0.15
+                    })}
+                    onEachFeature={(feature, layer) => {
+                      layer.bindPopup(`
+                        <div class="text-sm">
+                          <p class="font-bold text-xs">${feature.properties?.codigo || 'Sin código'}</p>
+                          <p class="text-xs">${feature.properties?.tipo || ''}</p>
+                          <p class="text-xs">Área: ${(feature.properties?.area_m2 || 0).toLocaleString()} m²</p>
+                        </div>
+                      `);
+                    }}
+                  />
+                )}
+                
+                {/* Geometría del predio seleccionado (resaltado) */}
                 {geometry && (
                   <>
                     <GeoJSON 
                       key={JSON.stringify(geometry)}
                       data={geometry} 
-                      style={geoJSONStyle}
+                      style={{
+                        color: '#FFFF00', // Amarillo para destacar
+                        weight: 4,
+                        opacity: 1,
+                        fillColor: '#FFFF00',
+                        fillOpacity: 0.4
+                      }}
                     >
                       <Popup>
                         <div className="text-sm min-w-[200px]">
