@@ -3339,33 +3339,59 @@ async def get_cambios_stats(current_user: dict = Depends(get_current_user)):
 GDB_PATH = Path("/app/gdb_data/54003.gdb")
 
 def get_gdb_geometry(codigo_predial: str) -> Optional[dict]:
-    """Get geometry for a property from GDB file, transformed to WGS84 for web mapping"""
+    """Get geometry for a property from multiple GDB files, transformed to WGS84 for web mapping"""
     import geopandas as gpd
     from shapely.geometry import mapping
     
-    if not GDB_PATH.exists():
-        return None
+    # Mapeo de códigos de municipio a archivos GDB
+    GDB_FILES = {
+        '54003': '/app/gdb_data/54003.gdb',  # Ábrego
+        '54109': '/app/gdb_data/54109.gdb',  # Bucarasica
+        '54128': '/app/gdb_data/54128.gdb',  # Cáchira
+    }
     
-    # Determine if rural (R) or urban (U) based on code structure
-    # Code format: 540030008000000010027000000000
-    # Position 6-8 (sector): 000 = rural, 001+ = urban
     try:
+        # Extraer código de municipio del código predial (posiciones 0-5)
+        municipio_code = codigo_predial[:5]
+        
+        # Determinar si es rural o urbano
         sector = codigo_predial[5:8]
         is_urban = sector != "000"
-        layer = "U_TERRENO_1" if is_urban else "R_TERRENO_1"
         
-        # Read the layer and filter by code
-        gdf = gpd.read_file(str(GDB_PATH), layer=layer)
+        # Buscar el archivo GDB correcto
+        gdb_path = None
+        for code, path in GDB_FILES.items():
+            if municipio_code == code:
+                gdb_path = Path(path)
+                break
+        
+        if not gdb_path or not gdb_path.exists():
+            # Intentar con el GDB por defecto
+            if GDB_PATH.exists():
+                gdb_path = GDB_PATH
+            else:
+                return None
+        
+        # Determinar nombre de capa (diferentes GDBs usan diferentes nombres)
+        # 54003 (Ábrego): R_TERRENO_1, U_TERRENO_1
+        # Otros: R_TERRENO, U_TERRENO
+        if '54003' in str(gdb_path):
+            layer = "U_TERRENO_1" if is_urban else "R_TERRENO_1"
+        else:
+            layer = "U_TERRENO" if is_urban else "R_TERRENO"
+        
+        # Leer capa y buscar el código
+        gdf = gpd.read_file(str(gdb_path), layer=layer)
         match = gdf[gdf['codigo'] == codigo_predial]
         
         if len(match) == 0:
             return None
         
-        # Get original area and perimeter before transformation
+        # Obtener área y perímetro originales
         area_m2 = float(match.iloc[0]['shape_Area']) if 'shape_Area' in match.columns else None
         perimetro_m = float(match.iloc[0]['shape_Length']) if 'shape_Length' in match.columns else None
         
-        # Transform from EPSG:3116 (Colombia Bogotá Zone) to WGS84 (EPSG:4326) for Leaflet
+        # Transformar a WGS84
         match_wgs84 = match.to_crs(epsg=4326)
         
         geom = match_wgs84.iloc[0]['geometry']
