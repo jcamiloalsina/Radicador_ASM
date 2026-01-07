@@ -2079,10 +2079,16 @@ def main():
     if not gestor_success:
         print("⚠️ Gestor login failed, but continuing with admin tests")
     
+    # PETITION IMPORT FUNCTIONALITY TESTS - PRIORITY TEST FROM REVIEW REQUEST
+    print("\n🎯 Testing PETITION IMPORT Functionality from Review Request...")
+    
+    # Test 1: Petition Import Functionality (PRIORITY)
+    tester.test_petition_import_functionality()
+    
     # NEW FUNCTIONALITY TESTS - Testing specific features mentioned in review request
     print("\n🎯 Testing NEW Functionalities from Review Request...")
     
-    # Test 1: Dashboard "Gestión de Predios" with Vigencia/Municipio Filters
+    # Test 2: Dashboard "Gestión de Predios" with Vigencia/Municipio Filters
     tester.test_predios_dashboard_with_filters()
     
     # Test 2: Map Viewer Filters (Visor de Predios)
