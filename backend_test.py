@@ -2461,6 +2461,25 @@ def main():
     if not gestor_success:
         print("⚠️ Gestor login failed, but continuing with admin tests")
     
+    # PRIORITY TESTS FROM REVIEW REQUEST - P0, P1, P2
+    print("\n🎯 PRIORITY TESTS from Review Request...")
+    
+    # P0: PREDIOS Dashboard - GET /api/predios/stats/summary
+    tester.test_predios_dashboard_priority_p0()
+    
+    # P1: Pendientes API - GET /api/predios/cambios/pendientes
+    tester.test_pendientes_api_priority_p1()
+    
+    # P1: SMTP Password Reset - POST /api/auth/forgot-password
+    tester.test_smtp_password_reset_priority_p1()
+    
+    # P2: Productivity PDF Export - Find and test PDF endpoint
+    tester.test_productivity_pdf_export_priority_p2()
+    
+    # Basic Authentication Flow (already tested above)
+    # Petition Statistics
+    tester.test_petition_statistics_priority()
+    
     # PETITION IMPORT FUNCTIONALITY TESTS - PRIORITY TEST FROM REVIEW REQUEST
     print("\n🎯 Testing PETITION IMPORT Functionality from Review Request...")
     
