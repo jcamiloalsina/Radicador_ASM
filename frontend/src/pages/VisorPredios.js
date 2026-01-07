@@ -273,12 +273,12 @@ export default function VisorPredios() {
             <CardContent className="space-y-3">
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Municipio</label>
-                <Select value={filterMunicipio} onValueChange={setFilterMunicipio}>
+                <Select value={filterMunicipio || "none"} onValueChange={(v) => setFilterMunicipio(v === "none" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione municipio" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin filtro</SelectItem>
+                    <SelectItem value="none">Sin filtro</SelectItem>
                     {gdbStats?.municipios && Object.keys(gdbStats.municipios).map(m => (
                       <SelectItem key={m} value={m}>{m}</SelectItem>
                     ))}
