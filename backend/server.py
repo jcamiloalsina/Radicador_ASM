@@ -2627,17 +2627,17 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
     c = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
     
-    # Colores institucionales según el PDF de referencia
+    # Colores EXACTOS según el PDF de referencia
     azul_titulo = colors.HexColor('#1e3a5f')  # Azul oscuro para títulos
-    azul_celeste = colors.HexColor('#d4e5f7')  # Azul celeste para encabezado sección
+    azul_celeste = colors.HexColor('#CCE5FF')  # Azul celeste pálido para encabezado sección
     verde_seccion = colors.HexColor('#2d7a4f')  # Verde para subsecciones
     gris_texto = colors.HexColor('#333333')
     gris_claro = colors.HexColor('#666666')
-    linea_gris = colors.HexColor('#cccccc')
+    linea_gris = colors.HexColor('#dddddd')
     
     # Márgenes
-    left_margin = 1.8 * cm
-    right_margin = width - 1.8 * cm
+    left_margin = 1.5 * cm
+    right_margin = width - 1.5 * cm
     content_width = right_margin - left_margin
     
     fecha_actual = datetime.now()
@@ -2645,117 +2645,121 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
              'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
     
     # === ENCABEZADO ===
-    y = height - 1.2 * cm
+    y = height - 1 * cm
     
-    # Logo de Asomunicipios (izquierda)
+    # Logo de Asomunicipios (izquierda) - más grande como en el original
     logo_path = Path("/app/backend/logo_asomunicipios.jpeg")
     if not logo_path.exists():
         logo_path = Path("/app/backend/logo_asomunicipios.png")
     if logo_path.exists():
-        logo_width = 4.2 * cm
-        logo_height = 2.2 * cm
-        c.drawImage(str(logo_path), left_margin, height - 3.4 * cm, width=logo_width, height=logo_height, preserveAspectRatio=True, mask='auto')
+        logo_width = 5 * cm
+        logo_height = 2.8 * cm
+        c.drawImage(str(logo_path), left_margin, height - 3.8 * cm, width=logo_width, height=logo_height, preserveAspectRatio=True, mask='auto')
     
-    # Texto encabezado (centro)
-    header_x = left_margin + 4.8 * cm
+    # Texto encabezado (centro-izquierda, a la derecha del logo)
+    header_x = left_margin + 5.5 * cm
     c.setFillColor(azul_titulo)
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont("Helvetica-Bold", 11)
     c.drawString(header_x, y, "Asomunicipios")
-    y -= 11
-    c.setFont("Helvetica", 7)
+    y -= 12
+    c.setFont("Helvetica", 8)
     c.setFillColor(gris_texto)
     c.drawString(header_x, y, "Asociación de Municipios del Catatumbo")
-    y -= 9
+    y -= 10
     c.drawString(header_x, y, "Provincia de Ocaña y Sur del Cesar")
-    y -= 11
-    c.setFont("Helvetica-Bold", 8)
+    y -= 12
+    c.setFont("Helvetica-Bold", 9)
     c.setFillColor(verde_seccion)
     c.drawString(header_x, y, "Gestor Catastral")
     
-    # Número de certificado (derecha superior) - COM-F03-XXX-GC-XX
-    cert_numero = numero_certificado or "COM-F03-____-GC-__"
-    c.setFont("Helvetica-Bold", 8)
+    # Fecha (derecha superior)
+    fecha_str = f"{fecha_actual.day} de {meses[fecha_actual.month-1]} del {fecha_actual.year}"
+    c.setFont("Helvetica", 9)
     c.setFillColor(gris_texto)
-    c.drawRightString(right_margin, height - 1.2 * cm, cert_numero)
+    c.drawRightString(right_margin, height - 1 * cm, fecha_str)
     
-    y = height - 3.8 * cm
+    # Número de certificado (derecha, debajo de fecha) - COM-F03-XXX-GC-XX
+    cert_numero = numero_certificado or "COM-F03-____-GC-__"
+    c.setFont("Helvetica-Bold", 9)
+    c.drawRightString(right_margin, height - 1.5 * cm, f"CERTIFICADO: {cert_numero}")
+    
+    y = height - 4 * cm
     
     # Línea separadora verde
     c.setStrokeColor(verde_seccion)
     c.setLineWidth(1.5)
     c.line(left_margin, y, right_margin, y)
-    y -= 18
+    y -= 20
     
     # === TÍTULO PRINCIPAL ===
     c.setFillColor(azul_titulo)
-    c.setFont("Helvetica-Bold", 14)
+    c.setFont("Helvetica-Bold", 16)
     c.drawCentredString(width/2, y, "CERTIFICADO CATASTRAL")
-    y -= 12
+    y -= 14
     
     # Base legal (texto pequeño centrado)
     c.setFillColor(gris_claro)
-    c.setFont("Helvetica", 5.5)
+    c.setFont("Helvetica", 6)
     texto_legal1 = "LEY 527 DE 1999 (AGOSTO 18), Directiva Presidencial No. 02 del 2000, Ley 962 de 2005 (Anti trámites), Articulo 6, Parágrafo 3."
     texto_legal2 = "artículo 2.2.2.2.8 del Decreto 148 de 2020, artículo 29 de la resolución No. 1149 de 2021 emanada del Instituto Geográfico Agustín Codazzi"
     c.drawCentredString(width/2, y, texto_legal1)
-    y -= 8
+    y -= 9
     c.drawCentredString(width/2, y, texto_legal2)
-    y -= 14
+    y -= 16
     
     # === TEXTO CERTIFICADOR ===
     c.setFillColor(gris_texto)
-    c.setFont("Helvetica", 8)
+    c.setFont("Helvetica", 9)
     intro = "LA ASOCIACIÓN DE MUNICIPIOS DEL CATATUMBO PROVINCIA DE OCAÑA Y SUR DEL CESAR – ASOMUNICIPIOS, en su calidad de Gestor Catastral habilitado mediante resolución No. 1092 del 18 de diciembre de 2020, del Instituto Geográfico Agustín Codazzi – IGAC,"
-    lines = simpleSplit(intro, "Helvetica", 8, content_width)
+    lines = simpleSplit(intro, "Helvetica", 9, content_width)
     for line in lines:
         c.drawString(left_margin, y, line)
-        y -= 10
-    y -= 3
+        y -= 11
+    y -= 4
     
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont("Helvetica-Bold", 10)
     c.drawCentredString(width/2, y, "CERTIFICA:")
-    y -= 12
+    y -= 14
     
-    c.setFont("Helvetica", 8)
+    c.setFont("Helvetica", 9)
     certifica_texto = "Que en la base de datos catastral a cargo de esta entidad se encuentra inscrito el siguiente predio:"
     c.drawString(left_margin, y, certifica_texto)
-    y -= 16
+    y -= 18
     
-    # === ENCABEZADO SECCIÓN - AZUL CELESTE ===
+    # === ENCABEZADO SECCIÓN - AZUL CELESTE PÁLIDO (como en el original) ===
+    c.setFillColor(azul_celeste)
+    c.rect(left_margin, y - 14, content_width, 17, fill=1, stroke=0)
+    c.setFillColor(azul_titulo)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawCentredString(width/2, y - 10, "INFORMACIÓN CATASTRAL DEL PREDIO")
+    y -= 22
+    
+    # Predio No. (alineado a la derecha)
+    c.setFillColor(gris_texto)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawRightString(right_margin - 5, y, "Predio No. 01")
+    y -= 14
+    
+    # Función para dibujar fila de campo (SOLO líneas horizontales como en el original)
+    def draw_field(label, value, y_pos):
+        c.setFillColor(gris_texto)
+        c.setFont("Helvetica-Bold", 8)
+        c.drawString(left_margin + 3, y_pos, label)
+        c.setFont("Helvetica", 8)
+        c.drawString(left_margin + 130, y_pos, str(value) if value else "")
+        # Solo línea horizontal separadora (como en el original)
+        c.setStrokeColor(linea_gris)
+        c.setLineWidth(0.5)
+        c.line(left_margin, y_pos - 4, right_margin, y_pos - 4)
+        return y_pos - 13
+    
+    # === INFORMACIÓN JURÍDICA (con fondo celeste en encabezado) ===
     c.setFillColor(azul_celeste)
     c.rect(left_margin, y - 12, content_width, 15, fill=1, stroke=0)
     c.setFillColor(azul_titulo)
     c.setFont("Helvetica-Bold", 9)
-    c.drawCentredString(width/2, y - 8, "INFORMACION CATASTRAL DEL PREDIO")
+    c.drawString(left_margin + 5, y - 8, "INFORMACIÓN JURÍDICA")
     y -= 20
-    
-    # Predio No.
-    c.setFillColor(gris_texto)
-    c.setFont("Helvetica-Bold", 8)
-    c.drawRightString(right_margin - 5, y, "Predio No. 01")
-    y -= 12
-    
-    # Función para dibujar fila de campo
-    def draw_field(label, value, y_pos):
-        c.setFillColor(gris_texto)
-        c.setFont("Helvetica-Bold", 7)
-        c.drawString(left_margin + 3, y_pos, label)
-        c.setFont("Helvetica", 7)
-        c.drawString(left_margin + 110, y_pos, str(value) if value else "")
-        c.setStrokeColor(linea_gris)
-        c.setLineWidth(0.3)
-        c.line(left_margin, y_pos - 3, right_margin, y_pos - 3)
-        return y_pos - 11
-    
-    # === INFORMACIÓN JURÍDICA ===
-    c.setFillColor(verde_seccion)
-    c.setFont("Helvetica-Bold", 8)
-    c.drawString(left_margin, y, "INFORMACIÓN JURÍDICA")
-    y -= 3
-    c.setStrokeColor(verde_seccion)
-    c.setLineWidth(0.8)
-    c.line(left_margin, y, left_margin + 90, y)
-    y -= 10
     
     propietarios = predio.get('propietarios', [])
     if propietarios:
@@ -2777,15 +2781,13 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
     y = draw_field("Matrícula:", matricula or 'N/A', y)
     y -= 8
     
-    # === INFORMACIÓN FÍSICA ===
-    c.setFillColor(verde_seccion)
-    c.setFont("Helvetica-Bold", 8)
-    c.drawString(left_margin, y, "INFORMACIÓN FÍSICA")
-    y -= 3
-    c.setStrokeColor(verde_seccion)
-    c.setLineWidth(0.8)
-    c.line(left_margin, y, left_margin + 85, y)
-    y -= 10
+    # === INFORMACIÓN FÍSICA (con fondo celeste en encabezado) ===
+    c.setFillColor(azul_celeste)
+    c.rect(left_margin, y - 12, content_width, 15, fill=1, stroke=0)
+    c.setFillColor(azul_titulo)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(left_margin + 5, y - 8, "INFORMACIÓN FÍSICA")
+    y -= 20
     
     municipio = predio.get('municipio', '')
     if municipio in ['Río de Oro']:
@@ -2815,58 +2817,56 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
     y = draw_field("Área construida:", f"{int(area_construida):,} m²".replace(',', '.'), y)
     y -= 8
     
-    # === INFORMACIÓN ECONÓMICA ===
-    c.setFillColor(verde_seccion)
-    c.setFont("Helvetica-Bold", 8)
-    c.drawString(left_margin, y, "INFORMACIÓN ECONÓMICA")
-    y -= 3
-    c.setStrokeColor(verde_seccion)
-    c.setLineWidth(0.8)
-    c.line(left_margin, y, left_margin + 100, y)
-    y -= 10
+    # === INFORMACIÓN ECONÓMICA (con fondo celeste en encabezado) ===
+    c.setFillColor(azul_celeste)
+    c.rect(left_margin, y - 12, content_width, 15, fill=1, stroke=0)
+    c.setFillColor(azul_titulo)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawString(left_margin + 5, y - 8, "INFORMACIÓN ECONÓMICA")
+    y -= 20
     
     avaluo = predio.get('avaluo', 0)
     avaluo_str = f"${int(avaluo):,}".replace(',', '.')
     y = draw_field("Avalúo catastral:", avaluo_str, y)
-    y -= 12
+    y -= 14
     
     # === TEXTO DE EXPEDICIÓN ===
     c.setFillColor(gris_texto)
-    c.setFont("Helvetica", 8)
+    c.setFont("Helvetica", 9)
     fecha_str = f"{fecha_actual.day} de {meses[fecha_actual.month-1]} del {fecha_actual.year}"
     texto_exp = f"El presente certificado se expide a favor del interesado el {fecha_str}."
     c.drawString(left_margin, y, texto_exp)
-    y -= 28
+    y -= 30
     
     # === FIRMAS ===
-    c.setFont("Helvetica", 7)
+    c.setFont("Helvetica", 8)
     c.setFillColor(gris_texto)
     c.drawString(left_margin, y, f"Elaboró: {proyectado_por}")
-    c.drawString(left_margin + 200, y, "Revisó: Juan C. Alsina")
-    y -= 25
+    c.drawString(left_margin + 180, y, "Revisó: Juan C. Alsina")
+    y -= 28
     
     # Firma principal
     firma_x = width/2
     c.setStrokeColor(gris_texto)
     c.setLineWidth(0.5)
-    c.line(firma_x - 70, y + 10, firma_x + 70, y + 10)
+    c.line(firma_x - 75, y + 12, firma_x + 75, y + 12)
     
-    c.setFont("Helvetica-Bold", 9)
+    c.setFont("Helvetica-Bold", 10)
     c.setFillColor(azul_titulo)
     c.drawCentredString(firma_x, y, "DALGIE ESPERANZA TORRADO RIZO")
-    y -= 10
-    c.setFont("Helvetica", 7)
+    y -= 11
+    c.setFont("Helvetica", 8)
     c.setFillColor(gris_texto)
     c.drawCentredString(firma_x, y, "SUBDIRECTORA FINANCIERA Y ADMINISTRATIVA")
-    y -= 22
+    y -= 24
     
     # === NOTAS ===
     c.setFillColor(gris_claro)
-    c.setFont("Helvetica-Bold", 6)
+    c.setFont("Helvetica-Bold", 7)
     c.drawString(left_margin, y, "NOTA:")
-    y -= 8
+    y -= 9
     
-    c.setFont("Helvetica", 5.5)
+    c.setFont("Helvetica", 6)
     notas = [
         "• La presente información no sirve como prueba para establecer actos constitutivos de posesión.",
         "• De conformidad con el artículo 2.2.2.2.8 del Decreto 148 de 2020, Inscripción o incorporación catastral. La información catastral resultado de los procesos de formación,",
@@ -2879,19 +2879,19 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
     
     for nota in notas:
         c.drawString(left_margin, y, nota)
-        y -= 7
+        y -= 8
     
-    y -= 8
+    y -= 10
     
     # === PIE DE PÁGINA ===
     c.setStrokeColor(verde_seccion)
     c.setLineWidth(1)
     c.line(left_margin, y, right_margin, y)
-    y -= 10
+    y -= 12
     
     c.setFillColor(gris_texto)
-    c.setFont("Helvetica", 6)
-    # Redes sociales e info de contacto
+    c.setFont("Helvetica", 7)
+    # Redes sociales e info de contacto (como en el original)
     c.drawString(left_margin, y, "f @asomunicipios    X @asomunicipios    IG @asomunicipios")
     c.drawCentredString(width/2, y, "comunicaciones@asomunicipios.gov.co")
     c.drawRightString(right_margin, y, "Calle 12 # 11-76 Ocaña | +57 3102327647")
