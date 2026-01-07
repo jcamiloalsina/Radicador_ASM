@@ -2216,43 +2216,37 @@ async def import_predios_excel(
                 
                 # Zona 1
                 if len(row) > 10 and row[10]:
-                    try:
-                        area_t = float(str(row[10] or '0').replace(',', ''))
-                    except:
-                        area_t = 0
+                    area_t = parse_number(row[10])
                     zonas.append({
                         'zona_fisica': str(row[8] or '').strip() if len(row) > 8 else '',
                         'zona_economica': str(row[9] or '').strip() if len(row) > 9 else '',
                         'area_terreno': area_t,
-                        'habitaciones': int(row[14] or 0) if len(row) > 14 and row[14] else 0,
-                        'banos': int(row[15] or 0) if len(row) > 15 and row[15] else 0,
-                        'locales': int(row[16] or 0) if len(row) > 16 and row[16] else 0,
-                        'pisos': int(row[17] or 0) if len(row) > 17 and row[17] else 0,
+                        'habitaciones': int(parse_number(row[14])) if len(row) > 14 else 0,
+                        'banos': int(parse_number(row[15])) if len(row) > 15 else 0,
+                        'locales': int(parse_number(row[16])) if len(row) > 16 else 0,
+                        'pisos': int(parse_number(row[17])) if len(row) > 17 else 0,
                         'tipificacion': str(row[18] or '').strip() if len(row) > 18 else '',
                         'uso': str(row[19] or '').strip() if len(row) > 19 else '',
-                        'puntaje': int(row[20] or 0) if len(row) > 20 and row[20] else 0,
-                        'area_construida': float(row[21] or 0) if len(row) > 21 and row[21] else 0
+                        'puntaje': int(parse_number(row[20])) if len(row) > 20 else 0,
+                        'area_construida': parse_number(row[21]) if len(row) > 21 else 0
                     })
                 
                 # Zona 2
                 if len(row) > 13 and row[13]:
-                    try:
-                        area_t2 = float(str(row[13] or '0').replace(',', ''))
-                    except:
-                        area_t2 = 0
+                    area_t2 = parse_number(row[13])
                     if area_t2 > 0:
                         zonas.append({
                             'zona_fisica': str(row[11] or '').strip() if len(row) > 11 else '',
                             'zona_economica': str(row[12] or '').strip() if len(row) > 12 else '',
                             'area_terreno': area_t2,
-                            'habitaciones': int(row[22] or 0) if len(row) > 22 and row[22] else 0,
-                            'banos': int(row[23] or 0) if len(row) > 23 and row[23] else 0,
-                            'locales': int(row[24] or 0) if len(row) > 24 and row[24] else 0,
-                            'pisos': int(row[25] or 0) if len(row) > 25 and row[25] else 0,
+                            'habitaciones': int(parse_number(row[22])) if len(row) > 22 else 0,
+                            'banos': int(parse_number(row[23])) if len(row) > 23 else 0,
+                            'locales': int(parse_number(row[24])) if len(row) > 24 else 0,
+                            'pisos': int(parse_number(row[25])) if len(row) > 25 else 0,
                             'tipificacion': str(row[26] or '').strip() if len(row) > 26 else '',
                             'uso': str(row[27] or '').strip() if len(row) > 27 else '',
-                            'puntaje': int(row[28] or 0) if len(row) > 28 and row[28] else 0,
-                            'area_construida': float(row[29] or 0) if len(row) > 29 and row[29] else 0
+                            'puntaje': int(parse_number(row[28])) if len(row) > 28 else 0,
+                            'area_construida': parse_number(row[29]) if len(row) > 29 else 0
                         })
                 
                 r1_data[codigo_predial]['r2_registros'].append({
