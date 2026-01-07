@@ -534,7 +534,7 @@ async def forgot_password(request: ForgotPasswordRequest):
     <html>
     <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background-color: #047857; padding: 20px; border-radius: 8px 8px 0 0;">
-            <h1 style="color: white; margin: 0;">ASOMUNICIPIOS</h1>
+            <h1 style="color: white; margin: 0;">Asomunicipios</h1>
             <p style="color: #d1fae5; margin: 5px 0 0 0;">Sistema de Gestión Catastral</p>
         </div>
         <div style="background-color: #f8fafc; padding: 30px; border-radius: 0 0 8px 8px;">
@@ -555,7 +555,7 @@ async def forgot_password(request: ForgotPasswordRequest):
     """
     
     try:
-        await send_email(request.email, "Recuperación de Contraseña - ASOMUNICIPIOS", email_body)
+        await send_email(request.email, "Recuperación de Contraseña - Asomunicipios", email_body)
     except Exception as e:
         logging.error(f"Failed to send reset email: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al enviar el correo")
