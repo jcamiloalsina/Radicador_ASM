@@ -752,3 +752,49 @@ test_plan:
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+  - agent: "main"
+    message: |
+      NUEVAS FUNCIONALIDADES IMPLEMENTADAS (Fork Job - Sesión Actual):
+      
+      1. ✅ REDISEÑO DASHBOARD "GESTIÓN DE PREDIOS":
+         - Dashboard con estadísticas (Total, Avalúo, Área, Municipios)
+         - Selección obligatoria de Vigencia y Municipio antes de ver predios
+         - Eliminado filtro de "destinos económicos"
+         - Cards de predios por municipio clicables
+         - Navegación "Volver al Dashboard"
+      
+      2. ✅ FILTROS EN VISOR DE PREDIOS:
+         - Filtro por Municipio
+         - Filtro por Zona (Urbano/Rural/Todas)
+         - Carga de geometrías filtradas en el mapa
+         - Colores diferenciados (Urbano=naranja, Rural=cyan)
+      
+      3. ✅ IMPORTACIÓN DE 5 NUEVOS MUNICIPIOS:
+         - Convención: 5,683 predios
+         - El Carmen: 4,479 predios  
+         - El Tarra: 5,063 predios
+         - Hacarí: 1,748 predios
+         - La Playa: 2,188 predios
+         - Total: 36,040 predios en el sistema
+      
+      4. ✅ FIX IMPORTACIÓN EXCEL:
+         - Soporte para números con coma decimal (ej: 105,50)
+         - Función parse_number() añadida al backend
+      
+      CREDENCIALES DE PRUEBA:
+      - Admin: catastro@asomunicipios.gov.co / Asm*123*
+      
+      TESTING NECESARIO:
+      - Verificar dashboard de predios con filtros
+      - Verificar visor de predios con filtros de municipio/zona
+      - Verificar que los predios se muestran correctamente por vigencia
+
+test_plan:
+  current_focus:
+    - "Dashboard Gestión de Predios con filtros vigencia/municipio"
+    - "Filtros en Visor de Predios (municipio/zona)"
+    - "Importación de datos de 5 municipios"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
