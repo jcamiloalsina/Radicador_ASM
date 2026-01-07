@@ -57,6 +57,10 @@ export default function VisorPredios() {
   const [mapType, setMapType] = useState('satellite'); // satellite por defecto
   const [showUploadGdb, setShowUploadGdb] = useState(false);
   const [uploadingGdb, setUploadingGdb] = useState(false);
+  const [filterMunicipio, setFilterMunicipio] = useState('');
+  const [filterZona, setFilterZona] = useState('todos');
+  const [allGeometries, setAllGeometries] = useState(null);
+  const [loadingGeometries, setLoadingGeometries] = useState(false);
   const mapRef = useRef(null);
 
   // Default center: Norte de Santander, Colombia
