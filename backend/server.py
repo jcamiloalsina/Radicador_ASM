@@ -2628,14 +2628,16 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
     width, height = letter
     
     # Colores institucionales según el PDF de referencia
-    azul_asomunicipios = colors.HexColor('#1e3a5f')  # Azul oscuro del logo
-    verde_asomunicipios = colors.HexColor('#2d7a4f')  # Verde del logo
+    azul_titulo = colors.HexColor('#1e3a5f')  # Azul oscuro para títulos
+    azul_celeste = colors.HexColor('#d4e5f7')  # Azul celeste para encabezado sección
+    verde_seccion = colors.HexColor('#2d7a4f')  # Verde para subsecciones
     gris_texto = colors.HexColor('#333333')
     gris_claro = colors.HexColor('#666666')
+    linea_gris = colors.HexColor('#cccccc')
     
-    # Márgenes según el diseño original
-    left_margin = 2 * cm
-    right_margin = width - 2 * cm
+    # Márgenes
+    left_margin = 1.8 * cm
+    right_margin = width - 1.8 * cm
     content_width = right_margin - left_margin
     
     fecha_actual = datetime.now()
@@ -2643,22 +2645,259 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
              'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
     
     # === ENCABEZADO ===
-    y = height - 1.5 * cm
+    y = height - 1.2 * cm
     
-    # Logo de ASOMUNICIPIOS (izquierda)
+    # Logo de Asomunicipios (izquierda)
     logo_path = Path("/app/backend/logo_asomunicipios.jpeg")
     if not logo_path.exists():
         logo_path = Path("/app/backend/logo_asomunicipios.png")
     if logo_path.exists():
-        logo_width = 4.5 * cm
-        logo_height = 2.5 * cm
-        c.drawImage(str(logo_path), left_margin, height - 3.8 * cm, width=logo_width, height=logo_height, preserveAspectRatio=True, mask='auto')
+        logo_width = 4.2 * cm
+        logo_height = 2.2 * cm
+        c.drawImage(str(logo_path), left_margin, height - 3.4 * cm, width=logo_width, height=logo_height, preserveAspectRatio=True, mask='auto')
     
-    # Texto del encabezado (derecha del logo)
-    header_x = left_margin + 5 * cm
-    c.setFillColor(azul_asomunicipios)
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(header_x, y, "ASOMUNICIPIOS")
+    # Texto encabezado (centro)
+    header_x = left_margin + 4.8 * cm
+    c.setFillColor(azul_titulo)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(header_x, y, "Asomunicipios")
+    y -= 11
+    c.setFont("Helvetica", 7)
+    c.setFillColor(gris_texto)
+    c.drawString(header_x, y, "Asociación de Municipios del Catatumbo")
+    y -= 9
+    c.drawString(header_x, y, "Provincia de Ocaña y Sur del Cesar")
+    y -= 11
+    c.setFont("Helvetica-Bold", 8)
+    c.setFillColor(verde_seccion)
+    c.drawString(header_x, y, "Gestor Catastral")
+    
+    # Número de certificado (derecha superior) - COM-F03-XXX-GC-XX
+    cert_numero = numero_certificado or "COM-F03-____-GC-__"
+    c.setFont("Helvetica-Bold", 8)
+    c.setFillColor(gris_texto)
+    c.drawRightString(right_margin, height - 1.2 * cm, cert_numero)
+    
+    y = height - 3.8 * cm
+    
+    # Línea separadora verde
+    c.setStrokeColor(verde_seccion)
+    c.setLineWidth(1.5)
+    c.line(left_margin, y, right_margin, y)
+    y -= 18
+    
+    # === TÍTULO PRINCIPAL ===
+    c.setFillColor(azul_titulo)
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(width/2, y, "CERTIFICADO CATASTRAL")
+    y -= 12
+    
+    # Base legal (texto pequeño centrado)
+    c.setFillColor(gris_claro)
+    c.setFont("Helvetica", 5.5)
+    texto_legal1 = "LEY 527 DE 1999 (AGOSTO 18), Directiva Presidencial No. 02 del 2000, Ley 962 de 2005 (Anti trámites), Articulo 6, Parágrafo 3."
+    texto_legal2 = "artículo 2.2.2.2.8 del Decreto 148 de 2020, artículo 29 de la resolución No. 1149 de 2021 emanada del Instituto Geográfico Agustín Codazzi"
+    c.drawCentredString(width/2, y, texto_legal1)
+    y -= 8
+    c.drawCentredString(width/2, y, texto_legal2)
+    y -= 14
+    
+    # === TEXTO CERTIFICADOR ===
+    c.setFillColor(gris_texto)
+    c.setFont("Helvetica", 8)
+    intro = "LA ASOCIACIÓN DE MUNICIPIOS DEL CATATUMBO PROVINCIA DE OCAÑA Y SUR DEL CESAR – ASOMUNICIPIOS, en su calidad de Gestor Catastral habilitado mediante resolución No. 1092 del 18 de diciembre de 2020, del Instituto Geográfico Agustín Codazzi – IGAC,"
+    lines = simpleSplit(intro, "Helvetica", 8, content_width)
+    for line in lines:
+        c.drawString(left_margin, y, line)
+        y -= 10
+    y -= 3
+    
+    c.setFont("Helvetica-Bold", 9)
+    c.drawCentredString(width/2, y, "CERTIFICA:")
+    y -= 12
+    
+    c.setFont("Helvetica", 8)
+    certifica_texto = "Que en la base de datos catastral a cargo de esta entidad se encuentra inscrito el siguiente predio:"
+    c.drawString(left_margin, y, certifica_texto)
+    y -= 16
+    
+    # === ENCABEZADO SECCIÓN - AZUL CELESTE ===
+    c.setFillColor(azul_celeste)
+    c.rect(left_margin, y - 12, content_width, 15, fill=1, stroke=0)
+    c.setFillColor(azul_titulo)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawCentredString(width/2, y - 8, "INFORMACION CATASTRAL DEL PREDIO")
+    y -= 20
+    
+    # Predio No.
+    c.setFillColor(gris_texto)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawRightString(right_margin - 5, y, "Predio No. 01")
+    y -= 12
+    
+    # Función para dibujar fila de campo
+    def draw_field(label, value, y_pos):
+        c.setFillColor(gris_texto)
+        c.setFont("Helvetica-Bold", 7)
+        c.drawString(left_margin + 3, y_pos, label)
+        c.setFont("Helvetica", 7)
+        c.drawString(left_margin + 110, y_pos, str(value) if value else "")
+        c.setStrokeColor(linea_gris)
+        c.setLineWidth(0.3)
+        c.line(left_margin, y_pos - 3, right_margin, y_pos - 3)
+        return y_pos - 11
+    
+    # === INFORMACIÓN JURÍDICA ===
+    c.setFillColor(verde_seccion)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(left_margin, y, "INFORMACIÓN JURÍDICA")
+    y -= 3
+    c.setStrokeColor(verde_seccion)
+    c.setLineWidth(0.8)
+    c.line(left_margin, y, left_margin + 90, y)
+    y -= 10
+    
+    propietarios = predio.get('propietarios', [])
+    if propietarios:
+        prop = propietarios[0]
+        y = draw_field("Nombre de los propietarios:", prop.get('nombre_propietario', ''), y)
+        y = draw_field("Número de propietario:", "01", y)
+        y = draw_field("Tipo de documento:", prop.get('tipo_documento', 'C'), y)
+        y = draw_field("Número de documento:", prop.get('numero_documento', ''), y)
+    else:
+        y = draw_field("Nombre de los propietarios:", predio.get('nombre_propietario', 'N/A'), y)
+        y = draw_field("Número de propietario:", "01", y)
+        y = draw_field("Tipo de documento:", predio.get('tipo_documento', 'C'), y)
+        y = draw_field("Número de documento:", predio.get('numero_documento', ''), y)
+    
+    matricula = ''
+    r2_registros = predio.get('r2_registros', [])
+    if r2_registros:
+        matricula = r2_registros[0].get('matricula_inmobiliaria', '')
+    y = draw_field("Matrícula:", matricula or 'N/A', y)
+    y -= 8
+    
+    # === INFORMACIÓN FÍSICA ===
+    c.setFillColor(verde_seccion)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(left_margin, y, "INFORMACIÓN FÍSICA")
+    y -= 3
+    c.setStrokeColor(verde_seccion)
+    c.setLineWidth(0.8)
+    c.line(left_margin, y, left_margin + 85, y)
+    y -= 10
+    
+    municipio = predio.get('municipio', '')
+    if municipio in ['Río de Oro']:
+        depto_cod = "20 - CESAR"
+        muni_cod = "614 - RIO DE ORO"
+    else:
+        depto_cod = "54 - NORTE DE SANTANDER"
+        muni_mapping = {
+            'Ábrego': '003 - ÁBREGO', 'Bucarasica': '109 - BUCARASICA',
+            'Convención': '206 - CONVENCIÓN', 'Cáchira': '128 - CÁCHIRA',
+            'El Carmen': '245 - EL CARMEN', 'El Tarra': '250 - EL TARRA',
+            'Hacarí': '344 - HACARÍ', 'La Playa': '398 - LA PLAYA',
+            'San Calixto': '670 - SAN CALIXTO', 'Sardinata': '720 - SARDINATA',
+            'Teorama': '800 - TEORAMA'
+        }
+        muni_cod = muni_mapping.get(municipio, municipio)
+    
+    y = draw_field("Departamento:", depto_cod, y)
+    y = draw_field("Municipio:", muni_cod, y)
+    y = draw_field("Número predial:", predio.get('codigo_predial_nacional', ''), y)
+    y = draw_field("Número predial anterior:", predio.get('codigo_homologado', ''), y)
+    y = draw_field("Dirección:", predio.get('direccion', ''), y)
+    
+    area_terreno = predio.get('area_terreno', 0)
+    y = draw_field("Área terreno:", f"{int(area_terreno):,} m²".replace(',', '.'), y)
+    area_construida = predio.get('area_construida', 0)
+    y = draw_field("Área construida:", f"{int(area_construida):,} m²".replace(',', '.'), y)
+    y -= 8
+    
+    # === INFORMACIÓN ECONÓMICA ===
+    c.setFillColor(verde_seccion)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(left_margin, y, "INFORMACIÓN ECONÓMICA")
+    y -= 3
+    c.setStrokeColor(verde_seccion)
+    c.setLineWidth(0.8)
+    c.line(left_margin, y, left_margin + 100, y)
+    y -= 10
+    
+    avaluo = predio.get('avaluo', 0)
+    avaluo_str = f"${int(avaluo):,}".replace(',', '.')
+    y = draw_field("Avalúo catastral:", avaluo_str, y)
+    y -= 12
+    
+    # === TEXTO DE EXPEDICIÓN ===
+    c.setFillColor(gris_texto)
+    c.setFont("Helvetica", 8)
+    fecha_str = f"{fecha_actual.day} de {meses[fecha_actual.month-1]} del {fecha_actual.year}"
+    texto_exp = f"El presente certificado se expide a favor del interesado el {fecha_str}."
+    c.drawString(left_margin, y, texto_exp)
+    y -= 28
+    
+    # === FIRMAS ===
+    c.setFont("Helvetica", 7)
+    c.setFillColor(gris_texto)
+    c.drawString(left_margin, y, f"Elaboró: {proyectado_por}")
+    c.drawString(left_margin + 200, y, "Revisó: Juan C. Alsina")
+    y -= 25
+    
+    # Firma principal
+    firma_x = width/2
+    c.setStrokeColor(gris_texto)
+    c.setLineWidth(0.5)
+    c.line(firma_x - 70, y + 10, firma_x + 70, y + 10)
+    
+    c.setFont("Helvetica-Bold", 9)
+    c.setFillColor(azul_titulo)
+    c.drawCentredString(firma_x, y, "DALGIE ESPERANZA TORRADO RIZO")
+    y -= 10
+    c.setFont("Helvetica", 7)
+    c.setFillColor(gris_texto)
+    c.drawCentredString(firma_x, y, "SUBDIRECTORA FINANCIERA Y ADMINISTRATIVA")
+    y -= 22
+    
+    # === NOTAS ===
+    c.setFillColor(gris_claro)
+    c.setFont("Helvetica-Bold", 6)
+    c.drawString(left_margin, y, "NOTA:")
+    y -= 8
+    
+    c.setFont("Helvetica", 5.5)
+    notas = [
+        "• La presente información no sirve como prueba para establecer actos constitutivos de posesión.",
+        "• De conformidad con el artículo 2.2.2.2.8 del Decreto 148 de 2020, Inscripción o incorporación catastral. La información catastral resultado de los procesos de formación,",
+        "  actualización o conservación se inscribirá o incorporará en la base catastral con la fecha del acto administrativo que lo ordena.",
+        "• Adicionalmente de conformidad con el artículo 29 de la resolución No. 1149 de 2021 emanada del Instituto Geográfico Agustín Codazzi, \"Efecto jurídico de la inscripción",
+        "  catastral. La inscripción en el catastro no constituye título de dominio, ni sanea los vicios de que adolezca la titulación presentada o la posesión del interesado.\"",
+        "• La base catastral de Asomunicipios sólo incluye información de los municipios habilitados dentro del esquema asociativo.",
+        "• Ante cualquier inquietud, puede escribir al correo electrónico: comunicaciones@asomunicipios.gov.co",
+    ]
+    
+    for nota in notas:
+        c.drawString(left_margin, y, nota)
+        y -= 7
+    
+    y -= 8
+    
+    # === PIE DE PÁGINA ===
+    c.setStrokeColor(verde_seccion)
+    c.setLineWidth(1)
+    c.line(left_margin, y, right_margin, y)
+    y -= 10
+    
+    c.setFillColor(gris_texto)
+    c.setFont("Helvetica", 6)
+    # Redes sociales e info de contacto
+    c.drawString(left_margin, y, "f @asomunicipios    X @asomunicipios    IG @asomunicipios")
+    c.drawCentredString(width/2, y, "comunicaciones@asomunicipios.gov.co")
+    c.drawRightString(right_margin, y, "Calle 12 # 11-76 Ocaña | +57 3102327647")
+    
+    c.save()
+    return buffer.getvalue()
     y -= 12
     c.setFont("Helvetica", 8)
     c.setFillColor(gris_texto)
