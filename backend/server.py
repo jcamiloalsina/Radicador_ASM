@@ -2362,14 +2362,14 @@ async def import_predios_excel(
 
 @api_router.get("/predios/vigencias")
 async def get_vigencias_disponibles(current_user: dict = Depends(get_current_user)):
-    """Obtiene las vigencias disponibles por municipio"""
+    """Obtiene las vigencias disponibles por municipio, ordenadas de más reciente a más antigua"""
     if current_user['role'] == UserRole.CIUDADANO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     # Vigencias actuales
     pipeline = [
         {"$group": {"_id": {"municipio": "$municipio", "vigencia": "$vigencia"}, "count": {"$sum": 1}}},
-        {"$sort": {"_id.municipio": 1, "_id.vigencia": -1}}
+        {"$sort": {"_id.municipio": 1}}
     ]
     result = await db.predios.aggregate(pipeline).to_list(1000)
     
@@ -2384,7 +2384,7 @@ async def get_vigencias_disponibles(current_user: dict = Depends(get_current_use
     # Vigencias históricas
     historico_pipeline = [
         {"$group": {"_id": {"municipio": "$municipio", "vigencia": "$vigencia"}, "count": {"$sum": 1}}},
-        {"$sort": {"_id.municipio": 1, "_id.vigencia": -1}}
+        {"$sort": {"_id.municipio": 1}}
     ]
     historico = await db.predios_historico.aggregate(historico_pipeline).to_list(1000)
     
@@ -2396,6 +2396,17 @@ async def get_vigencias_disponibles(current_user: dict = Depends(get_current_use
         # Agregar si no existe
         if not any(v['vigencia'] == vig for v in vigencias[mun]):
             vigencias[mun].append({"vigencia": vig, "predios": h['count'], "historico": True})
+    
+    # Función para extraer el año de una vigencia (puede ser 2025, 01012025, 1012025)
+    def get_year(vig):
+        vig_str = str(vig)
+        if len(vig_str) >= 7:
+            return int(vig_str[-4:])
+        return int(vig_str)
+    
+    # Ordenar vigencias de más reciente a más antigua para cada municipio
+    for mun in vigencias:
+        vigencias[mun].sort(key=lambda x: get_year(x['vigencia']), reverse=True)
     
     return vigencias
 
