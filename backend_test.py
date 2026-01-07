@@ -2082,31 +2082,43 @@ def main():
     # NEW FUNCTIONALITY TESTS - Testing specific features mentioned in review request
     print("\n🎯 Testing NEW Functionalities from Review Request...")
     
-    # Test 1: GDB Geographic Database Integration
-    tester.test_gdb_integration_endpoints()
+    # Test 1: Dashboard "Gestión de Predios" with Vigencia/Municipio Filters
+    tester.test_predios_dashboard_with_filters()
     
-    # Test 2: Certificate Generation for 'Atención al Usuario' Role
-    tester.test_certificate_generation_atencion_usuario()
+    # Test 2: Map Viewer Filters (Visor de Predios)
+    tester.test_map_viewer_filters()
+    
+    # Test 3: Data Import Verification for 8 municipios (36,040 total predios)
+    tester.test_data_import_verification_8_municipios()
+    
+    # Test 4: Backend Predios Endpoint with new filters
+    tester.test_backend_predios_endpoint_new_filters()
     
     # PREVIOUS FUNCTIONALITY TESTS - Testing previously implemented features
     print("\n🔧 Testing Previously Implemented Functionality...")
     
-    # Test 3: Reimported Predios Data Structure Verification
+    # Test 5: GDB Geographic Database Integration
+    tester.test_gdb_integration_endpoints()
+    
+    # Test 6: Certificate Generation for 'Atención al Usuario' Role
+    tester.test_certificate_generation_atencion_usuario()
+    
+    # Test 7: Reimported Predios Data Structure Verification
     tester.test_predios_reimported_data_structure()
     
-    # Test 4: Predios Approval System Verification
+    # Test 8: Predios Approval System Verification
     tester.test_predios_approval_system_verification()
     
-    # Test 5: Predios Data Import Verification (11,269 properties from Ábrego)
+    # Test 9: Predios Data Import Verification (11,269 properties from Ábrego)
     tester.test_predios_data_import_verification()
     
-    # Test 6: Approval System for Property Changes
+    # Test 10: Approval System for Property Changes
     tester.test_approval_system_endpoints()
     
-    # Test 7: Unified Statistics Page
+    # Test 11: Unified Statistics Page
     tester.test_unified_statistics_endpoints()
     
-    # Test 8: Excel Export
+    # Test 12: Excel Export
     tester.test_export_excel_endpoint()
     
     # ADDITIONAL TESTS (from previous functionality)
