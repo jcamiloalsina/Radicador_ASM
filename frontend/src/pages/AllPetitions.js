@@ -56,9 +56,10 @@ export default function AllPetitions() {
     if (searchTerm) {
       filtered = filtered.filter(
         (p) =>
-          p.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.tipo_tramite.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.municipio.toLowerCase().includes(searchTerm.toLowerCase())
+          (p.nombre_completo || p.creator_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (p.tipo_tramite || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (p.municipio || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (p.radicado || p.radicado_id || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
