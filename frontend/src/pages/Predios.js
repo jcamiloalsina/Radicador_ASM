@@ -863,7 +863,7 @@ export default function Predios() {
                 {filterMunicipio}
               </Badge>
               <Badge variant="outline" className="border-emerald-300">
-                Vigencia {String(filterVigencia).length === 8 ? String(filterVigencia).slice(-4) : filterVigencia}
+                Vigencia {String(filterVigencia).length >= 7 ? String(filterVigencia).slice(-4) : filterVigencia}
               </Badge>
               <Badge variant="secondary">
                 {total.toLocaleString()} predios
