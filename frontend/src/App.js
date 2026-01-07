@@ -17,6 +17,7 @@ import UserManagement from "./pages/UserManagement";
 import EstadisticasUnificadas from "./pages/EstadisticasUnificadas";
 import Predios from "./pages/Predios";
 import VisorPredios from "./pages/VisorPredios";
+import Pendientes from "./pages/Pendientes";
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
             <Route path="estadisticas" element={<EstadisticasUnificadas />} />
             <Route path="predios" element={<Predios />} />
             <Route path="visor-predios" element={<VisorPredios />} />
+            <Route path="pendientes" element={<Pendientes />} />
           </Route>
         </Routes>
       </BrowserRouter>
