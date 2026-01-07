@@ -1999,7 +1999,9 @@ async def get_predios_catalogos(current_user: dict = Depends(get_current_user)):
 @api_router.get("/predios")
 async def get_predios(
     municipio: Optional[str] = None,
+    vigencia: Optional[int] = None,
     destino_economico: Optional[str] = None,
+    zona: Optional[str] = None,  # '00' = urbano, otros = rural
     search: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
@@ -2013,8 +2015,15 @@ async def get_predios(
     
     if municipio:
         query["municipio"] = municipio
+    if vigencia:
+        query["vigencia"] = vigencia
     if destino_economico:
         query["destino_economico"] = destino_economico
+    if zona:
+        if zona == 'urbano':
+            query["zona"] = "00"
+        elif zona == 'rural':
+            query["zona"] = {"$ne": "00"}
     if search:
         query["$or"] = [
             {"codigo_predial_nacional": {"$regex": search, "$options": "i"}},
