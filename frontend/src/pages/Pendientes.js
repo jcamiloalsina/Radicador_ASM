@@ -31,10 +31,12 @@ export default function Pendientes() {
       const response = await axios.get(`${API}/predios/cambios/pendientes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setCambiosPendientes(response.data || []);
+      // Asegurarse de que siempre sea un array
+      const data = response.data;
+      setCambiosPendientes(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading pending changes:', error);
-      toast.error('Error al cargar cambios pendientes');
+      setCambiosPendientes([]);
     } finally {
       setLoading(false);
     }
