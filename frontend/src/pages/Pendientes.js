@@ -31,9 +31,10 @@ export default function Pendientes() {
       const response = await axios.get(`${API}/predios/cambios/pendientes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // Asegurarse de que siempre sea un array
+      // El API devuelve {total: X, cambios: [...]}
       const data = response.data;
-      setCambiosPendientes(Array.isArray(data) ? data : []);
+      const cambios = data.cambios || (Array.isArray(data) ? data : []);
+      setCambiosPendientes(cambios);
     } catch (error) {
       console.error('Error loading pending changes:', error);
       setCambiosPendientes([]);
