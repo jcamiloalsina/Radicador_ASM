@@ -2092,6 +2092,237 @@ async def get_predios_eliminados(
         "predios": predios
     }
 
+
+@api_router.post("/predios/import-excel")
+async def import_predios_excel(
+    file: UploadFile = File(...),
+    vigencia: int = 2025,
+    current_user: dict = Depends(get_current_user)
+):
+    """Importa predios desde archivo Excel R1-R2 con soporte de vigencia"""
+    import openpyxl
+    
+    # Solo coordinador o admin pueden importar
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden importar datos")
+    
+    if not file.filename.endswith('.xlsx'):
+        raise HTTPException(status_code=400, detail="El archivo debe ser .xlsx")
+    
+    try:
+        # Guardar archivo temporalmente
+        temp_path = UPLOAD_DIR / f"temp_import_{uuid.uuid4()}.xlsx"
+        content = await file.read()
+        with open(temp_path, 'wb') as f:
+            f.write(content)
+        
+        wb = openpyxl.load_workbook(temp_path, read_only=True, data_only=True)
+        
+        # Leer R1 (propietarios)
+        ws_r1 = wb['REGISTRO_R1']
+        r1_data = {}
+        
+        for row in ws_r1.iter_rows(min_row=2, values_only=True):
+            if not row[0]:  # Sin departamento = fila vacía
+                continue
+            
+            codigo_predial = str(row[3] or '').strip()
+            if not codigo_predial:
+                continue
+            
+            if codigo_predial not in r1_data:
+                r1_data[codigo_predial] = {
+                    'departamento': str(row[0] or '').strip(),
+                    'municipio': str(row[1] or '').strip(),
+                    'numero_predio': str(row[2] or '').strip(),
+                    'codigo_predial_nacional': codigo_predial,
+                    'codigo_homologado': str(row[4] or '').strip(),
+                    'direccion': str(row[12] or '').strip(),
+                    'comuna': str(row[13] or '').strip(),
+                    'destino_economico': str(row[14] or '').strip(),
+                    'area_terreno': float(row[15] or 0) if row[15] else 0,
+                    'area_construida': float(row[16] or 0) if row[16] else 0,
+                    'avaluo': float(str(row[17] or '0').replace('$', '').replace(',', '').replace('.', '')) if row[17] else 0,
+                    'vigencia': vigencia,
+                    'tipo_mutacion': str(row[19] or '').strip() if len(row) > 19 else '',
+                    'numero_resolucion': str(row[20] or '').strip() if len(row) > 20 else '',
+                    'fecha_resolucion': str(row[21] or '').strip() if len(row) > 21 else '',
+                    'propietarios': [],
+                    'r2_registros': [],
+                    'id': str(uuid.uuid4()),
+                    'created_at': datetime.now(timezone.utc).isoformat(),
+                    'status': 'aprobado'
+                }
+            
+            # Agregar propietario
+            nombre = str(row[8] or '').strip()
+            if nombre:
+                r1_data[codigo_predial]['propietarios'].append({
+                    'nombre_propietario': nombre,
+                    'estado_civil': str(row[9] or '').strip(),
+                    'tipo_documento': str(row[10] or '').strip(),
+                    'numero_documento': str(row[11] or '').strip()
+                })
+        
+        # Leer R2 (físico)
+        ws_r2 = wb['REGISTRO_R2']
+        
+        for row in ws_r2.iter_rows(min_row=2, values_only=True):
+            if not row[0]:
+                continue
+            
+            codigo_predial = str(row[3] or '').strip()
+            if codigo_predial not in r1_data:
+                continue
+            
+            matricula = str(row[7] or '').strip() if len(row) > 7 else ''
+            
+            # Buscar si ya existe este registro R2 (por matrícula o agregar nuevo)
+            r2_exists = False
+            for r2 in r1_data[codigo_predial]['r2_registros']:
+                if r2.get('matricula_inmobiliaria') == matricula:
+                    r2_exists = True
+                    break
+            
+            if not r2_exists:
+                zonas = []
+                
+                # Zona 1
+                if len(row) > 10 and row[10]:
+                    try:
+                        area_t = float(str(row[10] or '0').replace(',', ''))
+                    except:
+                        area_t = 0
+                    zonas.append({
+                        'zona_fisica': str(row[8] or '').strip() if len(row) > 8 else '',
+                        'zona_economica': str(row[9] or '').strip() if len(row) > 9 else '',
+                        'area_terreno': area_t,
+                        'habitaciones': int(row[14] or 0) if len(row) > 14 and row[14] else 0,
+                        'banos': int(row[15] or 0) if len(row) > 15 and row[15] else 0,
+                        'locales': int(row[16] or 0) if len(row) > 16 and row[16] else 0,
+                        'pisos': int(row[17] or 0) if len(row) > 17 and row[17] else 0,
+                        'tipificacion': str(row[18] or '').strip() if len(row) > 18 else '',
+                        'uso': str(row[19] or '').strip() if len(row) > 19 else '',
+                        'puntaje': int(row[20] or 0) if len(row) > 20 and row[20] else 0,
+                        'area_construida': float(row[21] or 0) if len(row) > 21 and row[21] else 0
+                    })
+                
+                # Zona 2
+                if len(row) > 13 and row[13]:
+                    try:
+                        area_t2 = float(str(row[13] or '0').replace(',', ''))
+                    except:
+                        area_t2 = 0
+                    if area_t2 > 0:
+                        zonas.append({
+                            'zona_fisica': str(row[11] or '').strip() if len(row) > 11 else '',
+                            'zona_economica': str(row[12] or '').strip() if len(row) > 12 else '',
+                            'area_terreno': area_t2,
+                            'habitaciones': int(row[22] or 0) if len(row) > 22 and row[22] else 0,
+                            'banos': int(row[23] or 0) if len(row) > 23 and row[23] else 0,
+                            'locales': int(row[24] or 0) if len(row) > 24 and row[24] else 0,
+                            'pisos': int(row[25] or 0) if len(row) > 25 and row[25] else 0,
+                            'tipificacion': str(row[26] or '').strip() if len(row) > 26 else '',
+                            'uso': str(row[27] or '').strip() if len(row) > 27 else '',
+                            'puntaje': int(row[28] or 0) if len(row) > 28 and row[28] else 0,
+                            'area_construida': float(row[29] or 0) if len(row) > 29 and row[29] else 0
+                        })
+                
+                r1_data[codigo_predial]['r2_registros'].append({
+                    'matricula_inmobiliaria': matricula,
+                    'zonas': zonas
+                })
+        
+        wb.close()
+        temp_path.unlink()
+        
+        # Guardar en historial antes de actualizar
+        municipio = list(r1_data.values())[0]['municipio'] if r1_data else 'Desconocido'
+        
+        # Guardar historial de la vigencia anterior
+        existing_predios = await db.predios.find(
+            {"municipio": municipio, "vigencia": {"$lt": vigencia}}, 
+            {"_id": 0}
+        ).to_list(50000)
+        
+        if existing_predios:
+            await db.predios_historico.insert_many([
+                {**p, "archivado_en": datetime.now(timezone.utc).isoformat()}
+                for p in existing_predios
+            ])
+        
+        # Eliminar predios de este municipio (vigencia anterior o actual)
+        await db.predios.delete_many({"municipio": municipio})
+        
+        # Insertar nuevos predios
+        predios_list = list(r1_data.values())
+        if predios_list:
+            await db.predios.insert_many(predios_list)
+        
+        # Registrar importación
+        await db.importaciones.insert_one({
+            "id": str(uuid.uuid4()),
+            "municipio": municipio,
+            "vigencia": vigencia,
+            "total_predios": len(predios_list),
+            "archivo": file.filename,
+            "importado_por": current_user['id'],
+            "importado_por_nombre": current_user['full_name'],
+            "fecha": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {
+            "message": f"Importación exitosa para {municipio}",
+            "vigencia": vigencia,
+            "predios_importados": len(predios_list),
+            "municipio": municipio
+        }
+        
+    except Exception as e:
+        logger.error(f"Error importing Excel: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al importar: {str(e)}")
+
+
+@api_router.get("/predios/vigencias")
+async def get_vigencias_disponibles(current_user: dict = Depends(get_current_user)):
+    """Obtiene las vigencias disponibles por municipio"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    # Vigencias actuales
+    pipeline = [
+        {"$group": {"_id": {"municipio": "$municipio", "vigencia": "$vigencia"}, "count": {"$sum": 1}}},
+        {"$sort": {"_id.municipio": 1, "_id.vigencia": -1}}
+    ]
+    result = await db.predios.aggregate(pipeline).to_list(1000)
+    
+    vigencias = {}
+    for r in result:
+        mun = r['_id']['municipio']
+        vig = r['_id']['vigencia']
+        if mun not in vigencias:
+            vigencias[mun] = []
+        vigencias[mun].append({"vigencia": vig, "predios": r['count']})
+    
+    # Vigencias históricas
+    historico_pipeline = [
+        {"$group": {"_id": {"municipio": "$municipio", "vigencia": "$vigencia"}, "count": {"$sum": 1}}},
+        {"$sort": {"_id.municipio": 1, "_id.vigencia": -1}}
+    ]
+    historico = await db.predios_historico.aggregate(historico_pipeline).to_list(1000)
+    
+    for h in historico:
+        mun = h['_id']['municipio']
+        vig = h['_id']['vigencia']
+        if mun not in vigencias:
+            vigencias[mun] = []
+        # Agregar si no existe
+        if not any(v['vigencia'] == vig for v in vigencias[mun]):
+            vigencias[mun].append({"vigencia": vig, "predios": h['count'], "historico": True})
+    
+    return vigencias
+
+
 @api_router.get("/predios/export-excel")
 async def export_predios_excel(
     municipio: Optional[str] = None,
