@@ -973,11 +973,6 @@ export default function Predios() {
               </div>
             </CardContent>
           </Card>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
       {/* Results */}
       <Card className="border-slate-200">
