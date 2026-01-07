@@ -27,8 +27,11 @@ export default function Predios() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
-  const [filterMunicipio, setFilterMunicipio] = useState('todos');
-  const [filterDestino, setFilterDestino] = useState('todos');
+  const [filterMunicipio, setFilterMunicipio] = useState('');
+  const [filterVigencia, setFilterVigencia] = useState('');
+  const [vigenciasData, setVigenciasData] = useState({});
+  const [showDashboard, setShowDashboard] = useState(true);
+  const [prediosStats, setPrediosStats] = useState(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
