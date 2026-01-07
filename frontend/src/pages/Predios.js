@@ -190,47 +190,6 @@ function ImportR1R2Form({ onSuccess }) {
   );
 }
 
-      {result && (
-        <div className={`p-3 rounded-lg ${result.success ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
-          <p className={`text-sm font-medium ${result.success ? 'text-emerald-800' : 'text-red-800'}`}>
-            {result.success ? '✅ ' : '❌ '}{result.message}
-          </p>
-          {result.success && (
-            <div className="text-xs mt-2 space-y-1">
-              <p className="text-emerald-700">📊 <strong>{result.predios?.toLocaleString()}</strong> predios importados para {result.municipio}</p>
-              {result.prediosAnteriores > 0 && (
-                <p className="text-slate-600">• Predios anteriores: {result.prediosAnteriores?.toLocaleString()}</p>
-              )}
-              {result.prediosEliminados > 0 && (
-                <p className="text-red-600">• <strong>Predios eliminados:</strong> {result.prediosEliminados?.toLocaleString()}</p>
-              )}
-              {result.prediosNuevos > 0 && (
-                <p className="text-blue-600">• Predios nuevos: {result.prediosNuevos?.toLocaleString()}</p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="flex justify-end gap-3 pt-2">
-        <Button type="submit" disabled={uploading || !file} className="bg-emerald-700 hover:bg-emerald-800">
-          {uploading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Importando...
-            </>
-          ) : (
-            <>
-              <Upload className="w-4 h-4 mr-2" />
-              Importar Predios
-            </>
-          )}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
 // Componente para ver predios eliminados
 function PrediosEliminadosView({ municipio }) {
   const [prediosEliminados, setPrediosEliminados] = useState([]);
