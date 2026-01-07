@@ -136,10 +136,11 @@ export default function Predios() {
 
   const fetchPredios = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       const params = new URLSearchParams();
-      if (filterMunicipio !== 'todos') params.append('municipio', filterMunicipio);
-      if (filterDestino !== 'todos') params.append('destino_economico', filterDestino);
+      if (filterMunicipio) params.append('municipio', filterMunicipio);
+      if (filterVigencia) params.append('vigencia', filterVigencia);
       if (search) params.append('search', search);
       
       const res = await axios.get(`${API}/predios?${params.toString()}`, {
