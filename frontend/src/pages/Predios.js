@@ -851,7 +851,7 @@ export default function Predios() {
                 {filterMunicipio}
               </Badge>
               <Badge variant="outline" className="border-emerald-300">
-                Vigencia {filterVigencia}
+                Vigencia {String(filterVigencia).length === 8 ? String(filterVigencia).slice(-4) : filterVigencia}
               </Badge>
               <Badge variant="secondary">
                 {total.toLocaleString()} predios
@@ -880,10 +880,6 @@ export default function Predios() {
                   <Button variant="outline" onClick={handleExportExcel} className="flex-1">
                     <Download className="w-4 h-4 mr-2" />
                     Excel
-                  </Button>
-                  <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800 flex-1">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nuevo
                   </Button>
                 </div>
               </div>
