@@ -48,7 +48,7 @@ export default function Login() {
           />
           <h2 className="text-xl font-bold font-outfit leading-tight">Asociación de Municipios del Catatumbo,</h2>
           <p className="text-emerald-100 mt-1 text-lg leading-relaxed">Provincia de Ocaña y Sur del Cesar</p>
-          <p className="text-emerald-200 mt-2 text-base font-bold tracking-wide">– ASOMUNICIPIOS –</p>
+          <p className="text-emerald-200 mt-2 text-base font-bold tracking-wide">– Asomunicipios –</p>
         </div>
         <div className="relative z-10 text-center">
           <p className="text-emerald-100 text-lg font-semibold">
