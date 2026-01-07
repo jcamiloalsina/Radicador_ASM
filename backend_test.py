@@ -2181,6 +2181,236 @@ class CatastralAPITester:
         
         return dashboard_success and petition_list_success and radicado_format_success and sample_petition_success and municipality_stats_success
 
+    def test_predios_dashboard_priority_p0(self):
+        """Test PREDIOS Dashboard (P0) - GET /api/predios/stats/summary"""
+        print("\n🏘️ Testing PREDIOS Dashboard (P0) - Priority Test...")
+        
+        if 'admin' not in self.tokens:
+            print("   ❌ No admin token available")
+            return False
+        
+        # Test: GET /api/predios/stats/summary - Should show counts for vigencia 2025 only
+        # Expected: 12 municipalities with data, Total should be ~58,677 predios
+        success, response = self.run_test(
+            "Get predios summary statistics (P0)",
+            "GET",
+            "predios/stats/summary",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        if success:
+            print(f"   ✅ PREDIOS Dashboard API responding")
+            
+            # Check for expected fields
+            if 'total_predios' in response:
+                total_predios = response['total_predios']
+                print(f"   - Total Predios: {total_predios:,}")
+                
+                # Check if close to expected 58,677
+                if 58000 <= total_predios <= 60000:
+                    print(f"   ✅ Total predios count within expected range (~58,677)")
+                else:
+                    print(f"   ⚠️ Total predios count: {total_predios:,} (expected ~58,677)")
+            
+            # Check municipalities count
+            if 'by_municipio' in response:
+                municipios = response['by_municipio']
+                municipios_count = len(municipios)
+                print(f"   - Municipalities with data: {municipios_count}")
+                
+                if municipios_count == 12:
+                    print(f"   ✅ Found expected 12 municipalities")
+                else:
+                    print(f"   ⚠️ Found {municipios_count} municipalities (expected 12)")
+            
+            # Check if data is for vigencia 2025 only
+            if 'vigencia' in response:
+                vigencia = response['vigencia']
+                if vigencia == 2025:
+                    print(f"   ✅ Data shows vigencia 2025 only")
+                else:
+                    print(f"   ⚠️ Data shows vigencia {vigencia} (expected 2025)")
+            
+            return True
+        else:
+            print(f"   ❌ PREDIOS Dashboard API failed")
+            return False
+
+    def test_pendientes_api_priority_p1(self):
+        """Test Pendientes API (P1) - GET /api/predios/cambios/pendientes"""
+        print("\n⏳ Testing Pendientes API (P1) - Priority Test...")
+        
+        if 'admin' not in self.tokens:
+            print("   ❌ No admin token available")
+            return False
+        
+        # Test: GET /api/predios/cambios/pendientes (with auth token)
+        # Expected: {total: 4, cambios: [...]} with specific response structure
+        success, response = self.run_test(
+            "Get pendientes cambios (P1)",
+            "GET",
+            "predios/cambios/pendientes",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        if success:
+            print(f"   ✅ Pendientes API responding")
+            
+            # Check response structure
+            if 'total' in response and 'cambios' in response:
+                total = response['total']
+                cambios = response['cambios']
+                print(f"   - Total pendientes: {total}")
+                print(f"   - Cambios array length: {len(cambios)}")
+                
+                if total == 4:
+                    print(f"   ✅ Found expected 4 pendientes")
+                else:
+                    print(f"   ⚠️ Found {total} pendientes (expected 4)")
+                
+                # Check structure of cambios array
+                if len(cambios) > 0:
+                    cambio = cambios[0]
+                    required_fields = ['id', 'tipo_cambio', 'datos_propuestos', 'propuesto_por_nombre', 'fecha_propuesta']
+                    has_all_fields = all(field in cambio for field in required_fields)
+                    
+                    if has_all_fields:
+                        print(f"   ✅ Cambios have required structure")
+                        print(f"   - Sample cambio: {cambio.get('tipo_cambio')} by {cambio.get('propuesto_por_nombre')}")
+                    else:
+                        missing_fields = [field for field in required_fields if field not in cambio]
+                        print(f"   ⚠️ Missing fields in cambios: {missing_fields}")
+                
+                return True
+            else:
+                print(f"   ❌ Response missing required fields (total, cambios)")
+                return False
+        else:
+            print(f"   ❌ Pendientes API failed")
+            return False
+
+    def test_smtp_password_reset_priority_p1(self):
+        """Test SMTP Password Reset (P1) - POST /api/auth/forgot-password"""
+        print("\n📧 Testing SMTP Password Reset (P1) - Priority Test...")
+        
+        # Test with admin email (catastro@asomunicipios.gov.co)
+        # SMTP is configured with: catastroasm@gmail.com
+        test_email_data = {"email": "catastro@asomunicipios.gov.co"}
+        
+        success, response = self.run_test(
+            "SMTP Password Reset Test (P1)",
+            "POST",
+            "auth/forgot-password",
+            200,  # Expect 200 if SMTP is working
+            data=test_email_data
+        )
+        
+        if success:
+            print(f"   ✅ SMTP Password Reset working - 200 response")
+            print(f"   - SMTP configured with catastroasm@gmail.com")
+            return True
+        else:
+            # Try alternative status codes
+            success_503, response_503 = self.run_test(
+                "SMTP Password Reset Test (503 - Service Unavailable)",
+                "POST",
+                "auth/forgot-password",
+                503,
+                data=test_email_data
+            )
+            
+            if success_503:
+                print(f"   ⚠️ SMTP Service Unavailable (503) - SMTP not configured properly")
+                return False
+            
+            success_500, response_500 = self.run_test(
+                "SMTP Password Reset Test (500 - Internal Error)",
+                "POST",
+                "auth/forgot-password",
+                500,
+                data=test_email_data
+            )
+            
+            if success_500:
+                print(f"   ❌ SMTP Internal Error (500) - SMTP configuration issue")
+                return False
+            
+            print(f"   ❌ SMTP Password Reset failed with unexpected status")
+            return False
+
+    def test_productivity_pdf_export_priority_p2(self):
+        """Test Productivity PDF Export (P2) - Find and test PDF endpoint"""
+        print("\n📊 Testing Productivity PDF Export (P2) - Priority Test...")
+        
+        if 'admin' not in self.tokens:
+            print("   ❌ No admin token available")
+            return False
+        
+        # Test common productivity PDF endpoints
+        pdf_endpoints = [
+            "reports/gestor-productivity/export-pdf",
+            "petitions/productividad/pdf", 
+            "reports/productividad/pdf",
+            "reports/productivity/export"
+        ]
+        
+        for endpoint in pdf_endpoints:
+            success, response = self.run_test(
+                f"Test PDF endpoint: {endpoint}",
+                "GET",
+                endpoint,
+                200,
+                token=self.tokens['admin']
+            )
+            
+            if success:
+                print(f"   ✅ Found working PDF endpoint: {endpoint}")
+                return True
+        
+        print(f"   ❌ No working productivity PDF endpoint found")
+        return False
+
+    def test_petition_statistics_priority(self):
+        """Test Petition Statistics - GET /api/stats/dashboard"""
+        print("\n📈 Testing Petition Statistics - Priority Test...")
+        
+        if 'admin' not in self.tokens:
+            print("   ❌ No admin token available")
+            return False
+        
+        # Test: GET /api/stats/dashboard or similar
+        # Expected: ~5,446 total petitions
+        success, response = self.run_test(
+            "Get petition statistics",
+            "GET",
+            "petitions/stats/dashboard",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        if success:
+            print(f"   ✅ Petition Statistics API responding")
+            
+            if 'total' in response:
+                total_petitions = response['total']
+                print(f"   - Total Petitions: {total_petitions:,}")
+                
+                # Check if close to expected 5,446
+                if 5000 <= total_petitions <= 6000:
+                    print(f"   ✅ Total petitions within expected range (~5,446)")
+                else:
+                    print(f"   ⚠️ Total petitions: {total_petitions:,} (expected ~5,446)")
+                
+                return True
+            else:
+                print(f"   ❌ Response missing 'total' field")
+                return False
+        else:
+            print(f"   ❌ Petition Statistics API failed")
+            return False
+
 def main():
     print("🚀 Starting Asomunicipios Cadastral Management System API Tests")
     print("=" * 60)
