@@ -2145,8 +2145,23 @@ async def import_predios_excel(
         
         wb = openpyxl.load_workbook(temp_path, read_only=True, data_only=True)
         
+        # Buscar hoja R1 con nombres alternativos
+        r1_sheet_names = ['REGISTRO_R1', 'R1', 'Registro_R1', 'registro_r1', 'Hoja1', 'Sheet1']
+        ws_r1 = None
+        for name in r1_sheet_names:
+            if name in wb.sheetnames:
+                ws_r1 = wb[name]
+                break
+        
+        if ws_r1 is None:
+            wb.close()
+            temp_path.unlink()
+            raise HTTPException(
+                status_code=400, 
+                detail=f"No se encontró hoja R1. Hojas disponibles: {', '.join(wb.sheetnames)}. Se esperaba: REGISTRO_R1, R1, o similar."
+            )
+        
         # Leer R1 (propietarios)
-        ws_r1 = wb['REGISTRO_R1']
         r1_data = {}
         
         for row in ws_r1.iter_rows(min_row=2, values_only=True):
