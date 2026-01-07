@@ -63,6 +63,9 @@ function ImportR1R2Form({ onSuccess }) {
         success: true,
         message: response.data.message,
         predios: response.data.predios_importados,
+        prediosAnteriores: response.data.predios_anteriores,
+        prediosEliminados: response.data.predios_eliminados,
+        prediosNuevos: response.data.predios_nuevos,
         municipio: response.data.municipio
       });
       
