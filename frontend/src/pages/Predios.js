@@ -12,13 +12,150 @@ import axios from 'axios';
 import { 
   Plus, Search, Edit, Trash2, MapPin, FileText, Building, 
   User, DollarSign, LayoutGrid, Eye, History, Download, AlertTriangle, Users,
-  Clock, CheckCircle, XCircle, Bell, Map
+  Clock, CheckCircle, XCircle, Bell, Map, Upload, Loader2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import PredioMap from '../components/PredioMap';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Componente para importar archivos R1/R2
+function ImportR1R2Form({ onSuccess }) {
+  const [file, setFile] = useState(null);
+  const [vigencia, setVigencia] = useState(new Date().getFullYear().toString());
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!file) {
+      toast.error('Por favor seleccione un archivo Excel');
+      return;
+    }
+
+    setUploading(true);
+    setResult(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Convertir vigencia a formato 0101YYYY
+      const vigenciaFormato = `0101${vigencia}`;
+
+      const response = await axios.post(
+        `${API}/predios/import-excel?vigencia=${vigenciaFormato}`,
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      setResult({
+        success: true,
+        message: response.data.message,
+        predios: response.data.predios_importados,
+        municipio: response.data.municipio
+      });
+      
+      toast.success(`Importación exitosa: ${response.data.predios_importados} predios`);
+      
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || 'Error al importar archivo';
+      setResult({
+        success: false,
+        message: errorMsg
+      });
+      toast.error(errorMsg);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
+        <p className="font-medium text-blue-800 mb-2">Instrucciones de Importación:</p>
+        <ul className="text-blue-700 space-y-1 text-xs">
+          <li>• El archivo debe ser .xlsx con hojas REGISTRO_R1 y REGISTRO_R2</li>
+          <li>• Se reemplazarán los predios existentes del municipio</li>
+          <li>• Los predios anteriores se guardarán en el historial</li>
+          <li>• El sistema calculará automáticamente los predios eliminados</li>
+        </ul>
+      </div>
+
+      <div>
+        <Label className="text-sm font-medium">Vigencia (Año) *</Label>
+        <Select value={vigencia} onValueChange={setVigencia}>
+          <SelectTrigger className="mt-1">
+            <SelectValue placeholder="Seleccione el año" />
+          </SelectTrigger>
+          <SelectContent>
+            {years.map(year => (
+              <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-slate-500 mt-1">Se almacenará como vigencia 0101{vigencia}</p>
+      </div>
+
+      <div>
+        <Label className="text-sm font-medium">Archivo R1-R2 (.xlsx) *</Label>
+        <div className="mt-1 flex items-center gap-3">
+          <Input
+            type="file"
+            accept=".xlsx"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className="flex-1"
+          />
+        </div>
+        {file && (
+          <p className="text-xs text-emerald-600 mt-1">Archivo seleccionado: {file.name}</p>
+        )}
+      </div>
+
+      {result && (
+        <div className={`p-3 rounded-lg ${result.success ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
+          <p className={`text-sm font-medium ${result.success ? 'text-emerald-800' : 'text-red-800'}`}>
+            {result.success ? '✅ ' : '❌ '}{result.message}
+          </p>
+          {result.success && (
+            <p className="text-xs text-emerald-600 mt-1">
+              {result.predios} predios importados para {result.municipio}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="flex justify-end gap-3 pt-2">
+        <Button type="submit" disabled={uploading || !file} className="bg-emerald-700 hover:bg-emerald-800">
+          {uploading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Importando...
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4 mr-2" />
+              Importar Predios
+            </>
+          )}
+        </Button>
+      </div>
+    </form>
+  );
+}
 
 export default function Predios() {
   const { user } = useAuth();
