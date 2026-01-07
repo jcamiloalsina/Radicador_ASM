@@ -3461,6 +3461,105 @@ async def get_geometry_by_code(codigo_predial: str, current_user: dict = Depends
     return geometry
 
 
+@api_router.get("/gdb/geometrias")
+async def get_geometrias_filtradas(
+    municipio: Optional[str] = None,
+    zona: Optional[str] = None,  # 'urbano' o 'rural'
+    limit: int = 500,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all geometries for a municipality/zone to display on map"""
+    import geopandas as gpd
+    from pyproj import CRS, Transformer
+    from shapely.ops import transform
+    
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    if not municipio:
+        raise HTTPException(status_code=400, detail="Debe especificar un municipio")
+    
+    # GDB files configuration
+    GDB_FILES = {
+        'Ábrego': ('/app/gdb_data/54003.gdb', 'R_TERRENO_1', 'U_TERRENO_1'),
+        'Bucarasica': ('/app/gdb_data/54109.gdb', 'R_TERRENO', 'U_TERRENO'),
+        'Cáchira': ('/app/gdb_data/54128.gdb', 'R_TERRENO', 'U_TERRENO'),
+    }
+    
+    if municipio not in GDB_FILES:
+        raise HTTPException(status_code=404, detail=f"No hay datos geográficos para {municipio}")
+    
+    gdb_path, rural_layer, urban_layer = GDB_FILES[municipio]
+    
+    if not Path(gdb_path).exists():
+        raise HTTPException(status_code=404, detail=f"Archivo GDB no encontrado para {municipio}")
+    
+    try:
+        features = []
+        
+        # Set up coordinate transformer (EPSG:3116 to WGS84)
+        transformer = Transformer.from_crs(CRS("EPSG:3116"), CRS("EPSG:4326"), always_xy=True)
+        
+        def transform_coords(geom):
+            return transform(transformer.transform, geom)
+        
+        # Read requested zone(s)
+        layers_to_read = []
+        if zona == 'urbano':
+            layers_to_read = [(urban_layer, 'Urbano')]
+        elif zona == 'rural':
+            layers_to_read = [(rural_layer, 'Rural')]
+        else:
+            layers_to_read = [(rural_layer, 'Rural'), (urban_layer, 'Urbano')]
+        
+        for layer_name, tipo in layers_to_read:
+            try:
+                gdf = gpd.read_file(gdb_path, layer=layer_name)
+                
+                # Find the code column
+                code_col = None
+                for col in ['codigo_ant', 'CODIGO', 'codigo', 'CODIGO_ANT']:
+                    if col in gdf.columns:
+                        code_col = col
+                        break
+                
+                # Limit results
+                gdf = gdf.head(limit)
+                
+                for idx, row in gdf.iterrows():
+                    geom = row.geometry
+                    if geom is not None:
+                        # Transform coordinates
+                        geom_wgs84 = transform_coords(geom)
+                        
+                        codigo = str(row[code_col]) if code_col and row[code_col] else f"SIN_CODIGO_{idx}"
+                        
+                        feature = {
+                            "type": "Feature",
+                            "geometry": geom_wgs84.__geo_interface__,
+                            "properties": {
+                                "codigo": codigo,
+                                "tipo": tipo,
+                                "area_m2": round(geom.area, 2) if geom.area else 0
+                            }
+                        }
+                        features.append(feature)
+            except Exception as e:
+                logger.warning(f"Error reading layer {layer_name}: {e}")
+                continue
+        
+        return {
+            "type": "FeatureCollection",
+            "municipio": municipio,
+            "zona_filter": zona,
+            "total": len(features),
+            "features": features
+        }
+    except Exception as e:
+        logger.error(f"Error getting geometries: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al obtener geometrías: {str(e)}")
+
+
 @api_router.get("/gdb/stats")
 async def get_gdb_stats(current_user: dict = Depends(get_current_user)):
     """Get statistics about available geographic data from all GDB files"""
