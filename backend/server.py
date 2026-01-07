@@ -2253,7 +2253,7 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
     # INFORMACIÓN CATASTRAL
     items_catastral = [
         ("Código Predial Nacional", predio.get('codigo_predial_nacional', '')),
-        ("Código Anterior (Homologado)", predio.get('codigo_homologado', '')),
+        ("Código Homologado", predio.get('codigo_homologado', '')),
         ("Número de Predio", predio.get('numero_predio', '01')),
     ]
     y = draw_section("INFORMACIÓN CATASTRAL", items_catastral, y)
