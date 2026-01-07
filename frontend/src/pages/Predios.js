@@ -938,46 +938,41 @@ export default function Predios() {
           {/* Filters */}
           <Card className="border-slate-200">
             <CardContent className="pt-6">
-              <div className="flex flex-col gap-4">
-                {/* Fila de búsqueda con botones */}
-                <div className="flex flex-wrap gap-2">
-                  <div className="flex-1 min-w-[200px]">
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Buscar por código, propietario, documento, matrícula..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                      />
-                      <Button onClick={handleSearch} variant="outline">
-                        <Search className="w-4 h-4" />
-                      </Button>
-                    </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex-1 min-w-[200px]">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Buscar por código, propietario, documento, matrícula..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    />
+                    <Button onClick={handleSearch} variant="outline">
+                      <Search className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nuevo Predio
-                  </Button>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="border-red-300 text-red-700 hover:bg-red-50">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Predios Eliminados
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Predios Eliminados</DialogTitle>
-                      </DialogHeader>
-                      <PrediosEliminadosView municipio={filterMunicipio} />
-                    </DialogContent>
-                  </Dialog>
                 </div>
-                {/* Fila de exportar */}
-                <div className="flex justify-end">
-                  <Button variant="outline" onClick={handleExportExcel}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Exportar Excel
+                <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo Predio
+                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="border-red-300 text-red-700 hover:bg-red-50">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Predios Eliminados
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Predios Eliminados - {filterMunicipio}</DialogTitle>
+                    </DialogHeader>
+                    <PrediosEliminadosView municipio={filterMunicipio} />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardContent>
+          </Card>
                   </Button>
                 </div>
               </div>
