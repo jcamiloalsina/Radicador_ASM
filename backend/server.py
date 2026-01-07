@@ -17,7 +17,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import shutil
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
@@ -2305,7 +2305,7 @@ async def export_predios_excel(
 
 def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por: str) -> bytes:
     """Genera un certificado catastral en PDF con diseño institucional de Asomunicipios"""
-    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.pagesizes import letter, landscape
     from reportlab.lib import colors
     from reportlab.lib.units import cm
     from reportlab.pdfgen import canvas
