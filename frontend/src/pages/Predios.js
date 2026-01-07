@@ -134,9 +134,18 @@ function ImportR1R2Form({ onSuccess }) {
             {result.success ? '✅ ' : '❌ '}{result.message}
           </p>
           {result.success && (
-            <p className="text-xs text-emerald-600 mt-1">
-              {result.predios} predios importados para {result.municipio}
-            </p>
+            <div className="text-xs mt-2 space-y-1">
+              <p className="text-emerald-700">📊 <strong>{result.predios?.toLocaleString()}</strong> predios importados para {result.municipio}</p>
+              {result.prediosAnteriores > 0 && (
+                <p className="text-slate-600">• Predios anteriores: {result.prediosAnteriores?.toLocaleString()}</p>
+              )}
+              {result.prediosEliminados > 0 && (
+                <p className="text-red-600">• <strong>Predios eliminados:</strong> {result.prediosEliminados?.toLocaleString()}</p>
+              )}
+              {result.prediosNuevos > 0 && (
+                <p className="text-blue-600">• Predios nuevos: {result.prediosNuevos?.toLocaleString()}</p>
+              )}
+            </div>
           )}
         </div>
       )}
