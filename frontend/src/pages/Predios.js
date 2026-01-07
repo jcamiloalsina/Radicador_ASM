@@ -802,7 +802,7 @@ export default function Predios() {
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-lg font-outfit">Predios por Municipio</CardTitle>
-                    <p className="text-sm text-slate-500">Vigencia actual: <span className="font-semibold text-emerald-700">2025</span> — Haga clic en un municipio para ver sus predios</p>
+                    <p className="text-sm text-slate-500">Haga clic en un municipio para ver los predios de la vigencia más reciente</p>
                   </div>
                   {/* Botón de importar R1/R2 solo para coordinadores y admins */}
                   {user && ['coordinador', 'administrador'].includes(user.role) && (
@@ -825,24 +825,29 @@ export default function Predios() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[...prediosStats.by_municipio].sort((a, b) => a.municipio.localeCompare(b.municipio, 'es')).map((item) => (
-                    <Button
-                      key={item.municipio}
-                      variant="outline"
-                      className="h-auto py-4 flex flex-col items-start justify-start text-left hover:bg-emerald-50 hover:border-emerald-300"
-                      onClick={() => {
-                        setFilterMunicipio(item.municipio);
-                        // Obtener la vigencia más reciente del municipio
-                        const vigencias = vigenciasData[item.municipio] || [];
-                        const vigenciaReciente = vigencias.length > 0 ? String(vigencias[0].vigencia) : '2025';
-                        setFilterVigencia(vigenciaReciente);
-                      }}
-                    >
-                      <span className="font-medium text-slate-900">{item.municipio}</span>
-                      <span className="text-xl font-bold text-emerald-700">{item.count?.toLocaleString()}</span>
-                      <span className="text-xs text-slate-500">predios</span>
-                    </Button>
-                  ))}
+                  {[...prediosStats.by_municipio].sort((a, b) => a.municipio.localeCompare(b.municipio, 'es')).map((item) => {
+                    // Obtener la vigencia más reciente del municipio (ordenadas de más nueva a más vieja)
+                    const vigencias = vigenciasData[item.municipio] || [];
+                    const vigenciaReciente = vigencias.length > 0 ? vigencias[0].vigencia : null;
+                    // Extraer el año de la vigencia (puede ser 2025 o 01012025 o 1012025)
+                    const vigenciaYear = vigenciaReciente ? (String(vigenciaReciente).length >= 7 ? String(vigenciaReciente).slice(-4) : vigenciaReciente) : '---';
+                    
+                    return (
+                      <Button
+                        key={item.municipio}
+                        variant="outline"
+                        className="h-auto py-4 flex flex-col items-start justify-start text-left hover:bg-emerald-50 hover:border-emerald-300"
+                        onClick={() => {
+                          setFilterMunicipio(item.municipio);
+                          setFilterVigencia(String(vigenciaReciente || '2025'));
+                        }}
+                      >
+                        <span className="font-medium text-slate-900">{item.municipio}</span>
+                        <span className="text-xl font-bold text-emerald-700">{item.count?.toLocaleString()}</span>
+                        <span className="text-xs text-slate-500">predios · vigencia {vigenciaYear}</span>
+                      </Button>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
