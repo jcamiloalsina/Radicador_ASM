@@ -2898,28 +2898,9 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
     
     c.save()
     return buffer.getvalue()
-    y -= 12
-    c.setFont("Helvetica", 8)
-    c.setFillColor(gris_texto)
-    c.drawString(header_x, y, "Asociación de Municipios del Catatumbo")
-    y -= 10
-    c.drawString(header_x, y, "Provincia de Ocaña y Sur del Cesar")
-    y -= 12
-    c.setFont("Helvetica-Bold", 9)
-    c.setFillColor(verde_asomunicipios)
-    c.drawString(header_x, y, "Gestor Catastral")
-    
-    # Fecha y número de certificado (derecha)
-    fecha_str = f"{fecha_actual.day} de {meses[fecha_actual.month-1]} del {fecha_actual.year}"
-    c.setFont("Helvetica", 9)
-    c.setFillColor(gris_texto)
-    c.drawRightString(right_margin, height - 1.5 * cm, fecha_str)
-    
-    # Número de certificado con formato COM-F03-XXXX-GC-XX
-    c.setFont("Helvetica-Bold", 9)
-    c.setFillColor(azul_asomunicipios)
-    cert_numero = numero_certificado or "COM-F03-____-GC-__"
-    c.drawRightString(right_margin, height - 2 * cm, f"CERTIFICADO: {cert_numero}")
+
+
+@api_router.get("/predios/{predio_id}/certificado")
     
     # Línea separadora
     y = height - 4.2 * cm
