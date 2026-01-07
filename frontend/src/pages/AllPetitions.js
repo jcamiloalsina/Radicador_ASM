@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Search, Eye, Filter } from 'lucide-react';
+import { Search, Eye, Filter, Download, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
