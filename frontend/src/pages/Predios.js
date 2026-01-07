@@ -108,6 +108,32 @@ export default function Predios() {
     }
   };
 
+  const fetchVigencias = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/predios/vigencias`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setVigenciasData(res.data);
+    } catch (error) {
+      console.log('Vigencias no disponibles');
+    }
+  };
+
+  const fetchPrediosStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/predios/stats/summary`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPrediosStats(res.data);
+    } catch (error) {
+      console.log('Stats no disponibles');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchPredios = async () => {
     try {
       const token = localStorage.getItem('token');
