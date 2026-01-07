@@ -169,6 +169,81 @@ function ImportR1R2Form({ onSuccess }) {
   );
 }
 
+// Componente para ver predios eliminados
+function PrediosEliminadosView({ municipio }) {
+  const [prediosEliminados, setPrediosEliminados] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEliminados = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const params = new URLSearchParams();
+        if (municipio) params.append('municipio', municipio);
+        
+        const response = await axios.get(`${API}/predios/eliminados?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setPrediosEliminados(response.data || []);
+      } catch (error) {
+        console.error('Error loading eliminated predios:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEliminados();
+  }, [municipio]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-700" />
+      </div>
+    );
+  }
+
+  if (prediosEliminados.length === 0) {
+    return (
+      <div className="text-center py-8 text-slate-500">
+        <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+        <p>No hay predios eliminados para {municipio || 'este filtro'}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+        <p className="text-sm text-red-800">
+          <strong>{prediosEliminados.length}</strong> predios fueron eliminados en la última importación de {municipio}
+        </p>
+      </div>
+      <div className="max-h-96 overflow-y-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-100 sticky top-0">
+            <tr>
+              <th className="text-left py-2 px-3">Código Predial</th>
+              <th className="text-left py-2 px-3">Propietario</th>
+              <th className="text-left py-2 px-3">Dirección</th>
+              <th className="text-right py-2 px-3">Avalúo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {prediosEliminados.map((predio, idx) => (
+              <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
+                <td className="py-2 px-3 font-mono text-xs">{predio.codigo_predial_nacional}</td>
+                <td className="py-2 px-3">{predio.propietarios?.[0]?.nombre_propietario || 'N/A'}</td>
+                <td className="py-2 px-3">{predio.direccion}</td>
+                <td className="py-2 px-3 text-right">${(predio.avaluo || 0).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function Predios() {
   const { user } = useAuth();
   const [predios, setPredios] = useState([]);
