@@ -263,6 +263,55 @@ export default function VisorPredios() {
       <div className="grid grid-cols-12 gap-6">
         {/* Panel Izquierdo - Búsqueda y Detalle con scroll */}
         <div className="col-span-4 space-y-4 max-h-[calc(100vh-180px)] overflow-y-auto pr-2">
+          {/* Filtros de Municipio y Zona */}
+          <Card className="border-emerald-200">
+            <CardHeader className="py-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Layers className="w-4 h-4 text-emerald-700" /> Filtrar Geometrías
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Municipio</label>
+                <Select value={filterMunicipio} onValueChange={setFilterMunicipio}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione municipio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin filtro</SelectItem>
+                    {gdbStats?.municipios && Object.keys(gdbStats.municipios).map(m => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Zona</label>
+                <Select value={filterZona} onValueChange={setFilterZona} disabled={!filterMunicipio}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas las zonas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas las zonas</SelectItem>
+                    <SelectItem value="urbano">Urbano</SelectItem>
+                    <SelectItem value="rural">Rural</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {loadingGeometries && (
+                <div className="flex items-center gap-2 text-sm text-emerald-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-700"></div>
+                  Cargando geometrías...
+                </div>
+              )}
+              {allGeometries && (
+                <Badge className="bg-emerald-100 text-emerald-800">
+                  {allGeometries.total} polígonos cargados
+                </Badge>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Búsqueda */}
           <Card>
             <CardHeader className="py-3">
