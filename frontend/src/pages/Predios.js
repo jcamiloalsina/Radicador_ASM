@@ -720,39 +720,7 @@ export default function Predios() {
                 </div>
               </div>
             </CardContent>
-          </Card>}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                />
-                <Button onClick={handleSearch} variant="outline">
-                  <Search className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-            <Select value={filterMunicipio} onValueChange={setFilterMunicipio}>
-              <SelectTrigger>
-                <SelectValue placeholder="Municipio" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los municipios</SelectItem>
-                {catalogos?.municipios?.map(m => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterDestino} onValueChange={setFilterDestino}>
-              <SelectTrigger>
-                <SelectValue placeholder="Destino" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los destinos</SelectItem>
-                {catalogos?.destino_economico && Object.entries(catalogos.destino_economico).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{k} - {v}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+          </Card>
 
       {/* Results */}
       <Card className="border-slate-200">
@@ -763,13 +731,17 @@ export default function Predios() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-700"></div>
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="text-left py-3 px-4 font-semibold text-slate-700">Código Nacional</th>
                   <th className="text-left py-3 px-4 font-semibold text-slate-700">Propietario(s)</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Municipio</th>
                   <th className="text-left py-3 px-4 font-semibold text-slate-700">Dirección</th>
                   <th className="text-center py-3 px-4 font-semibold text-slate-700">Destino</th>
                   <th className="text-right py-3 px-4 font-semibold text-slate-700">Avalúo</th>
