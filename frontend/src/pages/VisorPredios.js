@@ -71,6 +71,38 @@ export default function VisorPredios() {
     fetchGdbStats();
   }, []);
 
+  // Cargar geometrías cuando cambian los filtros
+  useEffect(() => {
+    if (filterMunicipio) {
+      fetchAllGeometries();
+    } else {
+      setAllGeometries(null);
+    }
+  }, [filterMunicipio, filterZona]);
+
+  const fetchAllGeometries = async () => {
+    setLoadingGeometries(true);
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams();
+      params.append('municipio', filterMunicipio);
+      if (filterZona !== 'todos') params.append('zona', filterZona);
+      params.append('limit', '500');
+      
+      const response = await axios.get(`${API}/gdb/geometrias?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAllGeometries(response.data);
+      toast.success(`${response.data.total} geometrías cargadas`);
+    } catch (error) {
+      console.error('Error loading geometries:', error);
+      toast.error('Error al cargar geometrías');
+      setAllGeometries(null);
+    } finally {
+      setLoadingGeometries(false);
+    }
+  };
+
   const fetchGdbStats = async () => {
     try {
       const token = localStorage.getItem('token');
