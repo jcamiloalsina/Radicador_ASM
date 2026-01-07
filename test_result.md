@@ -792,6 +792,8 @@ test_plan:
     - "Dashboard Gestión de Predios con filtros vigencia/municipio"
     - "Filtros en Visor de Predios (municipio/zona)"
     - "Importación de datos de 5 municipios"
-  stuck_tasks: []
+    - "Backend Predios Endpoint con nuevos filtros"
+  stuck_tasks:
+    - "Certificate Generation for Atencion al Usuario"
   test_all: false
   test_priority: "high_first"
