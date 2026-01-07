@@ -3454,27 +3454,45 @@ async def get_geometry_by_code(codigo_predial: str, current_user: dict = Depends
 
 @api_router.get("/gdb/stats")
 async def get_gdb_stats(current_user: dict = Depends(get_current_user)):
-    """Get statistics about available geographic data"""
+    """Get statistics about available geographic data from all GDB files"""
     import geopandas as gpd
     
     # Only staff can access stats
     if current_user['role'] == UserRole.CIUDADANO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
-    if not GDB_PATH.exists():
-        raise HTTPException(status_code=404, detail="Base de datos geográfica no disponible")
+    GDB_FILES = {
+        'Ábrego': ('/app/gdb_data/54003.gdb', 'R_TERRENO_1', 'U_TERRENO_1'),
+        'Bucarasica': ('/app/gdb_data/54109.gdb', 'R_TERRENO', 'U_TERRENO'),
+        'Cáchira': ('/app/gdb_data/54128.gdb', 'R_TERRENO', 'U_TERRENO'),
+    }
     
     try:
-        # Count records in each layer
-        r_terreno = gpd.read_file(str(GDB_PATH), layer='R_TERRENO_1')
-        u_terreno = gpd.read_file(str(GDB_PATH), layer='U_TERRENO_1')
+        stats_by_municipio = {}
+        total_rurales = 0
+        total_urbanos = 0
+        
+        for municipio, (path, rural_layer, urban_layer) in GDB_FILES.items():
+            if Path(path).exists():
+                try:
+                    r_count = len(gpd.read_file(path, layer=rural_layer))
+                    u_count = len(gpd.read_file(path, layer=urban_layer))
+                    stats_by_municipio[municipio] = {
+                        "rurales": r_count,
+                        "urbanos": u_count,
+                        "total": r_count + u_count
+                    }
+                    total_rurales += r_count
+                    total_urbanos += u_count
+                except Exception as e:
+                    stats_by_municipio[municipio] = {"error": str(e)}
         
         return {
             "gdb_disponible": True,
-            "predios_rurales": len(r_terreno),
-            "predios_urbanos": len(u_terreno),
-            "total_geometrias": len(r_terreno) + len(u_terreno),
-            "capas": ["R_TERRENO_1", "U_TERRENO_1"]
+            "predios_rurales": total_rurales,
+            "predios_urbanos": total_urbanos,
+            "total_geometrias": total_rurales + total_urbanos,
+            "municipios": stats_by_municipio
         }
     except Exception as e:
         logger.error(f"Error reading GDB stats: {e}")
