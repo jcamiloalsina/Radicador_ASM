@@ -56,8 +56,8 @@ export default function DashboardLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Sidebar - Desktop */}
-      <div className="hidden md:flex w-64 flex-col bg-emerald-900 text-white border-r border-emerald-800">
-        <div className="p-6 border-b border-emerald-800">
+      <div className="hidden md:flex w-64 flex-col bg-emerald-900 text-white border-r border-emerald-800 overflow-y-auto">
+        <div className="p-6 border-b border-emerald-800 flex-shrink-0">
           <img 
             src="/logo_asomunicipios.jpeg" 
             alt="Asomunicipios Logo" 
@@ -71,7 +71,7 @@ export default function DashboardLayout() {
           <p className="text-emerald-100 text-xs mt-2 text-center">{getRoleName(user.role)}</p>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2" data-testid="sidebar-nav">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto" data-testid="sidebar-nav">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -93,7 +93,7 @@ export default function DashboardLayout() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-emerald-800">
+        <div className="p-4 border-t border-emerald-800 flex-shrink-0">
           <div className="px-4 py-2 mb-2">
             <p className="text-sm font-medium text-white" data-testid="user-name">{user.full_name}</p>
             <p className="text-xs text-emerald-200" data-testid="user-email">{user.email}</p>
