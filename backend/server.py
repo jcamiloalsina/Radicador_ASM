@@ -2257,8 +2257,31 @@ async def import_predios_excel(
         wb.close()
         temp_path.unlink()
         
+        # Mapeo de códigos de municipio a nombres
+        MUNICIPIO_CODIGOS = {
+            '003': 'Ábrego', '54003': 'Ábrego',
+            '109': 'Bucarasica', '54109': 'Bucarasica',
+            '128': 'Cáchira', '54128': 'Cáchira',
+            '206': 'Convención', '54206': 'Convención',
+            '245': 'El Carmen', '54245': 'El Carmen',
+            '250': 'El Tarra', '54250': 'El Tarra',
+            '344': 'Hacarí', '54344': 'Hacarí',
+            '398': 'La Playa', '54398': 'La Playa',
+            '670': 'San Calixto', '54670': 'San Calixto',
+            '720': 'Sardinata', '54720': 'Sardinata',
+            '800': 'Teorama', '54800': 'Teorama',
+            '614': 'Río de Oro', '20614': 'Río de Oro',
+        }
+        
         # Guardar en historial antes de actualizar
-        municipio = list(r1_data.values())[0]['municipio'] if r1_data else 'Desconocido'
+        municipio_raw = list(r1_data.values())[0]['municipio'] if r1_data else 'Desconocido'
+        # Normalizar nombre del municipio
+        municipio = MUNICIPIO_CODIGOS.get(municipio_raw, municipio_raw)
+        
+        # Actualizar el municipio en todos los predios si era un código
+        if municipio_raw in MUNICIPIO_CODIGOS:
+            for predio in r1_data.values():
+                predio['municipio'] = municipio
         
         # Guardar historial de la vigencia anterior
         existing_predios = await db.predios.find(
