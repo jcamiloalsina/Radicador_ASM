@@ -63,6 +63,21 @@ export default function UserManagement() {
     }
   };
 
+  const handleGdbPermissionChange = async (userId, canUpdate) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(
+        `${API}/users/${userId}/gdb-permission?puede_actualizar=${canUpdate}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success(canUpdate ? 'Permiso GDB otorgado' : 'Permiso GDB revocado');
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al actualizar permiso');
+    }
+  };
+
   const getRoleBadge = (role) => {
     const roleConfig = {
       ciudadano: { label: 'Ciudadano', className: 'bg-blue-100 text-blue-800' },
