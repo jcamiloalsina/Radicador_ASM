@@ -1569,6 +1569,175 @@ async def export_gestor_productivity_pdf(current_user: dict = Depends(get_curren
     )
 
 
+@api_router.get("/reports/listado-tramites/export-pdf")
+async def export_listado_tramites_pdf(
+    municipio: Optional[str] = None,
+    estado: Optional[str] = None,
+    fecha_inicio: Optional[str] = None,
+    fecha_fin: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Export petition list as PDF (Listado de Trámites)"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.ATENCION_USUARIO, UserRole.GESTOR]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
+    
+    # Build query
+    query = {}
+    if municipio:
+        query["municipio"] = municipio
+    if estado:
+        query["estado"] = estado
+    if fecha_inicio:
+        query["created_at"] = {"$gte": fecha_inicio}
+    if fecha_fin:
+        if "created_at" in query:
+            query["created_at"]["$lte"] = fecha_fin
+        else:
+            query["created_at"] = {"$lte": fecha_fin}
+    
+    # Get petitions
+    petitions = await db.petitions.find(query, {"_id": 0}).sort("created_at", -1).to_list(5000)
+    
+    # Get user names for gestores
+    users = await db.users.find({}, {"_id": 0, "id": 1, "full_name": 1}).to_list(1000)
+    user_map = {u['id']: u['full_name'] for u in users}
+    
+    # Generate PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), leftMargin=0.5*inch, rightMargin=0.5*inch)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # Header with logo
+    logo_path = Path("/app/backend/logo_asomunicipios.png")
+    if logo_path.exists():
+        img = Image(str(logo_path), width=6*inch, height=1*inch)
+        story.append(img)
+        story.append(Spacer(1, 0.2*inch))
+    
+    # Title
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Heading1'],
+        fontSize=14,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#047857'),
+        spaceAfter=10
+    )
+    story.append(Paragraph("LISTADO DE TRÁMITES CATASTRALES", title_style))
+    
+    # Filter info
+    filter_text = f"Fecha de generación: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+    if municipio:
+        filter_text += f" | Municipio: {municipio}"
+    if estado:
+        filter_text += f" | Estado: {estado}"
+    story.append(Paragraph(filter_text, styles['Normal']))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Table data
+    table_data = [
+        ['No.', 'RADICADO', 'FECHA', 'SOLICITANTE', 'TIPO TRÁMITE', 'MUNICIPIO', 'ESTADO', 'GESTOR']
+    ]
+    
+    estado_labels = {
+        'radicado': 'Radicado',
+        'asignado': 'Asignado',
+        'revision': 'En Revisión',
+        'devuelto': 'Devuelto',
+        'rechazado': 'Rechazado',
+        'finalizado': 'Finalizado'
+    }
+    
+    for idx, pet in enumerate(petitions, 1):
+        created_at = pet.get('created_at', '')
+        if isinstance(created_at, str):
+            try:
+                created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                fecha_str = created_at.strftime('%d/%m/%Y')
+            except:
+                fecha_str = str(created_at)[:10]
+        else:
+            fecha_str = created_at.strftime('%d/%m/%Y') if created_at else ''
+        
+        gestor_names = []
+        for g_id in pet.get('gestores_asignados', []):
+            if g_id in user_map:
+                gestor_names.append(user_map[g_id])
+        gestor_str = ', '.join(gestor_names) if gestor_names else 'Sin asignar'
+        
+        table_data.append([
+            str(idx),
+            pet.get('radicado_id', ''),
+            fecha_str,
+            pet.get('creator_name', ''),
+            pet.get('tipo_tramite', ''),
+            pet.get('municipio', ''),
+            estado_labels.get(pet.get('estado', ''), pet.get('estado', '')),
+            gestor_str[:30]  # Truncate long names
+        ])
+    
+    # Create table
+    col_widths = [0.4*inch, 1.3*inch, 0.8*inch, 1.8*inch, 1.5*inch, 1.2*inch, 0.9*inch, 1.5*inch]
+    table = Table(table_data, colWidths=col_widths, repeatRows=1)
+    
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#047857')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('FONTSIZE', (0, 1), (-1, -1), 7),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f9f4')]),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    
+    story.append(table)
+    story.append(Spacer(1, 0.3*inch))
+    
+    # Summary
+    total = len(petitions)
+    finalizados = sum(1 for p in petitions if p.get('estado') == 'finalizado')
+    en_proceso = sum(1 for p in petitions if p.get('estado') in ['asignado', 'revision', 'devuelto'])
+    radicados = sum(1 for p in petitions if p.get('estado') == 'radicado')
+    
+    summary_text = f"<b>Resumen:</b> Total: {total} | Finalizados: {finalizados} | En Proceso: {en_proceso} | Radicados: {radicados}"
+    story.append(Paragraph(summary_text, styles['Normal']))
+    
+    # Footer
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=7,
+        textColor=colors.grey,
+        alignment=TA_CENTER
+    )
+    story.append(Spacer(1, 0.2*inch))
+    story.append(Paragraph(
+        "ASOMUNICIPIOS - Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar",
+        footer_style
+    ))
+    
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    
+    temp_pdf_path = UPLOAD_DIR / f"listado_tramites_{uuid.uuid4()}.pdf"
+    with open(temp_pdf_path, 'wb') as f:
+        f.write(pdf_bytes)
+    
+    return FileResponse(
+        path=temp_pdf_path,
+        filename=f"listado_tramites_{datetime.now().strftime('%Y%m%d')}.pdf",
+        media_type='application/pdf'
+    )
+
+
 # ===== ADVANCED STATISTICS =====
 
 @api_router.get("/stats/by-municipality")
