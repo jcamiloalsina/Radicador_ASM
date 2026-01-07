@@ -225,8 +225,8 @@ export default function VisorPredios() {
       </div>
 
       <div className="grid grid-cols-12 gap-6">
-        {/* Panel Izquierdo - Búsqueda y Detalle */}
-        <div className="col-span-4 space-y-4">
+        {/* Panel Izquierdo - Búsqueda y Detalle con scroll */}
+        <div className="col-span-4 space-y-4 max-h-[calc(100vh-180px)] overflow-y-auto pr-2">
           {/* Búsqueda */}
           <Card>
             <CardHeader className="py-3">
