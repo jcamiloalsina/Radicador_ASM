@@ -155,24 +155,43 @@ export default function UserManagement() {
               </CardHeader>
               <CardContent>
                 {user.id !== currentUser.id && (
-                  <div className="space-y-2">
-                    <Label htmlFor={`role-${user.id}`} className="text-slate-700">Cambiar Rol</Label>
-                    <Select 
-                      value={user.role} 
-                      onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
-                    >
-                      <SelectTrigger className="focus:ring-emerald-600" data-testid={`role-select-${user.id}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ciudadano">Ciudadano</SelectItem>
-                        <SelectItem value="atencion_usuario">Atención al Usuario</SelectItem>
-                        <SelectItem value="gestor">Gestor</SelectItem>
-                        <SelectItem value="gestor_auxiliar">Gestor Auxiliar</SelectItem>
-                        <SelectItem value="coordinador">Coordinador</SelectItem>
-                        <SelectItem value="administrador">Administrador</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor={`role-${user.id}`} className="text-slate-700">Cambiar Rol</Label>
+                      <Select 
+                        value={user.role} 
+                        onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
+                      >
+                        <SelectTrigger className="focus:ring-emerald-600" data-testid={`role-select-${user.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ciudadano">Ciudadano</SelectItem>
+                          <SelectItem value="atencion_usuario">Atención al Usuario</SelectItem>
+                          <SelectItem value="gestor">Gestor</SelectItem>
+                          <SelectItem value="gestor_auxiliar">Gestor Auxiliar</SelectItem>
+                          <SelectItem value="coordinador">Coordinador</SelectItem>
+                          <SelectItem value="administrador">Administrador</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Permiso GDB solo para gestores */}
+                    {user.role === 'gestor' && ['coordinador', 'administrador'].includes(currentUser.role) && (
+                      <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
+                        <div className="flex items-center gap-2">
+                          <Map className="w-4 h-4 text-amber-700" />
+                          <div>
+                            <p className="text-sm font-medium text-amber-800">Permiso Actualizar Base Gráfica</p>
+                            <p className="text-xs text-amber-600">Permite subir archivos .gdb al sistema</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={user.puede_actualizar_gdb || false}
+                          onCheckedChange={(checked) => handleGdbPermissionChange(user.id, checked)}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
                 {user.id === currentUser.id && (
