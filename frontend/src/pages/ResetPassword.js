@@ -103,7 +103,7 @@ export default function ResetPassword() {
         </div>
         <div className="relative z-10">
           <p className="text-emerald-100 text-sm">
-            Sistema profesional de gestión catastral
+            CatastroYa - Tu radicador catastral en línea
           </p>
         </div>
       </div>
