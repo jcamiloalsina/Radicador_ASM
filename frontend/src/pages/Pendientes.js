@@ -225,7 +225,7 @@ export default function Pendientes() {
                   {getTipoCambioLabel(selectedCambio.tipo_cambio)}
                 </Badge>
                 <span className="text-sm text-slate-500">
-                  Solicitado por: {selectedCambio.solicitado_por_nombre}
+                  Solicitado por: {selectedCambio.propuesto_por_nombre || 'N/A'}
                 </span>
               </div>
               
@@ -234,28 +234,34 @@ export default function Pendientes() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-slate-500">Código Predial:</span>
-                    <p className="font-mono">{selectedCambio.datos_nuevos?.codigo_predial_nacional}</p>
+                    <p className="font-mono">{selectedCambio.datos_propuestos?.codigo_predial_nacional || selectedCambio.predio_actual?.codigo_homologado || 'Nuevo'}</p>
                   </div>
                   <div>
                     <span className="text-slate-500">Municipio:</span>
-                    <p>{selectedCambio.datos_nuevos?.municipio}</p>
+                    <p>{selectedCambio.datos_propuestos?.municipio || selectedCambio.predio_actual?.municipio || 'N/A'}</p>
                   </div>
                   <div>
                     <span className="text-slate-500">Dirección:</span>
-                    <p>{selectedCambio.datos_nuevos?.direccion}</p>
+                    <p>{selectedCambio.datos_propuestos?.direccion || 'N/A'}</p>
                   </div>
                   <div>
                     <span className="text-slate-500">Propietario:</span>
-                    <p>{selectedCambio.datos_nuevos?.propietarios?.[0]?.nombre_propietario || 'N/A'}</p>
+                    <p>{selectedCambio.datos_propuestos?.nombre_propietario || selectedCambio.datos_propuestos?.propietarios?.[0]?.nombre_propietario || 'N/A'}</p>
                   </div>
                   <div>
                     <span className="text-slate-500">Área Terreno:</span>
-                    <p>{selectedCambio.datos_nuevos?.area_terreno?.toLocaleString()} m²</p>
+                    <p>{selectedCambio.datos_propuestos?.area_terreno?.toLocaleString() || 'N/A'} m²</p>
                   </div>
                   <div>
                     <span className="text-slate-500">Avalúo:</span>
-                    <p>${selectedCambio.datos_nuevos?.avaluo?.toLocaleString()}</p>
+                    <p>${selectedCambio.datos_propuestos?.avaluo?.toLocaleString() || 'N/A'}</p>
                   </div>
+                  {selectedCambio.justificacion && (
+                    <div className="col-span-2">
+                      <span className="text-slate-500">Justificación:</span>
+                      <p>{selectedCambio.justificacion}</p>
+                    </div>
+                  )}
                 </div>
               </div>
               
