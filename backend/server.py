@@ -2206,9 +2206,23 @@ async def import_predios_excel(
                     'numero_documento': str(row[11] or '').strip()
                 })
         
-        # Leer R2 (físico)
-        ws_r2 = wb['REGISTRO_R2']
+        # Buscar hoja R2 con nombres alternativos
+        r2_sheet_names = ['REGISTRO_R2', 'R2', 'Registro_R2', 'registro_r2', 'Hoja2', 'Sheet2']
+        ws_r2 = None
+        for name in r2_sheet_names:
+            if name in wb.sheetnames:
+                ws_r2 = wb[name]
+                break
         
+        if ws_r2 is None:
+            wb.close()
+            temp_path.unlink()
+            raise HTTPException(
+                status_code=400, 
+                detail=f"No se encontró hoja R2. Hojas disponibles: {', '.join(wb.sheetnames)}. Se esperaba: REGISTRO_R2, R2, o similar."
+            )
+        
+        # Leer R2 (físico)
         for row in ws_r2.iter_rows(min_row=2, values_only=True):
             if not row[0]:
                 continue
