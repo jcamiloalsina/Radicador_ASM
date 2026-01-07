@@ -591,8 +591,29 @@ export default function Predios() {
           {prediosStats?.by_municipio && (
             <Card className="border-slate-200">
               <CardHeader>
-                <CardTitle className="text-lg font-outfit">Predios por Municipio</CardTitle>
-                <p className="text-sm text-slate-500">Haga clic en un municipio para ver sus predios</p>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg font-outfit">Predios por Municipio</CardTitle>
+                    <p className="text-sm text-slate-500">Vigencia actual: <span className="font-semibold text-emerald-700">2025</span> — Haga clic en un municipio para ver sus predios</p>
+                  </div>
+                  {/* Botón de importar R1/R2 solo para coordinadores y admins */}
+                  {user && ['coordinador', 'administrador'].includes(user.role) && (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="border-emerald-600 text-emerald-700 hover:bg-emerald-50">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Importar R1/R2
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle className="text-lg font-outfit">Importar Predios R1/R2</DialogTitle>
+                        </DialogHeader>
+                        <ImportR1R2Form onSuccess={() => { fetchPrediosStats(); fetchVigencias(); }} />
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
