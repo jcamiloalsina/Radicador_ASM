@@ -2404,11 +2404,18 @@ async def get_vigencias_disponibles(current_user: dict = Depends(get_current_use
             return int(vig_str[-4:])
         return int(vig_str)
     
-    # Ordenar vigencias: primero por año (descendente), luego actuales antes que históricos
+    # Ordenar vigencias: primero datos actuales (no históricos) por año descendente, luego históricos
     for mun in vigencias:
-        vigencias[mun].sort(key=lambda x: (get_year(x['vigencia']), 0 if not x.get('historico') else 1), reverse=True)
-        # Pero queremos actuales primero, así que reordenamos
-        vigencias[mun].sort(key=lambda x: (-get_year(x['vigencia']), 1 if x.get('historico') else 0))
+        # Separar actuales de históricos
+        actuales = [v for v in vigencias[mun] if not v.get('historico')]
+        historicos = [v for v in vigencias[mun] if v.get('historico')]
+        
+        # Ordenar cada grupo por año descendente
+        actuales.sort(key=lambda x: get_year(x['vigencia']), reverse=True)
+        historicos.sort(key=lambda x: get_year(x['vigencia']), reverse=True)
+        
+        # Combinar: actuales primero, luego históricos
+        vigencias[mun] = actuales + historicos
     
     return vigencias
 
