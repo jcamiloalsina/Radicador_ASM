@@ -67,7 +67,7 @@ export default function DashboardLayout() {
           <h2 className="text-xs font-bold font-outfit leading-tight text-center" data-testid="sidebar-title">
             Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar
           </h2>
-          <p className="text-emerald-200 text-xs mt-1 text-center font-semibold">– ASOMUNICIPIOS –</p>
+          <p className="text-emerald-200 text-xs mt-1 text-center font-semibold">– Asomunicipios –</p>
           <p className="text-emerald-100 text-xs mt-2 text-center">{getRoleName(user.role)}</p>
         </div>
 
@@ -123,7 +123,7 @@ export default function DashboardLayout() {
                   className="w-full mb-2 rounded"
                 />
                 <h2 className="text-xs font-bold font-outfit leading-tight text-center">Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar</h2>
-                <p className="text-emerald-200 text-xs mt-1 text-center">– ASOMUNICIPIOS –</p>
+                <p className="text-emerald-200 text-xs mt-1 text-center">– Asomunicipios –</p>
                 <p className="text-emerald-100 text-xs mt-1">{getRoleName(user.role)}</p>
               </div>
               <button onClick={() => setSidebarOpen(false)} className="text-white ml-2">
