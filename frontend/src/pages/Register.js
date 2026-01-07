@@ -42,20 +42,23 @@ export default function Register() {
             className="w-full h-full object-cover opacity-20"
           />
         </div>
-        <div className="relative z-10">
+        <div className="relative z-10 text-center">
           <img 
-            src="https://customer-assets.emergentagent.com/job_28ae97d1-3b3d-446d-842a-30fce089309a/artifacts/3sbor4tr_HorizontalBlancoCorto_ConFondo.png" 
+            src="/logo_asomunicipios.jpeg" 
             alt="Asomunicipios Logo" 
-            className="w-56 mb-4"
+            className="w-64 mx-auto mb-6 rounded-lg shadow-lg"
             data-testid="register-logo"
           />
-          <h2 className="text-2xl font-bold font-outfit leading-tight">Asociación de Municipios del Catatumbo</h2>
-          <p className="text-emerald-100 mt-2 text-sm leading-relaxed">Provincia de Ocaña y Sur del Cesar</p>
-          <p className="text-emerald-200 mt-1 text-xs font-semibold">ASOMUNICIPIOS</p>
+          <h2 className="text-xl font-bold font-outfit leading-tight">Asociación de Municipios del Catatumbo,</h2>
+          <p className="text-emerald-100 mt-1 text-lg leading-relaxed">Provincia de Ocaña y Sur del Cesar</p>
+          <p className="text-emerald-200 mt-2 text-base font-bold tracking-wide">– ASOMUNICIPIOS –</p>
         </div>
-        <div className="relative z-10">
-          <p className="text-emerald-100 text-sm">
-            CatastroYa - Tu radicador catastral en línea
+        <div className="relative z-10 text-center">
+          <p className="text-emerald-100 text-lg font-semibold">
+            CatastroYa
+          </p>
+          <p className="text-emerald-200 text-sm mt-1">
+            Tu radicador catastral en línea
           </p>
         </div>
       </div>
