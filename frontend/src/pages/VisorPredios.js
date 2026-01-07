@@ -313,7 +313,7 @@ export default function VisorPredios() {
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
                 <div className="space-y-1 text-sm">
-                  <p className="text-xs text-slate-500">Código Homologado (Anterior)</p>
+                  <p className="text-xs text-slate-500">Código Homologado</p>
                   <p className="font-medium text-slate-700">
                     {selectedPredio.codigo_homologado}
                   </p>
