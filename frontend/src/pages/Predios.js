@@ -751,8 +751,8 @@ export default function Predios() {
               <tbody>
                 {predios.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-8 text-center text-slate-500">
-                      No hay predios registrados
+                    <td colSpan="6" className="py-8 text-center text-slate-500">
+                      No hay predios registrados para este municipio y vigencia
                     </td>
                   </tr>
                 ) : (
@@ -780,7 +780,6 @@ export default function Predios() {
                           </p>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-slate-700">{predio.municipio}</td>
                       <td className="py-3 px-4 text-slate-700 max-w-[200px] truncate">{predio.direccion}</td>
                       <td className="py-3 px-4 text-center">
                         <Badge className="bg-emerald-100 text-emerald-800">
@@ -809,8 +808,11 @@ export default function Predios() {
               </tbody>
             </table>
           </div>
+          )}
         </CardContent>
       </Card>
+        </>
+      )}
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
