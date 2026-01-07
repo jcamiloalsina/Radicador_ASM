@@ -468,13 +468,25 @@ export default function Predios() {
     return `${m2.toLocaleString('es-CO')} m²`;
   };
 
-  if (loading) {
+  if (loading && !prediosStats) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-700"></div>
       </div>
     );
   }
+
+  // Obtener vigencias disponibles para el municipio seleccionado
+  const vigenciasDelMunicipio = filterMunicipio ? vigenciasData[filterMunicipio] || [] : [];
+  
+  // Función para volver al dashboard
+  const volverAlDashboard = () => {
+    setShowDashboard(true);
+    setFilterMunicipio('');
+    setFilterVigencia('');
+    setPredios([]);
+    setSearch('');
+  };
 
   return (
     <div className="space-y-6">
@@ -496,14 +508,18 @@ export default function Predios() {
             <AlertTriangle className="w-4 h-4 mr-2" />
             Eliminados
           </Button>
-          <Button variant="outline" onClick={handleExportExcel}>
-            <Download className="w-4 h-4 mr-2" />
-            Exportar Excel
-          </Button>
-          <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Predio
-          </Button>
+          {!showDashboard && (
+            <>
+              <Button variant="outline" onClick={handleExportExcel}>
+                <Download className="w-4 h-4 mr-2" />
+                Exportar Excel
+              </Button>
+              <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Predio
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -518,16 +534,193 @@ export default function Predios() {
         </div>
       )}
 
-      {/* Filters */}
-      <Card className="border-slate-200">
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-2">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Buscar por código, propietario, documento, matrícula..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+      {/* Dashboard de Selección */}
+      {showDashboard ? (
+        <div className="space-y-6">
+          {/* Estadísticas Generales */}
+          {prediosStats && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-emerald-600 font-medium">Total Predios</p>
+                      <p className="text-3xl font-bold text-emerald-800">{prediosStats.total_predios?.toLocaleString()}</p>
+                    </div>
+                    <Building className="w-10 h-10 text-emerald-300" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-blue-600 font-medium">Avalúo Total</p>
+                      <p className="text-2xl font-bold text-blue-800">{formatCurrency(prediosStats.total_avaluo)}</p>
+                    </div>
+                    <DollarSign className="w-10 h-10 text-blue-300" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-white">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-amber-600 font-medium">Área Total</p>
+                      <p className="text-2xl font-bold text-amber-800">{formatAreaHectareas(prediosStats.total_area_terreno)}</p>
+                    </div>
+                    <MapPin className="w-10 h-10 text-amber-300" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-white">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-purple-600 font-medium">Municipios</p>
+                      <p className="text-3xl font-bold text-purple-800">{prediosStats.by_municipio?.length || 0}</p>
+                    </div>
+                    <LayoutGrid className="w-10 h-10 text-purple-300" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Selección de Vigencia y Municipio */}
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-lg font-outfit flex items-center gap-2">
+                <Search className="w-5 h-5 text-emerald-700" />
+                Seleccione Vigencia y Municipio
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-slate-500">
+                Para consultar los predios, primero seleccione el año de vigencia y el municipio.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-slate-700">Municipio *</Label>
+                  <Select value={filterMunicipio} onValueChange={(v) => { setFilterMunicipio(v); setFilterVigencia(''); }}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Seleccione un municipio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {catalogos?.municipios?.map(m => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-slate-700">Vigencia (Año) *</Label>
+                  <Select 
+                    value={filterVigencia} 
+                    onValueChange={setFilterVigencia}
+                    disabled={!filterMunicipio}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder={filterMunicipio ? "Seleccione vigencia" : "Primero seleccione municipio"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vigenciasDelMunicipio.length > 0 ? (
+                        vigenciasDelMunicipio.map(v => (
+                          <SelectItem key={v.vigencia} value={String(v.vigencia)}>
+                            {v.vigencia} ({v.predios?.toLocaleString()} predios) {v.historico && '(histórico)'}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="2025">2025 (vigencia actual)</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Predios por Municipio */}
+          {prediosStats?.by_municipio && (
+            <Card className="border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg font-outfit">Predios por Municipio</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {prediosStats.by_municipio.map((item) => (
+                    <Button
+                      key={item.municipio}
+                      variant="outline"
+                      className="h-auto py-4 flex flex-col items-start justify-start text-left hover:bg-emerald-50 hover:border-emerald-300"
+                      onClick={() => {
+                        setFilterMunicipio(item.municipio);
+                        setFilterVigencia('2025');
+                      }}
+                    >
+                      <span className="font-medium text-slate-900">{item.municipio}</span>
+                      <span className="text-xl font-bold text-emerald-700">{item.count?.toLocaleString()}</span>
+                      <span className="text-xs text-slate-500">predios</span>
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Vista de Predios (después de seleccionar filtros) */}
+          
+          {/* Barra de navegación */}
+          <div className="flex items-center gap-4 bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+            <Button variant="ghost" onClick={volverAlDashboard} className="text-emerald-700 hover:text-emerald-800">
+              ← Volver al Dashboard
+            </Button>
+            <div className="h-6 border-l border-emerald-300"></div>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-emerald-100 text-emerald-800">
+                {filterMunicipio}
+              </Badge>
+              <Badge variant="outline" className="border-emerald-300">
+                Vigencia {filterVigencia}
+              </Badge>
+              <Badge variant="secondary">
+                {total.toLocaleString()} predios
+              </Badge>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <Card className="border-slate-200">
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Buscar por código, propietario, documento, matrícula..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    />
+                    <Button onClick={handleSearch} variant="outline">
+                      <Search className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleExportExcel} className="flex-1">
+                    <Download className="w-4 h-4 mr-2" />
+                    Excel
+                  </Button>
+                  <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800 flex-1">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nuevo
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 />
                 <Button onClick={handleSearch} variant="outline">
