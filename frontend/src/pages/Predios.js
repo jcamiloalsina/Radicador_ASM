@@ -77,13 +77,17 @@ export default function Predios() {
 
   useEffect(() => {
     fetchCatalogos();
-    fetchPredios();
+    fetchVigencias();
+    fetchPrediosStats();
     fetchCambiosStats();
   }, []);
 
   useEffect(() => {
-    fetchPredios();
-  }, [filterMunicipio, filterDestino]);
+    if (filterMunicipio && filterVigencia) {
+      fetchPredios();
+      setShowDashboard(false);
+    }
+  }, [filterMunicipio, filterVigencia]);
 
   // Obtener info del terreno cuando cambia la ubicación
   useEffect(() => {
