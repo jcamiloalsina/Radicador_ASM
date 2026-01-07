@@ -974,6 +974,13 @@ export default function Predios() {
           </div>
           )}
         </CardContent>
+        {/* Botón Nuevo Predio al final de la tabla */}
+        <div className="px-6 pb-6 flex justify-end">
+          <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Predio
+          </Button>
+        </div>
       </Card>
         </>
       )}
