@@ -348,8 +348,8 @@ export default function VisorPredios() {
             </CardContent>
           </Card>
 
-          {/* Botón Actualizar Base Gráfica - Solo gestores autorizados */}
-          {user?.role === 'gestor' && user?.puede_actualizar_gdb && (
+          {/* Botón Actualizar Base Gráfica - Solo gestores y coordinadores autorizados */}
+          {(user?.role === 'coordinador' || (user?.role === 'gestor' && user?.puede_actualizar_gdb)) && (
             <Card className="border-amber-200 bg-amber-50">
               <CardContent className="py-3">
                 <div className="flex items-center justify-between">
