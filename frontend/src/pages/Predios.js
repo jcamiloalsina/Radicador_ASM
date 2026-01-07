@@ -892,10 +892,9 @@ export default function Predios() {
                     <SelectContent>
                       {vigenciasDelMunicipio.length > 0 ? (
                         vigenciasDelMunicipio.map(v => {
-                          // Mostrar solo el año (extraer de formato 0101YYYY o usar directamente si es número)
-                          const yearDisplay = String(v.vigencia).length === 8 
-                            ? String(v.vigencia).slice(-4) 
-                            : v.vigencia;
+                          // Mostrar solo el año (extraer de formato 0101YYYY, 1012024 o usar directamente si es número)
+                          const vigStr = String(v.vigencia);
+                          const yearDisplay = vigStr.length >= 7 ? vigStr.slice(-4) : vigStr;
                           return (
                             <SelectItem key={v.vigencia} value={String(v.vigencia)}>
                               {yearDisplay} ({v.predios?.toLocaleString()} predios) {v.historico && '(histórico)'}
