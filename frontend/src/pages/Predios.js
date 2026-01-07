@@ -587,17 +587,49 @@ export default function Predios() {
             </div>
           )}
 
-          {/* Selección de Vigencia y Municipio */}
+          {/* Predios por Municipio - PRIMERO (ordenados alfabéticamente) */}
+          {prediosStats?.by_municipio && (
+            <Card className="border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg font-outfit">Predios por Municipio</CardTitle>
+                <p className="text-sm text-slate-500">Haga clic en un municipio para ver sus predios</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[...prediosStats.by_municipio].sort((a, b) => a.municipio.localeCompare(b.municipio, 'es')).map((item) => (
+                    <Button
+                      key={item.municipio}
+                      variant="outline"
+                      className="h-auto py-4 flex flex-col items-start justify-start text-left hover:bg-emerald-50 hover:border-emerald-300"
+                      onClick={() => {
+                        setFilterMunicipio(item.municipio);
+                        // Obtener la vigencia más reciente del municipio
+                        const vigencias = vigenciasData[item.municipio] || [];
+                        const vigenciaReciente = vigencias.length > 0 ? String(vigencias[0].vigencia) : '2025';
+                        setFilterVigencia(vigenciaReciente);
+                      }}
+                    >
+                      <span className="font-medium text-slate-900">{item.municipio}</span>
+                      <span className="text-xl font-bold text-emerald-700">{item.count?.toLocaleString()}</span>
+                      <span className="text-xs text-slate-500">predios</span>
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Selección de Vigencia y Municipio - DESPUÉS */}
           <Card className="border-slate-200">
             <CardHeader>
               <CardTitle className="text-lg font-outfit flex items-center gap-2">
                 <Search className="w-5 h-5 text-emerald-700" />
-                Seleccione Vigencia y Municipio
+                Búsqueda Avanzada
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-slate-500">
-                Para consultar los predios, primero seleccione el año de vigencia y el municipio.
+                O seleccione manualmente el municipio y vigencia para una búsqueda específica.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -607,7 +639,7 @@ export default function Predios() {
                       <SelectValue placeholder="Seleccione un municipio" />
                     </SelectTrigger>
                     <SelectContent>
-                      {catalogos?.municipios?.map(m => (
+                      {catalogos?.municipios?.slice().sort((a, b) => a.localeCompare(b, 'es')).map(m => (
                         <SelectItem key={m} value={m}>{m}</SelectItem>
                       ))}
                     </SelectContent>
@@ -625,11 +657,17 @@ export default function Predios() {
                     </SelectTrigger>
                     <SelectContent>
                       {vigenciasDelMunicipio.length > 0 ? (
-                        vigenciasDelMunicipio.map(v => (
-                          <SelectItem key={v.vigencia} value={String(v.vigencia)}>
-                            {v.vigencia} ({v.predios?.toLocaleString()} predios) {v.historico && '(histórico)'}
-                          </SelectItem>
-                        ))
+                        vigenciasDelMunicipio.map(v => {
+                          // Mostrar solo el año (extraer de formato 0101YYYY o usar directamente si es número)
+                          const yearDisplay = String(v.vigencia).length === 8 
+                            ? String(v.vigencia).slice(-4) 
+                            : v.vigencia;
+                          return (
+                            <SelectItem key={v.vigencia} value={String(v.vigencia)}>
+                              {yearDisplay} ({v.predios?.toLocaleString()} predios) {v.historico && '(histórico)'}
+                            </SelectItem>
+                          );
+                        })
                       ) : (
                         <SelectItem value="2025">2025 (vigencia actual)</SelectItem>
                       )}
@@ -639,34 +677,6 @@ export default function Predios() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Predios por Municipio */}
-          {prediosStats?.by_municipio && (
-            <Card className="border-slate-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-outfit">Predios por Municipio</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {prediosStats.by_municipio.map((item) => (
-                    <Button
-                      key={item.municipio}
-                      variant="outline"
-                      className="h-auto py-4 flex flex-col items-start justify-start text-left hover:bg-emerald-50 hover:border-emerald-300"
-                      onClick={() => {
-                        setFilterMunicipio(item.municipio);
-                        setFilterVigencia('2025');
-                      }}
-                    >
-                      <span className="font-medium text-slate-900">{item.municipio}</span>
-                      <span className="text-xl font-bold text-emerald-700">{item.count?.toLocaleString()}</span>
-                      <span className="text-xs text-slate-500">predios</span>
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
       ) : (
         <>
