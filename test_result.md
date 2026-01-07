@@ -789,11 +789,62 @@ test_plan:
 
 test_plan:
   current_focus:
-    - "Dashboard Gestión de Predios con filtros vigencia/municipio"
-    - "Filtros en Visor de Predios (municipio/zona)"
-    - "Importación de datos de 5 municipios"
-    - "Backend Predios Endpoint con nuevos filtros"
-  stuck_tasks:
-    - "Certificate Generation for Atencion al Usuario"
+    - "Importación masiva de ~5,400 peticiones desde PDF"
+    - "Formato de radicado RASMGC-[ID]-[dd]-[mm]-[yyyy]"
+    - "Dashboard stats de peticiones"
+  stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+
+  - agent: "main"
+    message: |
+      NUEVA FUNCIONALIDAD IMPLEMENTADA (Fork Job - Sesión Actual):
+      
+      1. ✅ IMPORTACIÓN MASIVA DE PETICIONES DESDE PDF:
+         - Extraídas 5,432 peticiones del archivo listado_tramites.pdf
+         - Importadas 5,427 nuevas peticiones a la base de datos
+         - Total en sistema: 5,444 peticiones
+         - Formato de radicado: RASMGC-[ID]-[dd]-[mm]-[yyyy]
+         
+      2. ✅ DISTRIBUCIÓN POR ESTADO:
+         - Finalizado: 3,009
+         - Asignado: 2,219
+         - Rechazado: 114
+         - Radicado: 86
+         - En Revisión: 10
+         - Devuelto: 1
+         
+      3. ✅ DISTRIBUCIÓN POR MUNICIPIO:
+         - Ábrego: 2,021
+         - Cáchira: 584
+         - Sardinata: 537
+         - Convención: 426
+         - Río de Oro: 355
+         - Teorama: 268
+         - El Tarra: 257
+         - El Carmen: 249
+         - La Playa: 232
+         - San Calixto: 225
+         - Hacarí: 168
+         - Bucarasica: 105
+      
+      CREDENCIALES DE PRUEBA:
+      - Admin: catastro@asomunicipios.gov.co / Asm*123*
+      
+      TESTING NECESARIO:
+      - Verificar que las peticiones importadas se muestran en el listado
+      - Verificar que el dashboard stats muestra totales correctos
+      - Verificar formato de radicado_id correcto
+
+backend:
+  - task: "Importación masiva de peticiones desde PDF"
+    implemented: true
+    working: true
+    file: "/app/import_petitions_full.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Importadas 5,427 peticiones del PDF listado_tramites.pdf con formato RASMGC-[ID]-[dd]-[mm]-[yyyy]"
