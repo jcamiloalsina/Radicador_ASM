@@ -66,7 +66,6 @@ class UserRole:
     CIUDADANO = "ciudadano"
     ATENCION_USUARIO = "atencion_usuario"
     GESTOR = "gestor"
-    GESTOR_AUXILIAR = "gestor_auxiliar"
     COORDINADOR = "coordinador"
     ADMINISTRADOR = "administrador"
 
