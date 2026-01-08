@@ -2241,32 +2241,123 @@ async def import_predios_excel(
         r1_data = {}
         rows_read = 0
         
-        for row in ws_r1.iter_rows(min_row=2, values_only=True):
-            if not row[0]:  # Sin departamento = fila vacía
+        # Detectar formato del archivo leyendo headers
+        headers = []
+        for row in ws_r1.iter_rows(min_row=1, max_row=1, values_only=True):
+            headers = [str(h).upper().strip() if h else '' for h in row]
+            break
+        
+        # Mapear columnas según headers o usar posiciones por defecto
+        # Formato 1: Sin headers explícitos (col[0]=depto, col[1]=mun, col[3]=codigo_predial)
+        # Formato 2: Con headers (NUMERO_DEL_PREDIO, Codigo_Predial_Nacional, etc.)
+        
+        col_map = {
+            'departamento': 0,
+            'municipio': 1,
+            'numero_predio': 2,
+            'codigo_predial': 3,
+            'codigo_homologado': 4,
+            'nombre': 8,
+            'estado_civil': 9,
+            'tipo_documento': 10,
+            'numero_documento': 11,
+            'direccion': 12,
+            'comuna': 13,
+            'destino_economico': 14,
+            'area_terreno': 15,
+            'area_construida': 16,
+            'avaluo': 17,
+            'vigencia_excel': 18,
+            'tipo_mutacion': 19,
+            'numero_resolucion': 20,
+            'fecha_resolucion': 21,
+        }
+        
+        # Detectar si tiene headers conocidos
+        tiene_headers = any('CODIGO' in h or 'PREDIO' in h or 'NUMERO' in h for h in headers)
+        
+        if tiene_headers:
+            logger.info(f"Detectado archivo con headers: {headers[:10]}")
+            # Buscar posiciones de columnas por nombre de header
+            for i, h in enumerate(headers):
+                h_upper = h.upper().replace('_', ' ').replace('-', ' ')
+                if 'CODIGO' in h_upper and 'PREDIAL' in h_upper and 'NACIONAL' in h_upper:
+                    col_map['codigo_predial'] = i
+                elif 'CODIGO' in h_upper and 'HOMOLOG' in h_upper:
+                    col_map['codigo_homologado'] = i
+                elif 'NUMERO' in h_upper and 'PREDIO' in h_upper:
+                    col_map['numero_predio'] = i
+                elif h_upper in ['NOMBRE', 'PROPIETARIO', 'NOMBRE PROPIETARIO']:
+                    col_map['nombre'] = i
+                elif 'ESTADO' in h_upper and 'CIVIL' in h_upper:
+                    col_map['estado_civil'] = i
+                elif 'TIPO' in h_upper and 'DOCUMENTO' in h_upper:
+                    col_map['tipo_documento'] = i
+                elif 'NUMERO' in h_upper and 'DOCUMENTO' in h_upper:
+                    col_map['numero_documento'] = i
+                elif h_upper in ['DIRECCION', 'DIRECCIÓN']:
+                    col_map['direccion'] = i
+                elif h_upper == 'COMUNA':
+                    col_map['comuna'] = i
+                elif 'DESTINO' in h_upper and 'ECONOMICO' in h_upper:
+                    col_map['destino_economico'] = i
+                elif 'AREA' in h_upper and 'TERRENO' in h_upper:
+                    col_map['area_terreno'] = i
+                elif 'AREA' in h_upper and 'CONSTRUIDA' in h_upper:
+                    col_map['area_construida'] = i
+                elif h_upper in ['AVALUO', 'AVALÚO']:
+                    col_map['avaluo'] = i
+                elif h_upper == 'VIGENCIA':
+                    col_map['vigencia_excel'] = i
+                elif 'TIPO' in h_upper and 'MUTACION' in h_upper:
+                    col_map['tipo_mutacion'] = i
+                elif 'RESOLUCION' in h_upper or 'RESOLUCIÓN' in h_upper:
+                    if 'FECHA' in h_upper:
+                        col_map['fecha_resolucion'] = i
+                    elif 'NO' in h_upper or 'NUMERO' in h_upper:
+                        col_map['numero_resolucion'] = i
+            
+            logger.info(f"Mapa de columnas detectado: codigo_predial={col_map['codigo_predial']}, nombre={col_map['nombre']}")
+            start_row = 2  # Datos empiezan en fila 2
+        else:
+            logger.info("Archivo sin headers explícitos, usando formato estándar")
+            start_row = 2  # Datos empiezan en fila 2
+        
+        # Función helper para obtener valor de columna de forma segura
+        def get_col(row, key, default=''):
+            idx = col_map.get(key, -1)
+            if idx >= 0 and idx < len(row):
+                return row[idx]
+            return default
+        
+        for row in ws_r1.iter_rows(min_row=start_row, values_only=True):
+            # Verificar fila no vacía
+            first_col = get_col(row, 'numero_predio') or get_col(row, 'codigo_predial')
+            if not first_col:
                 continue
             
             rows_read += 1
-            codigo_predial = str(row[3] or '').strip()
-            if not codigo_predial:
+            codigo_predial = str(get_col(row, 'codigo_predial') or '').strip()
+            if not codigo_predial or len(codigo_predial) < 10:
                 continue
             
             if codigo_predial not in r1_data:
                 r1_data[codigo_predial] = {
-                    'departamento': str(row[0] or '').strip(),
-                    'municipio': str(row[1] or '').strip(),
-                    'numero_predio': str(row[2] or '').strip(),
+                    'departamento': str(get_col(row, 'departamento') or '').strip()[:10],
+                    'municipio': str(get_col(row, 'municipio') or '').strip(),
+                    'numero_predio': str(get_col(row, 'numero_predio') or '').strip(),
                     'codigo_predial_nacional': codigo_predial,
-                    'codigo_homologado': str(row[4] or '').strip(),
-                    'direccion': str(row[12] or '').strip(),
-                    'comuna': str(row[13] or '').strip(),
-                    'destino_economico': str(row[14] or '').strip(),
-                    'area_terreno': parse_number(row[15]),
-                    'area_construida': parse_number(row[16]),
-                    'avaluo': parse_number(row[17]),
+                    'codigo_homologado': str(get_col(row, 'codigo_homologado') or '').strip(),
+                    'direccion': str(get_col(row, 'direccion') or '').strip(),
+                    'comuna': str(get_col(row, 'comuna') or '').strip(),
+                    'destino_economico': str(get_col(row, 'destino_economico') or '').strip(),
+                    'area_terreno': parse_number(get_col(row, 'area_terreno')),
+                    'area_construida': parse_number(get_col(row, 'area_construida')),
+                    'avaluo': parse_number(get_col(row, 'avaluo')),
                     'vigencia': vigencia,
-                    'tipo_mutacion': str(row[19] or '').strip() if len(row) > 19 else '',
-                    'numero_resolucion': str(row[20] or '').strip() if len(row) > 20 else '',
-                    'fecha_resolucion': str(row[21] or '').strip() if len(row) > 21 else '',
+                    'tipo_mutacion': str(get_col(row, 'tipo_mutacion') or '').strip(),
+                    'numero_resolucion': str(get_col(row, 'numero_resolucion') or '').strip(),
+                    'fecha_resolucion': str(get_col(row, 'fecha_resolucion') or '').strip(),
                     'propietarios': [],
                     'r2_registros': [],
                     'id': str(uuid.uuid4()),
@@ -2275,13 +2366,13 @@ async def import_predios_excel(
                 }
             
             # Agregar propietario
-            nombre = str(row[8] or '').strip()
+            nombre = str(get_col(row, 'nombre') or '').strip()
             if nombre:
                 r1_data[codigo_predial]['propietarios'].append({
                     'nombre_propietario': nombre,
-                    'estado_civil': str(row[9] or '').strip(),
-                    'tipo_documento': str(row[10] or '').strip(),
-                    'numero_documento': str(row[11] or '').strip()
+                    'estado_civil': str(get_col(row, 'estado_civil') or '').strip(),
+                    'tipo_documento': str(get_col(row, 'tipo_documento') or '').strip(),
+                    'numero_documento': str(get_col(row, 'numero_documento') or '').strip()
                 })
         
         # Buscar hoja R2 con nombres alternativos (normalizando espacios)
