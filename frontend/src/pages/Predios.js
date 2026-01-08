@@ -1006,6 +1006,49 @@ export default function Predios() {
     }
   };
 
+  // Revincular geometrías GDB con predios usando algoritmo mejorado
+  const handleRevincularGdb = async (municipioParam = null) => {
+    setRevinculandoGdb(true);
+    try {
+      const token = localStorage.getItem('token');
+      const params = municipioParam ? `?municipio=${encodeURIComponent(municipioParam)}` : '';
+      
+      toast.info('Iniciando revinculación de geometrías GDB. Este proceso puede tardar unos minutos...');
+      
+      const response = await axios.post(`${API}/gdb/revincular-predios${params}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 300000 // 5 minutos de timeout
+      });
+      
+      const data = response.data;
+      const totalVinculados = data.total_vinculados || 0;
+      
+      if (totalVinculados > 0) {
+        toast.success(`¡Revinculación completada! ${totalVinculados.toLocaleString()} predios vinculados con geometría GDB`);
+        // Refrescar estadísticas
+        fetchGdbStats();
+        fetchPrediosStats();
+      } else {
+        toast.info('Revinculación completada. No se encontraron nuevos predios para vincular.');
+      }
+      
+      // Mostrar detalle por municipio
+      if (data.municipios_procesados && data.municipios_procesados.length > 0) {
+        console.log('Detalle de revinculación:', data.municipios_procesados);
+      }
+      
+      if (data.errores && data.errores.length > 0) {
+        console.warn('Errores durante revinculación:', data.errores);
+      }
+      
+    } catch (error) {
+      console.error('Error en revinculación:', error);
+      toast.error(error.response?.data?.detail || 'Error al revincular geometrías GDB');
+    } finally {
+      setRevinculandoGdb(false);
+    }
+  };
+
   const handleExportExcel = async () => {
     try {
       const token = localStorage.getItem('token');
