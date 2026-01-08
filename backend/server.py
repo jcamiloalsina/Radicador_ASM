@@ -5544,21 +5544,7 @@ async def upload_gdb_file(
         
         # Guardar las geometrías con sus códigos
         try:
-            # Rural - usar los mismos nombres de capas extendidos
-            rural_layers_save = [
-                'R_TERRENO_1', 'R_TERRENO', 'R_Terreno', 'r_terreno', 'r_terreno_1',
-                'TERRENO', 'Terreno', 'terreno', 
-                'TERRENO_R', 'terreno_r', 'Terreno_R',
-                'R_PREDIO', 'R_Predio', 'r_predio',
-                'RURAL', 'Rural', 'rural',
-                'TERRENO_RURAL', 'terreno_rural', 'Terreno_Rural'
-            ]
-            # También buscar capas dinámicamente
-            for layer_name in available_layers:
-                if layer_name.upper().startswith('R_') and layer_name not in rural_layers_save:
-                    rural_layers_save.insert(0, layer_name)
-                elif 'RURAL' in layer_name.upper() and layer_name not in rural_layers_save:
-                    rural_layers_save.insert(0, layer_name)
+            # Rural - usar lista de capas específicas (SIN buscar dinámicamente para evitar ZONA_HOMOGENEA)
             
             rural_guardadas = 0
             # Usar la misma capa que se usó para leer, si se encontró
