@@ -141,3 +141,34 @@
 5. ✅ Input validation working on other POST endpoints
 
 **Recommendation**: Main agent should fix the ObjectId serialization issue in the approval endpoint before frontend testing.
+
+## Test Session - January 8, 2026 (Fork Session)
+
+### Feature: Visor de Predios Simplification
+- **Status**: ✅ FIXED
+- **Issue**: `tipoLimites is not defined` error
+- **Fix**: Removed obsolete reference to `tipoLimites` variable in VisorPredios.js
+- **Verification**: Map loads correctly with official DANE/IGAC boundaries
+
+### Feature: Conditional GDB Upload Logic
+- **Status**: ✅ IMPLEMENTED
+- **Backend Endpoint**: `/api/gdb/verificar-carga-mes`
+- **Test Results**:
+  - Returns correct structure: mes, total_cargados, total_pendientes, municipios_cargados, municipios_pendientes
+  - Current data: 12 municipalities loaded for 2026-01, 0 pending
+- **Frontend Integration**: UI shows GDB status summary and conditional upload prompt
+
+### Feature: Pendientes Page
+- **Status**: ✅ WORKING
+- **Endpoint**: `/api/predios/cambios/pendientes`
+- **Test Results**: Returns correct structure {total: 0, cambios: []}
+
+### Feature: Export Productivity PDF
+- **Status**: ✅ WORKING
+- **Endpoint**: `/api/reports/gestor-productivity/export-pdf`
+- **Test Results**: Returns valid PDF file (HTTP 200, file size 2378 bytes)
+- **Frontend**: Button works, shows "Reporte PDF descargado" toast
+
+### Credentials Verified
+- **Admin**: catastro@asomunicipios.gov.co / Asm*123* ✅ WORKING
+
