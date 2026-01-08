@@ -795,6 +795,19 @@ export default function Predios() {
   const [cambiosPendientes, setCambiosPendientes] = useState([]);
   const [cambiosStats, setCambiosStats] = useState(null);
   const [terrenoInfo, setTerrenoInfo] = useState(null);
+  const [estructuraCodigo, setEstructuraCodigo] = useState(null);
+  const [verificacionCodigo, setVerificacionCodigo] = useState(null);
+  const [codigoManual, setCodigoManual] = useState({
+    zona: '00',
+    sector: '00',
+    comuna: '00',
+    barrio: '00',
+    manzana_vereda: '0000',
+    terreno: '0001',
+    edificio: '0',
+    piso: '0000',
+    unidad: '0000'
+  });
   const [formData, setFormData] = useState({
     municipio: '',
     zona: '00',
