@@ -4701,6 +4701,7 @@ async def get_gdb_geometry_async(codigo_predial: str) -> Optional[dict]:
                                     "codigo_original": codigo_predial,
                                     "tipo": geometria.get("tipo", "Rural"),
                                     "municipio": geometria.get("municipio", ""),
+                                    "area_m2": geometria.get("area_m2", 0),
                                     "match_method": "segmento"
                                 }
                             }
