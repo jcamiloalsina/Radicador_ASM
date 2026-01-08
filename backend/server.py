@@ -2787,7 +2787,10 @@ async def crear_predio_con_workflow(
             "condicion_predio": codigo_predial[17:21],
             "predio_horizontal": codigo_predial[21:30],
             "tiene_geometria_gdb": geometria is not None,
-            "area_gdb": geometria.get("area_m2") if geometria else None
+            "area_gdb": geometria.get("area_m2") if geometria else None,
+            "propietarios": request.get("propietarios", []),
+            "zonas_fisicas": request.get("zonas_fisicas", []),
+            "matricula_inmobiliaria": request.get("matricula_inmobiliaria", "")
         },
         "justificacion": justificacion,
         "estado": "pendiente_aprobacion",
@@ -2796,6 +2799,8 @@ async def crear_predio_con_workflow(
         "creado_por_rol": current_user["role"],
         "gestor_asignado": None,
         "gestor_asignado_nombre": None,
+        "gestor_continuar": None,
+        "gestor_continuar_nombre": None,
         "historial": [{
             "accion": "Creación de propuesta",
             "usuario": current_user["full_name"],
@@ -2807,6 +2812,23 @@ async def crear_predio_con_workflow(
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
+    
+    # Si se asignó a otro gestor para continuar
+    gestor_asignado_id = request.get("gestor_asignado_id")
+    if gestor_asignado_id:
+        gestor_info = await db.users.find_one({"id": gestor_asignado_id}, {"_id": 0, "full_name": 1})
+        if gestor_info:
+            propuesta["gestor_continuar"] = gestor_asignado_id
+            propuesta["gestor_continuar_nombre"] = gestor_info["full_name"]
+            propuesta["estado"] = "en_proceso"
+            propuesta["historial"].append({
+                "accion": "Asignado a otro gestor para continuar",
+                "usuario": current_user["full_name"],
+                "usuario_id": current_user["id"],
+                "rol": current_user["role"],
+                "fecha": datetime.now(timezone.utc).isoformat(),
+                "notas": f"Asignado a {gestor_info['full_name']} para continuar el diligenciamiento"
+            })
     
     await db.predios_cambios_propuestos.insert_one(propuesta)
     
