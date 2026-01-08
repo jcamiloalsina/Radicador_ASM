@@ -5653,11 +5653,22 @@ async def upload_gdb_file(
                         if codigo and row.geometry:
                             try:
                                 geom_wgs84 = transform(project, row.geometry) if project else row.geometry
+                                # Calcular área en m2
+                                area_m2 = 0
+                                try:
+                                    # El área en grados se convierte aproximadamente a m2
+                                    # Factor para Colombia (~7° latitud): 1 grado ≈ 111320 m
+                                    area_deg = geom_wgs84.area
+                                    area_m2 = round(area_deg * (111320 ** 2), 2)
+                                except:
+                                    pass
+                                
                                 await db.gdb_geometrias.insert_one({
                                     "codigo": codigo,
                                     "tipo": "rural",
                                     "gdb_source": gdb_name,
                                     "municipio": municipio_nombre,
+                                    "area_m2": area_m2,
                                     "geometry": geom_wgs84.__geo_interface__
                                 })
                                 geometrias_guardadas += 1
