@@ -2039,18 +2039,18 @@ export default function Predios() {
                       <Input value={estructuraCodigo.prefijo_fijo} disabled className="font-mono bg-blue-50 text-blue-800 font-bold text-center" />
                     </div>
                     <div>
-                      <Label className="text-xs text-emerald-700">Zona (6)</Label>
+                      <Label className="text-xs text-emerald-700">Zona (6-7)</Label>
                       <Input 
                         value={codigoManual.zona} 
-                        onChange={(e) => handleCodigoChange('zona', e.target.value, 1)}
-                        maxLength={1}
+                        onChange={(e) => handleCodigoChange('zona', e.target.value, 2)}
+                        maxLength={2}
                         className="font-mono text-center"
-                        placeholder="0"
+                        placeholder="00"
                       />
-                      <span className="text-xs text-slate-400">0=Rural 1=Urb</span>
+                      <span className="text-xs text-slate-400">00=Rural 01=Urb</span>
                     </div>
                     <div>
-                      <Label className="text-xs text-amber-700">Sector (7-8)</Label>
+                      <Label className="text-xs text-amber-700">Sector (8-9)</Label>
                       <Input 
                         value={codigoManual.sector} 
                         onChange={(e) => handleCodigoChange('sector', e.target.value, 2)}
@@ -2060,13 +2060,13 @@ export default function Predios() {
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-purple-700">Comuna (9-11)</Label>
+                      <Label className="text-xs text-purple-700">Comuna (10-11)</Label>
                       <Input 
                         value={codigoManual.comuna} 
-                        onChange={(e) => handleCodigoChange('comuna', e.target.value, 3)}
-                        maxLength={3}
+                        onChange={(e) => handleCodigoChange('comuna', e.target.value, 2)}
+                        maxLength={2}
                         className="font-mono text-center"
-                        placeholder="000"
+                        placeholder="00"
                       />
                     </div>
                     <div>
