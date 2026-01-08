@@ -202,52 +202,88 @@ export default function VisorPredios() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     
-    // Si es un solo archivo ZIP
-    if (files.length === 1 && files[0].name.endsWith('.zip')) {
-      setUploadingGdb(true);
-      const formData = new FormData();
-      formData.append('files', files[0]);
-      
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.post(`${API}/gdb/upload`, formData, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-        toast.success(`Base gráfica de ${response.data.municipio || 'municipio'} actualizada. ${response.data.total_geometrias} geometrías, ${response.data.predios_relacionados} predios relacionados.`);
-        fetchGdbStats();
-        setShowUploadGdb(false);
-      } catch (error) {
-        toast.error(error.response?.data?.detail || 'Error al subir la base gráfica');
-      } finally {
-        setUploadingGdb(false);
-      }
-      return;
-    }
-    
-    // Si son múltiples archivos (carpeta .gdb)
     setUploadingGdb(true);
+    setUploadProgress({ status: 'iniciando', progress: 0, message: 'Preparando archivos...' });
+    
     const formData = new FormData();
     
-    for (let i = 0; i < files.length; i++) {
-      formData.append('files', files[i]);
+    // Si es un solo archivo ZIP
+    if (files.length === 1 && files[0].name.endsWith('.zip')) {
+      formData.append('files', files[0]);
+    } else {
+      // Si son múltiples archivos (carpeta .gdb)
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
     }
     
     try {
       const token = localStorage.getItem('token');
+      
+      // Iniciar subida
+      setUploadProgress({ status: 'subiendo', progress: 5, message: 'Subiendo archivos al servidor...' });
+      
       const response = await axios.post(`${API}/gdb/upload`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 10) / progressEvent.total);
+          setUploadProgress({ 
+            status: 'subiendo', 
+            progress: percentCompleted, 
+            message: `Subiendo archivos: ${Math.round(progressEvent.loaded / 1024)}KB` 
+          });
         }
       });
-      toast.success(`Base gráfica de ${response.data.municipio || 'municipio'} actualizada. ${response.data.total_geometrias} geometrías, ${response.data.predios_relacionados} predios relacionados.`);
-      fetchGdbStats();
-      setShowUploadGdb(false);
+      
+      // Si hay upload_id, consultar progreso periódicamente
+      if (response.data.upload_id) {
+        let checkCount = 0;
+        const maxChecks = 120; // 2 minutos máximo
+        
+        const checkProgress = async () => {
+          if (checkCount >= maxChecks) {
+            setUploadProgress(null);
+            return;
+          }
+          
+          try {
+            const progressRes = await axios.get(`${API}/gdb/upload-progress/${response.data.upload_id}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            setUploadProgress(progressRes.data);
+            
+            if (progressRes.data.status !== 'completado' && progressRes.data.status !== 'error') {
+              checkCount++;
+              setTimeout(checkProgress, 1000);
+            } else if (progressRes.data.status === 'completado') {
+              toast.success(`¡Completado! ${response.data.predios_relacionados} predios relacionados de ${response.data.total_geometrias_gdb} geometrías GDB`);
+              fetchGdbStats();
+              setShowUploadGdb(false);
+              setTimeout(() => setUploadProgress(null), 3000);
+            }
+          } catch (err) {
+            console.error('Error checking progress:', err);
+          }
+        };
+        
+        // Comenzar a verificar progreso después de 1 segundo
+        setTimeout(checkProgress, 1000);
+      } else {
+        // Sin upload_id, mostrar resultado directo
+        toast.success(`Base gráfica de ${response.data.municipio || 'municipio'} actualizada. ${response.data.total_geometrias_gdb || response.data.total_geometrias} geometrías, ${response.data.predios_relacionados} predios relacionados.`);
+        fetchGdbStats();
+        setShowUploadGdb(false);
+        setUploadProgress(null);
+      }
+      
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al subir la base gráfica');
+      setUploadProgress({ status: 'error', progress: 0, message: error.response?.data?.detail || 'Error al procesar' });
+      setTimeout(() => setUploadProgress(null), 5000);
     } finally {
       setUploadingGdb(false);
     }
