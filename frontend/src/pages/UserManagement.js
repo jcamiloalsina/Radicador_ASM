@@ -5,10 +5,9 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
-import { Switch } from '../components/ui/switch';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { UserCog, Search, Map } from 'lucide-react';
+import { UserCog, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -63,27 +62,11 @@ export default function UserManagement() {
     }
   };
 
-  const handleGdbPermissionChange = async (userId, canUpdate) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.patch(
-        `${API}/users/${userId}/gdb-permission?puede_actualizar=${canUpdate}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success(canUpdate ? 'Permiso GDB otorgado' : 'Permiso GDB revocado');
-      fetchUsers();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Error al actualizar permiso');
-    }
-  };
-
   const getRoleBadge = (role) => {
     const roleConfig = {
       ciudadano: { label: 'Ciudadano', className: 'bg-blue-100 text-blue-800' },
       atencion_usuario: { label: 'Atención al Usuario', className: 'bg-purple-100 text-purple-800' },
       gestor: { label: 'Gestor', className: 'bg-green-100 text-green-800' },
-      gestor_auxiliar: { label: 'Gestor Auxiliar', className: 'bg-teal-100 text-teal-800' },
       coordinador: { label: 'Coordinador', className: 'bg-orange-100 text-orange-800' },
       administrador: { label: 'Administrador', className: 'bg-red-100 text-red-800' },
     };
@@ -106,7 +89,7 @@ export default function UserManagement() {
         <h2 className="text-3xl font-bold tracking-tight text-slate-900 font-outfit" data-testid="page-heading">
           Gestión de Usuarios
         </h2>
-        <p className="text-slate-600 mt-1">Administra roles y permisos de usuarios</p>
+        <p className="text-slate-600 mt-1">Administra los roles de los usuarios del sistema</p>
       </div>
 
       {/* Search */}
@@ -155,43 +138,23 @@ export default function UserManagement() {
               </CardHeader>
               <CardContent>
                 {user.id !== currentUser.id && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`role-${user.id}`} className="text-slate-700">Cambiar Rol</Label>
-                      <Select 
-                        value={user.role} 
-                        onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
-                      >
-                        <SelectTrigger className="focus:ring-emerald-600" data-testid={`role-select-${user.id}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ciudadano">Ciudadano</SelectItem>
-                          <SelectItem value="atencion_usuario">Atención al Usuario</SelectItem>
-                          <SelectItem value="gestor">Gestor</SelectItem>
-                          <SelectItem value="gestor_auxiliar">Gestor Auxiliar</SelectItem>
-                          <SelectItem value="coordinador">Coordinador</SelectItem>
-                          <SelectItem value="administrador">Administrador</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {/* Permiso GDB solo para gestores */}
-                    {user.role === 'gestor' && ['coordinador', 'administrador'].includes(currentUser.role) && (
-                      <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
-                        <div className="flex items-center gap-2">
-                          <Map className="w-4 h-4 text-amber-700" />
-                          <div>
-                            <p className="text-sm font-medium text-amber-800">Permiso Actualizar Base Gráfica</p>
-                            <p className="text-xs text-amber-600">Permite subir archivos .gdb al sistema</p>
-                          </div>
-                        </div>
-                        <Switch
-                          checked={user.puede_actualizar_gdb || false}
-                          onCheckedChange={(checked) => handleGdbPermissionChange(user.id, checked)}
-                        />
-                      </div>
-                    )}
+                  <div className="space-y-2">
+                    <Label htmlFor={`role-${user.id}`} className="text-slate-700">Cambiar Rol</Label>
+                    <Select 
+                      value={user.role} 
+                      onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
+                    >
+                      <SelectTrigger className="focus:ring-emerald-600" data-testid={`role-select-${user.id}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ciudadano">Ciudadano</SelectItem>
+                        <SelectItem value="atencion_usuario">Atención al Usuario</SelectItem>
+                        <SelectItem value="gestor">Gestor</SelectItem>
+                        <SelectItem value="coordinador">Coordinador</SelectItem>
+                        <SelectItem value="administrador">Administrador</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
                 {user.id === currentUser.id && (
