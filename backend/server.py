@@ -5357,44 +5357,49 @@ async def upload_gdb_file(
         
         # Guardar geometrías en colección para búsquedas posteriores
         geometrias_guardadas = 0
-        if codigos_gdb:
-            # Limpiar geometrías anteriores de este municipio
-            await db.gdb_geometrias.delete_many({"gdb_source": gdb_name})
-            
-            # Guardar las geometrías con sus códigos
-            try:
-                for rural_layer in ['R_TERRENO_1', 'R_TERRENO', 'R_Terreno']:
-                    try:
-                        gdf_rural = gpd.read_file(str(gdb_found), layer=rural_layer)
-                        total_rural = len(gdf_rural)
-                        for idx, row in gdf_rural.iterrows():
-                            if idx % 500 == 0:
-                                pct = 50 + int((idx / total_rural) * 15)
-                                update_progress("guardando_rural", pct, f"Procesando geometrías rurales: {idx}/{total_rural}")
-                            codigo = None
-                            for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED']:
-                                if col in gdf_rural.columns and pd.notna(row.get(col)):
-                                    codigo = str(row[col])
-                                    break
-                            if codigo and row.geometry:
-                                try:
-                                    geom_wgs84 = transform(project, row.geometry)
-                                    await db.gdb_geometrias.insert_one({
-                                        "codigo": codigo,
-                                        "tipo": "rural",
-                                        "gdb_source": gdb_name,
-                                        "municipio": municipio_nombre,
-                                        "geometry": geom_wgs84.__geo_interface__
-                                    })
-                                    geometrias_guardadas += 1
-                                except:
-                                    pass
-                        break
-                    except:
+        
+        # Limpiar geometrías anteriores de este municipio
+        await db.gdb_geometrias.delete_many({"gdb_source": gdb_name})
+        
+        # Guardar las geometrías con sus códigos
+        try:
+            # Rural - usar los mismos nombres de capas que al leer
+            rural_layers = ['R_TERRENO_1', 'R_TERRENO', 'R_Terreno', 'TERRENO', 'Terreno', 'terreno']
+            for rural_layer in rural_layers:
+                try:
+                    gdf_rural = gpd.read_file(str(gdb_found), layer=rural_layer)
+                    if len(gdf_rural) == 0:
                         continue
-                
-                update_progress("guardando_urbano", 65, "Procesando geometrías urbanas...")
-                for urban_layer in ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno']:
+                    total_rural = len(gdf_rural)
+                    for idx, row in gdf_rural.iterrows():
+                        if idx % 500 == 0:
+                            pct = 50 + int((idx / total_rural) * 15)
+                            update_progress("guardando_rural", pct, f"Procesando geometrías rurales: {idx}/{total_rural}")
+                        codigo = None
+                        for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED']:
+                            if col in gdf_rural.columns and pd.notna(row.get(col)):
+                                codigo = str(row[col])
+                                break
+                        if codigo and row.geometry:
+                            try:
+                                geom_wgs84 = transform(project, row.geometry) if project else row.geometry
+                                await db.gdb_geometrias.insert_one({
+                                    "codigo": codigo,
+                                    "tipo": "rural",
+                                    "gdb_source": gdb_name,
+                                    "municipio": municipio_nombre,
+                                    "geometry": geom_wgs84.__geo_interface__
+                                })
+                                geometrias_guardadas += 1
+                            except:
+                                pass
+                    break
+                except:
+                    continue
+            
+            update_progress("guardando_urbano", 65, "Procesando geometrías urbanas...")
+            urban_layers = ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno']
+            for urban_layer in urban_layers:
                     try:
                         gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
                         total_urban = len(gdf_urban)
