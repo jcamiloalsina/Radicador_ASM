@@ -4909,37 +4909,45 @@ async def get_limites_municipios(current_user: dict = Depends(get_current_user))
                 logger.warning(f"Error procesando {municipio}: {e}")
         
         # 3. Agregar municipios asociados sin GDB (Ocaña, Tibú, La Esperanza, González)
-        # Polígonos aproximados basados en límites conocidos (formato: lista de [lon, lat])
+        # Polígonos basados en la imagen de referencia de los límites municipales reales
+        # Formato: lista de [lon, lat] - coordenadas aproximadas de los vértices del polígono
         municipios_sin_gdb = {
             "Ocaña": {
                 "coords": [
-                    [-73.50, 8.35], [-73.40, 8.38], [-73.28, 8.35], [-73.22, 8.28],
-                    [-73.20, 8.18], [-73.25, 8.08], [-73.35, 8.05], [-73.45, 8.10],
-                    [-73.52, 8.20], [-73.50, 8.35]
+                    # Forma irregular central, limita con muchos municipios
+                    [-73.42, 8.32], [-73.38, 8.35], [-73.32, 8.34], [-73.28, 8.30],
+                    [-73.24, 8.26], [-73.22, 8.20], [-73.24, 8.14], [-73.28, 8.08],
+                    [-73.32, 8.05], [-73.38, 8.04], [-73.44, 8.08], [-73.48, 8.14],
+                    [-73.50, 8.20], [-73.48, 8.26], [-73.42, 8.32]
                 ],
                 "dept": "Norte de Santander"
             },
             "Tibú": {
                 "coords": [
-                    [-72.85, 8.85], [-72.70, 8.80], [-72.60, 8.70], [-72.55, 8.55],
-                    [-72.65, 8.40], [-72.80, 8.35], [-72.95, 8.40], [-73.05, 8.55],
-                    [-73.00, 8.70], [-72.85, 8.85]
+                    # Municipio grande al noreste, borde recto al este (frontera)
+                    [-73.10, 8.95], [-72.90, 8.98], [-72.65, 8.92], [-72.52, 8.78],
+                    [-72.50, 8.55], [-72.52, 8.35], [-72.60, 8.22], [-72.75, 8.18],
+                    [-72.90, 8.22], [-73.05, 8.30], [-73.15, 8.45], [-73.18, 8.60],
+                    [-73.15, 8.78], [-73.10, 8.95]
                 ],
                 "dept": "Norte de Santander"
             },
             "La Esperanza": {
                 "coords": [
-                    [-73.45, 7.75], [-73.35, 7.78], [-73.25, 7.72], [-73.20, 7.60],
-                    [-73.25, 7.50], [-73.35, 7.48], [-73.45, 7.55], [-73.50, 7.65],
-                    [-73.45, 7.75]
+                    # Al sur, con proyección alargada hacia el sur
+                    [-73.45, 7.72], [-73.38, 7.75], [-73.30, 7.72], [-73.24, 7.65],
+                    [-73.22, 7.55], [-73.24, 7.45], [-73.28, 7.38], [-73.35, 7.35],
+                    [-73.42, 7.40], [-73.48, 7.50], [-73.50, 7.60], [-73.48, 7.68],
+                    [-73.45, 7.72]
                 ],
                 "dept": "Norte de Santander"
             },
             "González": {
                 "coords": [
-                    [-73.42, 8.48], [-73.32, 8.50], [-73.22, 8.45], [-73.18, 8.35],
-                    [-73.22, 8.25], [-73.32, 8.22], [-73.42, 8.28], [-73.45, 8.38],
-                    [-73.42, 8.48]
+                    # Al noroeste, entre El Carmen y Río de Oro
+                    [-73.48, 8.52], [-73.42, 8.55], [-73.35, 8.52], [-73.30, 8.46],
+                    [-73.28, 8.38], [-73.30, 8.32], [-73.36, 8.28], [-73.44, 8.30],
+                    [-73.50, 8.36], [-73.52, 8.44], [-73.48, 8.52]
                 ],
                 "dept": "Cesar"
             }
