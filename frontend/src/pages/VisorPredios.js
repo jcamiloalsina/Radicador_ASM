@@ -1110,11 +1110,10 @@ export default function VisorPredios() {
                 
                 {/* Mostrar límites de municipios usando componente con acceso al mapa */}
                 <MunicipalityLimits 
-                  key={`limits-${tipoLimites}-${limitesMunicipios?.total_municipios || 0}`}
+                  key={`limits-oficial-${limitesMunicipios?.total_municipios || 0}`}
                   limitesMunicipios={limitesMunicipios}
                   filterMunicipio={filterMunicipio}
                   setFilterMunicipio={setFilterMunicipio}
-                  tipoLimites={tipoLimites}
                 />
                 
                 {/* Mostrar predios individuales solo si está activado y se seleccionó un municipio */}
