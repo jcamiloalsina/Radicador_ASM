@@ -22,7 +22,8 @@ export default function CreatePetition() {
     telefono: '',
     tipo_tramite: '',
     sub_tipo_tramite: '',
-    municipio: ''
+    municipio: '',
+    descripcion: ''
   });
   const [files, setFiles] = useState([]);
 
