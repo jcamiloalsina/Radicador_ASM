@@ -259,6 +259,10 @@ export default function VisorPredios() {
   useEffect(() => {
     fetchGdbStats();
     fetchLimitesMunicipios('oficial'); // Siempre usar límites oficiales
+    // Verificar estado de cargas GDB del mes (solo para roles autorizados)
+    if (user?.role === 'administrador' || user?.role === 'coordinador' || (user?.role === 'gestor' && user?.puede_actualizar_gdb)) {
+      verificarCargasMensuales();
+    }
   }, []);
 
   // Cargar geometrías cuando cambian los filtros Y el usuario quiere ver predios
