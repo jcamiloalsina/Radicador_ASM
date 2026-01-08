@@ -73,7 +73,7 @@ function FlyToCoordinates({ coordinates }) {
 }
 
 // Component to render municipality limits with zoom on click
-function MunicipalityLimits({ limitesMunicipios, filterMunicipio, setFilterMunicipio, tipoLimites }) {
+function MunicipalityLimits({ limitesMunicipios, filterMunicipio, setFilterMunicipio }) {
   const map = useMap();
   
   if (!limitesMunicipios || !limitesMunicipios.features) return null;
@@ -86,7 +86,7 @@ function MunicipalityLimits({ limitesMunicipios, filterMunicipio, setFilterMunic
         
         return (
           <GeoJSON
-            key={`limite-${feature.properties?.municipio}-${idx}-${tipoLimites}`}
+            key={`limite-${feature.properties?.municipio}-${idx}`}
             data={feature}
             style={() => ({
               color: isSelected ? '#10B981' : '#FFFFFF',
