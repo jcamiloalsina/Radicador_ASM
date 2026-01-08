@@ -913,6 +913,28 @@ export default function Predios() {
     setZonasFisicas(nuevas);
   };
 
+  // Estado para asignar a otro gestor
+  const [gestoresDisponibles, setGestoresDisponibles] = useState([]);
+  const [gestorAsignado, setGestorAsignado] = useState('');
+
+  // Cargar gestores disponibles
+  const fetchGestoresDisponibles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Filtrar solo gestores y staff
+      const gestores = res.data.filter(u => 
+        ['gestor', 'gestor_auxiliar', 'atencion_usuario', 'coordinador'].includes(u.role) && 
+        u.id !== user?.id
+      );
+      setGestoresDisponibles(gestores);
+    } catch (error) {
+      console.log('Error cargando gestores');
+    }
+  };
+
   useEffect(() => {
     fetchCatalogos();
     fetchVigencias();
@@ -920,6 +942,7 @@ export default function Predios() {
     fetchCambiosStats();
     fetchReaparicionesConteo();
     fetchGdbStats();
+    fetchGestoresDisponibles();
   }, []);
 
   useEffect(() => {
