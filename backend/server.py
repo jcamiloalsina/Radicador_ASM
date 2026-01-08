@@ -5293,15 +5293,36 @@ async def upload_gdb_file(
     
     update_progress("preparando", 5, "Preparando transformación de coordenadas...")
     
-    # Setup coordinate transformation (MAGNA-SIRGAS to WGS84)
-    try:
-        crs_magna = CRS.from_epsg(3116)  # MAGNA-SIRGAS Colombia Bogota zone
-        crs_wgs84 = CRS.from_epsg(4326)  # WGS84
-        transformer = Transformer.from_crs(crs_magna, crs_wgs84, always_xy=True)
-        project = transformer.transform
-    except Exception as e:
-        logger.warning(f"Error setting up CRS transformation: {e}")
-        project = None
+    # Setup coordinate transformation function (will be set based on GDB CRS)
+    project = None
+    
+    def get_transformer_for_gdf(gdf):
+        """Get the appropriate transformer based on GDF's CRS"""
+        try:
+            if gdf.crs is None:
+                # Assume MAGNA-SIRGAS if no CRS
+                source_crs = CRS.from_epsg(3116)
+            else:
+                source_crs = CRS.from_user_input(gdf.crs)
+            
+            target_crs = CRS.from_epsg(4326)  # WGS84
+            
+            # Check if already in WGS84
+            if source_crs.to_epsg() == 4326:
+                return None
+            
+            transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
+            return transformer.transform
+        except Exception as e:
+            logger.warning(f"Error setting up CRS transformation: {e}")
+            # Fallback to MAGNA-SIRGAS
+            try:
+                source_crs = CRS.from_epsg(3116)
+                target_crs = CRS.from_epsg(4326)
+                transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
+                return transformer.transform
+            except:
+                return None
     
     try:
         gdb_data_dir = Path("/app/gdb_data")
