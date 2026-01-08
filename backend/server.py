@@ -2170,11 +2170,23 @@ async def get_predios_eliminados_stats(current_user: dict = Depends(get_current_
 @api_router.post("/predios/import-excel")
 async def import_predios_excel(
     file: UploadFile = File(...),
-    vigencia: int = Form(2025),
+    vigencia: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_user)
 ):
     """Importa predios desde archivo Excel R1-R2 con soporte de vigencia"""
     import openpyxl
+    
+    # Procesar vigencia - puede venir como "2023", "2025", "01012023", "1012023", etc.
+    vigencia_int = 2025  # valor por defecto
+    if vigencia:
+        vigencia_str = str(vigencia).strip()
+        # Si tiene más de 4 dígitos, extraer los últimos 4 (el año)
+        if len(vigencia_str) > 4:
+            vigencia_int = int(vigencia_str[-4:])
+        else:
+            vigencia_int = int(vigencia_str)
+    
+    logger.info(f"Importando con vigencia: {vigencia} -> {vigencia_int}")
     
     # Helper para convertir números con formato de coma decimal
     def parse_number(value, default=0):
