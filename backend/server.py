@@ -5269,9 +5269,10 @@ async def aprobar_rechazar_cambio(
     request: CambioAprobacionRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """Aprueba o rechaza un cambio pendiente (solo coordinadores/admin)"""
-    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
-        raise HTTPException(status_code=403, detail="Solo coordinadores pueden aprobar cambios")
+    """Aprueba o rechaza un cambio pendiente (solo coordinadores/admin o con permiso)"""
+    has_permission = await check_permission(current_user, Permission.APPROVE_CHANGES)
+    if not has_permission:
+        raise HTTPException(status_code=403, detail="No tiene permiso para aprobar cambios")
     
     # Buscar el cambio
     cambio = await db.predios_cambios.find_one({"id": request.cambio_id}, {"_id": 0})
