@@ -1330,7 +1330,9 @@ export default function Predios() {
           pisos: parseInt(z.pisos) || 1,
           puntaje: parseFloat(z.puntaje) || 0,
           area_construida: parseFloat(z.area_construida) || 0
-        }))
+        })),
+        // Gestor asignado para continuar
+        gestor_asignado_id: gestorAsignado || null
       };
 
       const res = await axios.post(`${API}/predios/crear-con-workflow`, predioData, {
