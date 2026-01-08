@@ -2647,6 +2647,86 @@ async def rechazar_reaparicion(
     }
 
 
+class SolicitudRespuestaRequest(BaseModel):
+    solicitud_id: str
+    aprobado: bool
+    comentario: str
+
+
+@api_router.post("/predios/reapariciones/solicitud-responder")
+async def responder_solicitud_reaparicion(
+    request: SolicitudRespuestaRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Responde a una solicitud de reaparición hecha por un gestor"""
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden responder solicitudes")
+    
+    # Buscar la solicitud
+    solicitud = await db.predios_reapariciones_solicitudes.find_one(
+        {"id": request.solicitud_id},
+        {"_id": 0}
+    )
+    
+    if not solicitud:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    
+    if solicitud.get("estado") != "pendiente":
+        raise HTTPException(status_code=400, detail="Esta solicitud ya fue procesada")
+    
+    nuevo_estado = "aprobado" if request.aprobado else "rechazado"
+    
+    # Actualizar la solicitud
+    await db.predios_reapariciones_solicitudes.update_one(
+        {"id": request.solicitud_id},
+        {"$set": {
+            "estado": nuevo_estado,
+            "respondido_por": current_user['id'],
+            "respondido_por_nombre": current_user['full_name'],
+            "comentario_respuesta": request.comentario,
+            "fecha_respuesta": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Si fue aprobado, registrar en reapariciones aprobadas para permitir la creación del predio
+    if request.aprobado:
+        aprobacion = {
+            "id": str(uuid.uuid4()),
+            "codigo_predial_nacional": solicitud["codigo_predial_nacional"],
+            "municipio": solicitud["municipio"],
+            "vigencia_eliminacion": solicitud.get("vigencia_eliminacion"),
+            "estado": "aprobado",
+            "justificacion": f"Solicitud de gestor aprobada: {request.comentario}",
+            "justificacion_gestor": solicitud.get("justificacion_gestor"),
+            "aprobado_por": current_user['id'],
+            "aprobado_por_nombre": current_user['full_name'],
+            "fecha_aprobacion": datetime.now(timezone.utc).isoformat(),
+            "origen": "solicitud_gestor"
+        }
+        await db.predios_reapariciones_aprobadas.insert_one(aprobacion)
+        
+        # Eliminar de la lista de predios eliminados
+        await db.predios_eliminados.delete_one({
+            "codigo_predial_nacional": solicitud["codigo_predial_nacional"],
+            "municipio": solicitud["municipio"]
+        })
+    
+    # Notificar al gestor que hizo la solicitud
+    await crear_notificacion(
+        usuario_id=solicitud.get("solicitado_por"),
+        titulo=f"Solicitud de Reaparición {'Aprobada' if request.aprobado else 'Rechazada'}",
+        mensaje=f"Su solicitud para el predio {solicitud['codigo_predial_nacional']} ha sido {'aprobada' if request.aprobado else 'rechazada'}. {request.comentario}",
+        tipo="success" if request.aprobado else "error",
+        enviar_email=True
+    )
+    
+    return {
+        "message": f"Solicitud {'aprobada' if request.aprobado else 'rechazada'} correctamente",
+        "estado": nuevo_estado,
+        "puede_crear_predio": request.aprobado
+    }
+
+
 @api_router.get("/predios/reapariciones/historial")
 async def get_historial_reapariciones(
     municipio: Optional[str] = None,
