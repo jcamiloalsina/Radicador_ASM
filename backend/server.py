@@ -3260,8 +3260,9 @@ async def aprobar_reaparicion(
     current_user: dict = Depends(get_current_user)
 ):
     """Aprueba la reaparición de un predio eliminado después del análisis técnico"""
-    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
-        raise HTTPException(status_code=403, detail="Solo coordinadores pueden aprobar reapariciones")
+    has_permission = await check_permission(current_user, Permission.APPROVE_CHANGES)
+    if not has_permission:
+        raise HTTPException(status_code=403, detail="No tiene permiso para aprobar reapariciones")
     
     # Verificar que el predio esté en eliminados
     eliminado = await db.predios_eliminados.find_one({
