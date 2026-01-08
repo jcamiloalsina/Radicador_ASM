@@ -1044,6 +1044,55 @@ export default function Predios() {
     setCodigoManual(prev => ({ ...prev, [campo]: valorFinal }));
   };
 
+  // Verificar si hay datos ingresados en el formulario
+  const tieneDatasSinGuardar = () => {
+    // Verificar si se ha modificado algo del código
+    const codigoModificado = codigoManual.zona !== '00' || 
+                             codigoManual.sector !== '00' || 
+                             codigoManual.comuna !== '00' ||
+                             codigoManual.barrio !== '00' ||
+                             codigoManual.manzana_vereda !== '0000' ||
+                             codigoManual.terreno !== '0001';
+    
+    // Verificar si hay datos de propietario
+    const tienePropietario = propietarios[0]?.nombre_propietario?.trim() || 
+                             propietarios[0]?.numero_documento?.trim();
+    
+    // Verificar si hay datos del predio
+    const tieneDatosPredio = formData.direccion?.trim() || 
+                             formData.area_terreno || 
+                             formData.avaluo;
+    
+    return codigoModificado || tienePropietario || tieneDatosPredio;
+  };
+
+  // Manejar intento de cerrar el diálogo
+  const handleCloseDialog = (open) => {
+    if (!open && tieneDatasSinGuardar() && !gestorAsignado) {
+      // Hay datos sin guardar y no se ha asignado a otro gestor
+      setShowConfirmClose(true);
+    } else {
+      setShowCreateDialog(open);
+      if (!open) {
+        resetForm();
+      }
+    }
+  };
+
+  // Confirmar cierre sin guardar
+  const confirmarCierreSinGuardar = () => {
+    setShowConfirmClose(false);
+    setShowCreateDialog(false);
+    resetForm();
+  };
+
+  // Asignar a gestor y cerrar
+  const asignarYCerrar = () => {
+    setShowConfirmClose(false);
+    // Enfocar en el selector de gestor
+    toast.info('Por favor seleccione un gestor para continuar con el diligenciamiento', { duration: 4000 });
+  };
+
   const fetchCatalogos = async () => {
     try {
       const token = localStorage.getItem('token');
