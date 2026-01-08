@@ -754,10 +754,10 @@ export default function VisorPredios() {
                     data={allGeometries}
                     style={(feature) => ({
                       color: feature.properties?.tipo === 'Urbano' ? '#DC2626' : '#2563EB',
-                      weight: 1,
-                      opacity: 0.8,
-                      fillColor: feature.properties?.tipo === 'Urbano' ? '#DC2626' : '#2563EB',
-                      fillOpacity: 0.2
+                      weight: feature.properties?.tipo === 'Urbano' ? 2 : 1,
+                      opacity: 1,
+                      fillColor: feature.properties?.tipo === 'Urbano' ? '#FCA5A5' : '#93C5FD',
+                      fillOpacity: feature.properties?.tipo === 'Urbano' ? 0.5 : 0.3
                     })}
                     onEachFeature={(feature, layer) => {
                       layer.bindPopup(`
