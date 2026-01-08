@@ -55,7 +55,7 @@ export default function Register() {
         </div>
         <div className="relative z-10 text-center">
           <p className="text-emerald-100 text-lg font-semibold">
-            CatastroYa
+            Asomunicipios en línea
           </p>
           <p className="text-emerald-200 text-sm mt-1">
             Tu radicador catastral en línea
