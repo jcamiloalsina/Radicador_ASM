@@ -4802,7 +4802,7 @@ async def get_geometrias_filtradas(
 
 @api_router.get("/gdb/limites-municipios")
 async def get_limites_municipios(current_user: dict = Depends(get_current_user)):
-    """Obtiene los límites/contornos de todos los municipios basándose en las geometrías GDB"""
+    """Obtiene los límites/contornos de todos los municipios basándose en la UNIÓN REAL de las geometrías GDB"""
     from shapely.geometry import shape, mapping
     from shapely.ops import unary_union
     
@@ -4842,11 +4842,11 @@ async def get_limites_municipios(current_user: dict = Depends(get_current_user))
                             continue
                 
                 if shapes:
-                    # Crear el contorno del municipio (unión de todas las geometrías)
+                    # Crear el contorno REAL del municipio (unión de todas las geometrías - NO convex hull)
                     try:
                         union_geom = unary_union(shapes)
-                        # Obtener el convex hull para un límite más limpio
-                        limite = union_geom.convex_hull
+                        # Usar la unión real, NO convex hull
+                        limite = union_geom
                         
                         # Calcular el centroide para posicionar el label
                         centroid = limite.centroid
@@ -4864,7 +4864,7 @@ async def get_limites_municipios(current_user: dict = Depends(get_current_user))
                         }
                         features.append(feature)
                     except Exception as e:
-                        logger.warning(f"Error creating hull for {municipio}: {e}")
+                        logger.warning(f"Error creating union for {municipio}: {e}")
                         continue
                         
             except Exception as e:
