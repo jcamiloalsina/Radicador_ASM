@@ -2018,66 +2018,143 @@ export default function Predios() {
                   
                   {/* Visualización del código completo */}
                   <div className="bg-white p-3 rounded border mb-4 font-mono text-lg tracking-wider text-center">
-                    <span className="text-blue-600 font-bold">{estructuraCodigo.prefijo_fijo}</span>
-                    <span className="text-emerald-600">{codigoManual.zona}</span>
-                    <span className="text-amber-600">{codigoManual.sector}</span>
-                    <span className="text-purple-600">{codigoManual.comuna}</span>
-                    <span className="text-pink-600">{codigoManual.barrio}</span>
-                    <span className="text-cyan-600">{codigoManual.manzana_vereda}</span>
-                    <span className="text-red-600 font-bold">{codigoManual.terreno}</span>
-                    <span className="text-slate-400">{codigoManual.edificio}{codigoManual.piso}{codigoManual.unidad}</span>
+                    <span className="text-blue-600 font-bold" title="Departamento + Municipio">{estructuraCodigo.prefijo_fijo}</span>
+                    <span className="text-emerald-600" title="Zona">{codigoManual.zona}</span>
+                    <span className="text-amber-600" title="Sector">{codigoManual.sector}</span>
+                    <span className="text-purple-600" title="Comuna">{codigoManual.comuna}</span>
+                    <span className="text-pink-600" title="Barrio">{codigoManual.barrio}</span>
+                    <span className="text-cyan-600" title="Manzana/Vereda">{codigoManual.manzana_vereda}</span>
+                    <span className="text-red-600 font-bold" title="Terreno">{codigoManual.terreno}</span>
+                    <span className="text-orange-600" title="Condición">{codigoManual.condicion}</span>
+                    <span className="text-slate-500" title="Edificio">{codigoManual.edificio}</span>
+                    <span className="text-slate-500" title="Piso">{codigoManual.piso}</span>
+                    <span className="text-slate-500" title="Unidad">{codigoManual.unidad}</span>
                     <span className="text-xs text-slate-500 ml-2">({construirCodigoCompleto().length}/30)</span>
                   </div>
 
-                  {/* Campos editables */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {/* Campos editables - Fila 1: Ubicación geográfica */}
+                  <div className="grid grid-cols-6 gap-2 mb-3">
                     <div className="bg-blue-100 p-2 rounded">
-                      <Label className="text-xs text-blue-700">Depto + Mpio (fijo)</Label>
-                      <Input value={estructuraCodigo.prefijo_fijo} disabled className="font-mono bg-blue-50 text-blue-800 font-bold" />
+                      <Label className="text-xs text-blue-700">Dpto+Mpio (1-5)</Label>
+                      <Input value={estructuraCodigo.prefijo_fijo} disabled className="font-mono bg-blue-50 text-blue-800 font-bold text-center" />
                     </div>
                     <div>
-                      <Label className="text-xs text-emerald-700">Zona (6-7)</Label>
+                      <Label className="text-xs text-emerald-700">Zona (6)</Label>
                       <Input 
                         value={codigoManual.zona} 
-                        onChange={(e) => setCodigoManual({...codigoManual, zona: e.target.value.padStart(2, '0').slice(-2)})}
-                        maxLength={2}
-                        className="font-mono"
-                        placeholder="00=Rural"
+                        onChange={(e) => handleCodigoChange('zona', e.target.value, 1)}
+                        maxLength={1}
+                        className="font-mono text-center"
+                        placeholder="0"
                       />
+                      <span className="text-xs text-slate-400">0=Rural 1=Urb</span>
                     </div>
                     <div>
-                      <Label className="text-xs text-amber-700">Sector (8-9)</Label>
+                      <Label className="text-xs text-amber-700">Sector (7-8)</Label>
                       <Input 
                         value={codigoManual.sector} 
-                        onChange={(e) => setCodigoManual({...codigoManual, sector: e.target.value.padStart(2, '0').slice(-2)})}
+                        onChange={(e) => handleCodigoChange('sector', e.target.value, 2)}
                         maxLength={2}
-                        className="font-mono"
+                        className="font-mono text-center"
+                        placeholder="00"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-purple-700">Comuna (10-11)</Label>
+                      <Label className="text-xs text-purple-700">Comuna (9-11)</Label>
                       <Input 
                         value={codigoManual.comuna} 
-                        onChange={(e) => setCodigoManual({...codigoManual, comuna: e.target.value.padStart(2, '0').slice(-2)})}
-                        maxLength={2}
-                        className="font-mono"
+                        onChange={(e) => handleCodigoChange('comuna', e.target.value, 3)}
+                        maxLength={3}
+                        className="font-mono text-center"
+                        placeholder="000"
                       />
                     </div>
                     <div>
                       <Label className="text-xs text-pink-700">Barrio (12-13)</Label>
                       <Input 
                         value={codigoManual.barrio} 
-                        onChange={(e) => setCodigoManual({...codigoManual, barrio: e.target.value.padStart(2, '0').slice(-2)})}
+                        onChange={(e) => handleCodigoChange('barrio', e.target.value, 2)}
                         maxLength={2}
-                        className="font-mono"
+                        className="font-mono text-center"
+                        placeholder="00"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-cyan-700">Vereda/Manzana (14-17)</Label>
+                      <Label className="text-xs text-cyan-700">Manzana (14-17)</Label>
                       <Input 
                         value={codigoManual.manzana_vereda} 
-                        onChange={(e) => setCodigoManual({...codigoManual, manzana_vereda: e.target.value.padStart(4, '0').slice(-4)})}
+                        onChange={(e) => handleCodigoChange('manzana_vereda', e.target.value, 4)}
                         maxLength={4}
+                        className="font-mono text-center"
+                        placeholder="0000"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Campos editables - Fila 2: Predio y PH */}
+                  <div className="grid grid-cols-5 gap-2">
+                    <div className="bg-red-50 p-2 rounded border border-red-200">
+                      <Label className="text-xs text-red-700 font-semibold">Terreno (18-21) *</Label>
+                      <Input 
+                        value={codigoManual.terreno} 
+                        onChange={(e) => handleCodigoChange('terreno', e.target.value, 4)}
+                        maxLength={4}
+                        className="font-mono font-bold text-red-700 text-center"
+                        placeholder="0001"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-orange-700">Condición (22)</Label>
+                      <Input 
+                        value={codigoManual.condicion} 
+                        onChange={(e) => handleCodigoChange('condicion', e.target.value, 1)}
+                        maxLength={1}
+                        className="font-mono text-center"
+                        placeholder="0"
+                      />
+                      <span className="text-xs text-slate-400">0=Normal 9=PH</span>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-600">Edificio (23-24)</Label>
+                      <Input 
+                        value={codigoManual.edificio} 
+                        onChange={(e) => handleCodigoChange('edificio', e.target.value, 2)}
+                        maxLength={2}
+                        className="font-mono text-center"
+                        placeholder="00"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-600">Piso (25-26)</Label>
+                      <Input 
+                        value={codigoManual.piso} 
+                        onChange={(e) => handleCodigoChange('piso', e.target.value, 2)}
+                        maxLength={2}
+                        className="font-mono text-center"
+                        placeholder="00"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-600">Unidad (27-30)</Label>
+                      <Input 
+                        value={codigoManual.unidad} 
+                        onChange={(e) => handleCodigoChange('unidad', e.target.value, 4)}
+                        maxLength={4}
+                        className="font-mono text-center"
+                        placeholder="0000"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Botón de verificar */}
+                  <div className="mt-4 flex gap-3">
+                    <Button onClick={verificarCodigoCompleto} variant="outline" className="flex-1">
+                      <Search className="w-4 h-4 mr-2" />
+                      Verificar Código
+                    </Button>
+                  </div>
+                </div>
+              )}
                         className="font-mono"
                       />
                     </div>
