@@ -257,13 +257,8 @@ export default function VisorPredios() {
 
   useEffect(() => {
     fetchGdbStats();
-    fetchLimitesMunicipios(tipoLimites);
+    fetchLimitesMunicipios('oficial'); // Siempre usar límites oficiales
   }, []);
-
-  // Recargar límites cuando cambie el tipo
-  useEffect(() => {
-    fetchLimitesMunicipios(tipoLimites);
-  }, [tipoLimites]);
 
   // Cargar geometrías cuando cambian los filtros Y el usuario quiere ver predios
   useEffect(() => {
@@ -275,7 +270,7 @@ export default function VisorPredios() {
     }
   }, [filterMunicipio, filterZona, mostrarPredios]);
 
-  const fetchLimitesMunicipios = async (fuente = 'gdb') => {
+  const fetchLimitesMunicipios = async (fuente = 'oficial') => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(`${API}/gdb/limites-municipios?fuente=${fuente}`, {
