@@ -122,3 +122,22 @@
 
 **Credentials:**
 - Admin: catastro@asomunicipios.gov.co / Asm*123* ✅ WORKING
+
+## Agent Communication
+
+### Testing Agent Report - January 8, 2026
+
+**Backend Testing Summary:**
+- **Total Tests**: 7/8 reapariciones endpoints working
+- **Critical Issue**: POST /api/predios/reapariciones/aprobar endpoint failing with 520 error
+- **Root Cause**: MongoDB ObjectId serialization error in response JSON
+- **Impact**: Users cannot approve reappearances, blocking the workflow
+
+**Detailed Findings:**
+1. ✅ All GET endpoints working correctly
+2. ✅ Data structure and filtering validated
+3. ✅ San Calixto has expected 3 pending reappearances
+4. ❌ Approval endpoint has ObjectId serialization bug
+5. ✅ Input validation working on other POST endpoints
+
+**Recommendation**: Main agent should fix the ObjectId serialization issue in the approval endpoint before frontend testing.
