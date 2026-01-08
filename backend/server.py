@@ -2121,22 +2121,49 @@ async def get_predios_stats(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/predios/eliminados")
 async def get_predios_eliminados(
+    municipio: Optional[str] = None,
+    vigencia: Optional[int] = None,
     skip: int = 0,
     limit: int = 50,
     current_user: dict = Depends(get_current_user)
 ):
-    """Lista todos los predios eliminados (staff only)"""
+    """Lista predios eliminados - filtrable por municipio y vigencia"""
     if current_user['role'] == UserRole.CIUDADANO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
-    query = {"deleted": True}
+    query = {}
+    if municipio:
+        query["municipio"] = municipio
+    if vigencia:
+        query["vigencia_eliminacion"] = vigencia
     
-    total = await db.predios.count_documents(query)
-    predios = await db.predios.find(query, {"_id": 0}).sort("deleted_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.predios_eliminados.count_documents(query)
+    predios = await db.predios_eliminados.find(query, {"_id": 0}).sort("eliminado_en", -1).skip(skip).limit(limit).to_list(limit)
     
     return {
         "total": total,
         "predios": predios
+    }
+
+@api_router.get("/predios/eliminados/stats")
+async def get_predios_eliminados_stats(current_user: dict = Depends(get_current_user)):
+    """Obtiene estadísticas de predios eliminados por municipio"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    pipeline = [
+        {"$group": {"_id": {"municipio": "$municipio", "vigencia": "$vigencia_eliminacion"}, "count": {"$sum": 1}}},
+        {"$sort": {"_id.municipio": 1}}
+    ]
+    
+    result = await db.predios_eliminados.aggregate(pipeline).to_list(100)
+    
+    return {
+        "by_municipio": [
+            {"municipio": r["_id"]["municipio"], "vigencia": r["_id"]["vigencia"], "count": r["count"]}
+            for r in result
+        ],
+        "total": sum(r["count"] for r in result)
     }
 
 
