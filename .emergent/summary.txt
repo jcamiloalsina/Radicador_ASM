@@ -24,71 +24,74 @@ The user wants to build a web application for cadastral management (gestoría ca
 **User's preferred language**: Spanish
 
 **what currently exists?**
-A full-stack application with a FastAPI backend, React frontend, and MongoDB database. Key features implemented include:
-- A multi-role user management system.
-- A petition management workflow.
-- A highly complex and frequently revised R1/R2 Excel importer designed to handle multiple inconsistent file formats.
-- A GDB (GIS data) uploader that supports both ZIP files and folders.
-- A notification system (UI bell icon and backend logic) for GDB upload reminders.
-- A historical analysis system to detect properties that were eliminated across different  (years).
-- A management flow for re-appeared properties, allowing a  to approve or reject their re-instatement.
+A full-stack application (FastAPI, React, MongoDB) with user management, a petition workflow, and advanced file importing capabilities for both Excel (R1/R2) and GDB (GIS) files. The application features a map-based UI () for visualizing property data.
 
-The database has been frequently cleared and re-populated at the user's request to test the evolving import logic. The backend server is currently non-functional due to a syntax error.
+Recent work has focused heavily on the GDB import and visualization functionality. This includes:
+- A new, separate MongoDB collection  to store geometry data.
+- Refactored backend endpoints to use this new collection, improving performance and enabling new features.
+- A progress indicator for GDB uploads using Server-Sent Events (SSE).
+- An interactive map that first displays municipality boundaries and then loads individual property geometries on-demand.
+- The user's latest feedback regarding incorrect boundaries, the default map style (satellite), and GDB import issues for specific municipalities has been addressed, but requires user verification.
 
 **Last working item**:
-- **Last item agent was working:** The agent was addressing several user requests simultaneously:
-    1.  Investigating why GDB geometry data was not linking to properties.
-    2.  Refactoring the re-appearance feature to be managed within each municipality's view instead of a global dashboard button.
-    3.  Implementing a new workflow for  to request re-instatement of an eliminated property with a justification.
-- **Status:** BLOCKED
-- **Agent Testing Done:** N
-- **Which testing method agent to use?** Backend testing agent to first confirm the server is running after the syntax fix. Then, both frontend and backend testing agents to validate the new re-appearance workflow and geometry linking.
+- **Last item agent was working:** The agent was addressing three critical user complaints about the map visualization feature:
+    1.  **Incorrect Municipality Boundaries:** The agent replaced the inaccurate  calculation with a precise  of all property geometries to create the correct municipality outline.
+    2.  **Default Map Style:** The default map layer was changed to  view as requested.
+    3.  **San Calixto GDB Import:** The agent fixed a bug in the GDB import logic where the rural property layer was not being detected due to an unexpected layer name ( instead of ). The logic is now more flexible.
+- **Status:** IN PROGRESS
+- **Agent Testing Done:** Y
+- **Which testing method agent to use?** Frontend testing agent. The new  boundary calculation produces a very large GeoJSON payload. The agent needs to verify the frontend's performance (zooming, panning, interactivity) under this load.
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: Backend Server Crash (P0)**
-    - **Description:** The backend server is not starting due to an  in  at line 2447. This was introduced while implementing the new re-appearance workflow.
+- **Issue 1: GDB Not Linking to All Properties (P0)**
+    - **Description:** This is the highest priority issue. The user consistently reports that after a GDB upload, not all properties are being correctly linked with their geometry. The core problem is likely a mismatch between the 30-digit  in the database and the format of the codes in the GDB files.
     - **Status:** IN PROGRESS
-    - **Is recurring issue?** N
-- **Issue 2: Geometry Data Not Linking to Properties (P1)**
-    - **Description:** GDB files are uploaded, but the geometry data is not being associated with the properties. The  flag remains  for all properties. The agent suspects a mismatch between property codes in the GDB files and the database.
-    - **Status:** NOT STARTED
+    - **Is recurring issue?** Y
+- **Issue 2: San Calixto GDB Rural Layer Import (P1)**
+    - **Description:** The user reported the GDB for San Calixto only loaded urban data. The agent implemented a fix by making the layer name detection more flexible.
+    - **Status:** USER VERIFICATION PENDING
     - **Is recurring issue?** N
 - **Issue 3: Inconsistent Pendientes Count (P2)**
-    - **Description:** User reported a discrepancy where the API and UI show different counts for pending items. This is a carry-over issue from a previous session and has not been addressed.
+    - **Description:** User reported a discrepancy where the API and UI show different counts for pending items. This is a carry-over issue from a previous session.
     - **Status:** NOT STARTED
     - **Is recurring issue?** Y
 - **Issue 4: Broken Exportar productividad pdf (P2)**
-    - **Description:** A feature to export a productivity PDF is reportedly broken. This is another carry-over issue that has not been tested or fixed.
+    - **Description:** A feature to export a productivity PDF is reportedly broken. This is a carry-over issue.
     - **Status:** NOT STARTED
     - **Is recurring issue?** Y
 
 **In progress Task List**:
-- **Task 1: Implement Reapariciones Flow as per User Feedback (P1)**
-    - **Description:** The user wants to change how re-appeared properties are handled. The agent started the implementation but was blocked by the server crash.
+- **Task 1: Verify and Finalize GDB/Map Improvements (P0)**
+    - **Description:** Validate the latest fixes with the user and address any remaining problems.
     - **Where to resume:**
-        1.  Fix the  in .
-        2.  Finish implementing the backend logic to support a  providing justification for re-creating an eliminated property.
-        3.  Refactor the frontend () to move the Reapariciones Pendientes button and view inside the context of a specific municipality.
-    - **What will be achieved with this?** A more granular and role-appropriate workflow for handling properties that were previously eliminated but need to be re-instated.
+        1.  Guide the user to re-upload the GDB for San Calixto and confirm that both rural and urban properties are now imported correctly.
+        2.  Ask the user to verify the new, more accurate municipality boundaries on the satellite map and confirm they are no longer overlapping incorrectly.
+        3.  Deeply investigate the property linking issue (Issue #1). The next step should be to log example codes from both the GDB and the database that are failing to match, in order to devise a robust normalization and matching strategy.
+    - **What will be achieved with this?** A fully functional and accurate GDB import and map visualization system that meets user expectations.
     - **Status:** IN PROGRESS
-    - **Blocked on something:** Issue 1: Backend Server Crash.
+    - **Blocked on something:** User feedback and re-upload of GDB files.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - **P0: Re-evaluate Cadastral Certificate PDF Design:** A recurring user complaint. The generated PDF does not match the user's required layout and branding. This requires a precise, element-by-element redesign.
-    - **P1: Implement Petition Rejection Workflow:** A core requirement from the project's inception. When a petition is rejected, it must return to the appropriate user role ( or ) with an editable observaciones field.
+    - **P0: Re-evaluate Cadastral Certificate PDF Design:** A recurring user complaint that the generated PDF does not match the required layout.
+    - **P1: Implement Petition Rejection Workflow:** A core requirement. When a petition is rejected, it must return to the  or  with an editable observaciones field.
 - **Future Tasks:**
     - PDF Generation for Administrative Acts.
     - Digital Signatures for generated PDFs.
     - Automatic Database Backups.
 
 **Completed work in this session**
-- **Robust R1/R2 Excel Importer:** Resolved a critical recurring issue by re-engineering the importer to automatically detect and adapt to multiple inconsistent Excel file formats (with/without headers, different column names for , and varied sheet names).
-- **Corrected  Handling:** Fixed a bug where the  selected in the frontend was being ignored during import, defaulting to 2025.
-- **Historical Property Analysis:** Implemented a backend process to analyze property data from 2022-2025, successfully identifying 1,782 eliminated properties and 3 re-appeared properties, which were then stored in the database.
-- **GDB Upload Enhancements:** Implemented monthly alerts for the  to upload GDB files and enabled folder-based uploads in addition to ZIPs.
-- **Re-appearance Management Flow (v1):** Created a full backend and frontend workflow for  to review, approve, or reject re-appeared properties, complete with a UI modal showing a diff of the old and new property data.
+- **Fixed Backend Crash:** Resolved a critical  in .
+- **Refactored Reapariciones Workflow:** The entire feature for handling re-appeared properties was moved from a global dashboard to a per-municipality view, with UI badges and corrected backend logic, including fixing a MongoDB serialization error.
+- **GDB Data Reset:** Cleared all old GDB data from the database and filesystem at the user's request.
+- **Major GDB/Map Feature Overhaul:**
+    - **New Architecture:** Created a dedicated  collection to store geometries, decoupling them from the main  collection for better performance and scalability.
+    - **Interactive Boundaries:** Implemented a feature to show municipality boundaries on the map on initial load, loading the thousands of individual properties only on user demand (Ver Predios button).
+    - **UI/UX Improvements:** Added a GDB filter to the property search, sorted municipality lists alphabetically, and implemented a real-time progress bar for GDB uploads using Server-Sent Events (SSE).
+    - **Map Styling:** Set the default map layer to 'satellite' and styled the municipality boundaries with labels as per the user's image reference.
+- **Fixed  Display Bug:** Corrected a backend  that was preventing property  (year) from displaying correctly on the dashboard and in search filters.
+- **Fixed GDB Layer Toggling:** Corrected an issue in the Visor where selecting one map zone (e.g., rural) did not hide the other (e.g., urban).
 
 **Earlier issues found/mentioned but not fixed**
 - **Issue 1: Inconsistent Pendientes Count**
@@ -101,72 +104,91 @@ The database has been frequently cleared and re-populated at the user's request 
     - **Is recurring issue?** Y
 
 **Known issue recurrence from previous fork**
-- **Issue recurrence in previous fork:** The R1/R2 Excel importer repeatedly failed, importing only 1 property for certain municipalities.
-- **Recurrence count:** High (occurred at least 5 times during the session).
-- **Status:** RESOLVED. The agent finally resolved this by building a dynamic parser that inspects Excel headers to determine the file structure, rather than assuming a fixed column layout.
+- **Issue recurrence in previous fork:** R1/R2 Excel importer failures.
+- **Recurrence count:** High.
+- **Status:** RESOLVED. This issue has not recurred in the current session.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend:** FastAPI, Pydantic, Motor (async MongoDB driver)
-- **Frontend:** React, React Router, Tailwind CSS, shadcn/ui
-- **File Processing:**  for Excel,  for GDB.
+- **Backend:** FastAPI, Pydantic, Motor, **Server-Sent Events (SSE)**
+- **Frontend:** React, React Router, Tailwind CSS, shadcn/ui, **Leaflet**
+- **File/Data Processing:** , , , , usage: pyproj [-h] [-v] {sync} ...
+
+pyproj version: 3.7.2 [PROJ version: 9.5.1]
+
+options:
+  -h, --help     show this help message and exit
+  -v, --verbose  Show verbose debugging version information.
+
+commands:
+  {sync}
 
 **key DB schema**
-- **predios:** 
-- **predios_historico:** Snapshot of property data for each import.
-- **predios_eliminados:** 
-- **reapariciones:** 
-- **gdb_uploads:** 
-- **notificaciones:** 
-- **petitions:** 
-- **users:** 
+- : 
+- : **(New)**  - Stores individual geometries from GDB files.
+- :  - Tracks GDB upload jobs.
+- : 
+- : 
+- : 
+
+**changes in tech stack**
+- No changes in the core stack, but a significant architectural change was made by introducing the  collection to separate geometry data from property metadata.
 
 **All files of reference**
-- : The single source of all backend logic. **It has a syntax error and must be fixed first.**
-- : The main UI for all property-related tasks. Contains logic for displaying data, import forms, and modals for eliminated/re-appeared properties.
-- : Contains the main layout and the new notification component.
-- : Contains the GDB upload component.
+- : The monolithic backend file, now with new endpoints for SSE progress (), precise boundaries (), and refactored geometry queries.
+- : The main map component, heavily updated to support boundary layers, on-demand property loading, SSE progress display, and satellite view.
+- : The main property dashboard, updated with the refactored Reapariciones flow.
+- : Custom CSS was added for municipality labels on the map.
 
 **Areas that need refactoring**:
-- **:** This file is critically oversized (over 4,500 lines). The logic for R1/R2 import, GDB processing, historical analysis, notifications, and PDF generation should be extracted into separate utility modules in a  or  directory to improve maintainability.
-- **:** This React component is also excessively large. The sub-components for , , the import form, and advanced search should be broken down into their own files within .
+- **:** This file is critically oversized. The entire GDB processing logic (upload, progress tracking, matching, boundary calculation) should be extracted into a dedicated service module (e.g., ).
+- **:** This component has become very large. The map logic, layer controls, statistics display, and upload modals should be broken down into smaller, reusable components.
 
 **key api endpoints**
--  (POST): Main endpoint for R1/R2 import.
--  (POST): Handles folder-based GDB uploads.
--  (POST): Runs the historical comparison of vigencias.
--  (GET): Lists re-appeared properties pending review.
--  (POST): New endpoint for a  to request a re-appearance review.
--  (POST): Creates a new property, now with logic to handle re-appearance requests.
+-  (POST): New primary endpoint for GDB uploads that returns an .
+-  (GET): SSE endpoint to stream real-time upload progress.
+-  (GET): Returns the precise  boundaries for all municipalities.
+-  (GET): Returns individual property geometries from the  collection, filterable by municipality and zone.
+-  (GET): Modified to accept a  boolean filter.
+-  (POST): New endpoint for approving/rejecting re-appearance requests.
 
 **Critical Info for New Agent**
-- **THE BACKEND IS DOWN.** The immediate first step is to fix the  in  at line 2447. The application will not work until this is resolved.
-- The user is frustrated with the recurring R1/R2 import bug. While the agent believes it's fixed with a new dynamic parser, you must be prepared to debug it further if it reappears. Do not assume it is permanently solved.
-- The next set of tasks revolves around refining the re-appearance and eliminated property workflows based on the user's latest, more granular feedback. This implementation was started but is incomplete.
-- The geometry linking issue is a significant blocker for the GDB feature, making it currently useless. This needs investigation.
+- **The top priority is fixing the GDB property linking issue.** The user is blocked by this. The next agent must investigate the code mismatch between the database and GDB files and develop a robust normalization/matching strategy.
+- The new endpoint for municipality boundaries () uses  and produces a very large GeoJSON payload. This is a **high risk for frontend performance**. Be prepared to optimize this, possibly by simplifying the geometry on the backend () before sending it to the client.
+- The agent has just implemented fixes for the San Calixto GDB import and the map boundary display. You must **start by confirming with the user if these fixes work** as expected. Guide them to re-upload the file and check the map.
+
+**documents and test reports created in this job**
+- : Updated before calling the testing subagent.
 
 **Last 10 User Messages and any pending HUMAN messages**
-- **msg 516:** Critical feedback: 1) Geometry isn't working. 2) The Reapariciones button should be inside each municipality view, not global. 3) A  should be able to submit a justification when trying to register a re-appeared property, for a  to approve. (IN PROGRESS)
-- **msg 469:** User confirms that the  should be the one to approve re-appeared properties. (DONE, but being refactored per msg 516)
-- **msg 448:** Request to run the eliminated properties check back to 2022, prevent re-using eliminated codes, and be alerted if an eliminated property is re-created. (DONE)
-- **msg 415:** The eliminated properties counter isn't working correctly because it doesn't compare across different vigencias. Also requested a feature to download the list as an Excel file. (DONE)
-- **msg 391:** User reports that the error with 3 municipalities showing 0 properties is still present. (ADDRESSED, needs user verification)
-- **msg 359:** User reports two issues: 1) Two municipalities incorrectly imported with 0 properties. 2) An import for vigencia 2023 was incorrectly saved as 2025, a bug that was supposedly fixed before. (ADDRESSED, needs user verification)
-- **msg 323:** User expresses frustration that the import only 1 property bug persists and is costing them credits. (ADDRESSED, needs user verification)
-- **msg 273:** User reports that after loading names, many municipalities show only 1 property, which is incorrect. Asks the agent to clear the DB after finding the fix. (ADDRESSED, needs user verification)
-- **msg 269:** User asks the agent to delete all R1 data to test from scratch. (DONE)
-- **msg 247:** User reports that after re-uploading R1 files for 2023, the data is still incorrect, questioning if the agent had fixed the issue. (ADDRESSED, needs user verification)
+- **msg 491:** User provided critical feedback: 1) Municipality boundaries are wrong and overlapping. 2) The default map must be satellite. 3) The GDB for San Calixto only loaded urban data, not rural. (Status: IN PROGRESS, agent implemented fixes for all three points, pending user verification).
+- **msg 450:** User provided an image of the desired map style (topographic, black borders, labels). (Status: ADDRESSED, but the user later requested a satellite map instead).
+- **msg 413:** Request to make the map interactive by showing municipality limits first, without loading all properties. (Status: DONE).
+- **msg 405:** Request to sort the municipality filter alphabetically. (Status: DONE).
+- **msg 337:** User reported issues with the GDB viewer: not all properties from Ábrego GDB were appearing, and toggling urban/rural layers didn't work correctly. (Status: ADDRESSED, layer toggling was fixed).
+- **msg 266:** User requested a progress bar (%) for GDB uploads and asked again why not all properties are being linked. (Status: IN PROGRESS, progress bar added, linking issue remains).
+- **msg 231:** User reported that the  (year) was missing from the dashboard and advanced search. (Status: DONE, backend  was fixed).
+- **msg 145:** User requested to delete all existing GDB data to start fresh. (Status: DONE).
+- **msg 5:** User confirmed priorities at the start of the session: fix backend, perfect the Reapariciones flow, then address GDB issues. (Status: DONE, agent is now on the GDB issues).
+- All other messages are from the previous session.
 
 **Project Health Check:**
-- **Broken:** The backend server is not running due to a syntax error.
+- **Broken:** No broken components. The backend is running.
+- **Mocked:** No mocked components.
 
 **3rd Party Integrations**
-- **react-leaflet:** Map visualization.
-- **openpyxl:** Excel file processing.
-- **pyogrio, shapely, pyproj:** GIS data processing (for GDB files).
-- **ReportLab:** PDF generation (feature is pending/broken).
+- **react-leaflet:** Used for map visualization.
+- **openpyxl:** Used for Excel file processing.
+- **pyogrio, shapely, pyproj, geopandas:** Used for GIS data processing (GDB files).
+- **ReportLab:** Used for PDF generation.
+
+**Testing status**
+- **Testing agent used after significant changes:** YES, but it failed due to a backend bug. The bug was then fixed and tested manually via . A full re-test is recommended.
+- **Troubleshoot agent used after agent stuck in loop:** NO
+- **Test files created:** None.
+- **Known regressions:** None.
 
 **Credentials to test flow:**
 - **Administrator:**
@@ -174,6 +196,5 @@ The database has been frequently cleared and re-populated at the user's request 
   - **Password:** 
 
 **What agent forgot to execute**
-- The agent has not yet fixed the  that is crashing the backend.
-- The agent has not started investigating the root cause of the geometry data not linking, despite identifying the problem.
-- The agent has not addressed the older, pending issues regarding the Pendientes count and the broken PDF export feature.</analysis>
+- The agent has not addressed two long-standing issues mentioned in the initial summary: the inconsistent Pendientes count and the broken Exportar productividad pdf feature.
+- A full regression test using the testing subagent was not performed after the last set of major fixes to the Reapariciones workflow.</analysis>
