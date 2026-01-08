@@ -2167,6 +2167,215 @@ async def get_predios_eliminados_stats(current_user: dict = Depends(get_current_
     }
 
 
+@api_router.post("/predios/comparar-vigencias")
+async def comparar_vigencias_predios(
+    municipio: str = Form(...),
+    vigencia_anterior: int = Form(...),
+    vigencia_nueva: int = Form(...),
+    radicado: Optional[str] = Form(None),
+    current_user: dict = Depends(get_current_user)
+):
+    """Compara dos vigencias para detectar predios eliminados entre ellas"""
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR, UserRole.GESTOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    # Obtener predios de vigencia anterior
+    predios_anterior = await db.predios.find(
+        {"municipio": municipio, "vigencia": vigencia_anterior},
+        {"_id": 0, "codigo_predial_nacional": 1}
+    ).to_list(50000)
+    codigos_anterior = {p['codigo_predial_nacional'] for p in predios_anterior}
+    
+    # Obtener predios de vigencia nueva
+    predios_nueva = await db.predios.find(
+        {"municipio": municipio, "vigencia": vigencia_nueva},
+        {"_id": 0, "codigo_predial_nacional": 1}
+    ).to_list(50000)
+    codigos_nueva = {p['codigo_predial_nacional'] for p in predios_nueva}
+    
+    # Predios que estaban en anterior pero no en nueva = eliminados
+    codigos_eliminados = codigos_anterior - codigos_nueva
+    
+    if not codigos_eliminados:
+        return {
+            "message": "No se encontraron predios eliminados entre las vigencias",
+            "municipio": municipio,
+            "vigencia_anterior": vigencia_anterior,
+            "vigencia_nueva": vigencia_nueva,
+            "predios_eliminados": 0
+        }
+    
+    # Obtener datos completos de predios eliminados
+    predios_eliminados = await db.predios.find(
+        {"municipio": municipio, "vigencia": vigencia_anterior, "codigo_predial_nacional": {"$in": list(codigos_eliminados)}},
+        {"_id": 0}
+    ).to_list(50000)
+    
+    # Guardar en colección de eliminados
+    eliminados_docs = []
+    for p in predios_eliminados:
+        eliminados_docs.append({
+            **p,
+            "eliminado_en": datetime.now(timezone.utc).isoformat(),
+            "vigencia_eliminacion": vigencia_nueva,
+            "vigencia_origen": vigencia_anterior,
+            "radicado_eliminacion": radicado,
+            "motivo": f"No incluido en vigencia {vigencia_nueva}",
+            "eliminado_por": current_user['id'],
+            "eliminado_por_nombre": current_user['full_name']
+        })
+    
+    if eliminados_docs:
+        await db.predios_eliminados.insert_many(eliminados_docs)
+    
+    return {
+        "message": f"Se detectaron {len(eliminados_docs)} predios eliminados",
+        "municipio": municipio,
+        "vigencia_anterior": vigencia_anterior,
+        "vigencia_nueva": vigencia_nueva,
+        "predios_eliminados": len(eliminados_docs),
+        "radicado": radicado
+    }
+
+
+@api_router.get("/predios/eliminados/exportar-excel")
+async def exportar_predios_eliminados_excel(
+    municipio: Optional[str] = None,
+    vigencia: Optional[int] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Exporta predios eliminados a Excel con radicado"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from io import BytesIO
+    
+    query = {}
+    if municipio:
+        query["municipio"] = municipio
+    if vigencia:
+        query["vigencia_eliminacion"] = vigencia
+    
+    predios = await db.predios_eliminados.find(query, {"_id": 0}).sort("eliminado_en", -1).to_list(50000)
+    
+    if not predios:
+        raise HTTPException(status_code=404, detail="No hay predios eliminados para exportar")
+    
+    # Crear workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Predios Eliminados"
+    
+    # Estilos
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="059669", end_color="059669", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Headers
+    headers = [
+        "Código Predial Nacional",
+        "Municipio",
+        "Dirección",
+        "Propietario",
+        "Área Terreno (m²)",
+        "Área Construida (m²)",
+        "Avalúo",
+        "Vigencia Origen",
+        "Vigencia Eliminación",
+        "Radicado Eliminación",
+        "Fecha Eliminación",
+        "Motivo",
+        "Eliminado Por"
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+    
+    # Datos
+    for row_idx, predio in enumerate(predios, 2):
+        propietario = ""
+        if predio.get("propietarios"):
+            propietario = predio["propietarios"][0].get("nombre_propietario", "")
+        
+        data = [
+            predio.get("codigo_predial_nacional", ""),
+            predio.get("municipio", ""),
+            predio.get("direccion", ""),
+            propietario,
+            predio.get("area_terreno", 0),
+            predio.get("area_construida", 0),
+            predio.get("avaluo", 0),
+            predio.get("vigencia_origen", predio.get("vigencia", "")),
+            predio.get("vigencia_eliminacion", ""),
+            predio.get("radicado_eliminacion", ""),
+            predio.get("eliminado_en", "")[:10] if predio.get("eliminado_en") else "",
+            predio.get("motivo", ""),
+            predio.get("eliminado_por_nombre", "")
+        ]
+        
+        for col, value in enumerate(data, 1):
+            cell = ws.cell(row=row_idx, column=col, value=value)
+            cell.border = thin_border
+            if col in [5, 6, 7]:  # Números
+                cell.alignment = Alignment(horizontal="right")
+    
+    # Ajustar anchos de columna
+    column_widths = [35, 15, 30, 30, 15, 15, 15, 12, 12, 20, 12, 30, 20]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
+    
+    # Guardar a BytesIO
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    filename = f"predios_eliminados_{municipio or 'todos'}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@api_router.patch("/predios/eliminados/{predio_id}/radicado")
+async def actualizar_radicado_eliminado(
+    predio_id: str,
+    radicado: str = Form(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Actualiza el radicado de un predio eliminado"""
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR, UserRole.GESTOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    result = await db.predios_eliminados.update_one(
+        {"id": predio_id},
+        {"$set": {
+            "radicado_eliminacion": radicado,
+            "radicado_actualizado_por": current_user['full_name'],
+            "radicado_actualizado_en": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Predio eliminado no encontrado")
+    
+    return {"message": "Radicado actualizado correctamente", "radicado": radicado}
+
+
 @api_router.post("/predios/import-excel")
 async def import_predios_excel(
     file: UploadFile = File(...),
