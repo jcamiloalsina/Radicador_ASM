@@ -2391,15 +2391,15 @@ async def import_predios_excel(
         # Obtener los códigos prediales de los nuevos predios
         new_codigos = set(r1_data.keys())
         
-        # Obtener los predios existentes del municipio (para calcular eliminados)
+        # Obtener los predios existentes del municipio PARA ESTA VIGENCIA ESPECÍFICA
         existing_predios = await db.predios.find(
-            {"municipio": municipio}, 
+            {"municipio": municipio, "vigencia": vigencia}, 
             {"_id": 0}
         ).to_list(50000)
         
         existing_codigos = {p.get('codigo_predial_nacional') for p in existing_predios}
         
-        # Calcular predios eliminados (estaban antes pero no vienen en la nueva importación)
+        # Calcular predios eliminados (estaban antes en esta vigencia pero no vienen en la nueva importación)
         codigos_eliminados = existing_codigos - new_codigos
         predios_eliminados_count = len(codigos_eliminados)
         
@@ -2417,15 +2417,15 @@ async def import_predios_excel(
                     for p in predios_a_eliminar
                 ])
         
-        # Guardar historial de predios existentes
+        # Guardar historial de predios existentes de esta vigencia
         if existing_predios:
             await db.predios_historico.insert_many([
                 {**p, "archivado_en": datetime.now(timezone.utc).isoformat(), "vigencia_archivo": vigencia}
                 for p in existing_predios
             ])
         
-        # Eliminar predios actuales de este municipio
-        await db.predios.delete_many({"municipio": municipio})
+        # Eliminar predios actuales de este municipio SOLO PARA ESTA VIGENCIA
+        await db.predios.delete_many({"municipio": municipio, "vigencia": vigencia})
         
         # Insertar nuevos predios
         predios_list = list(r1_data.values())
