@@ -328,3 +328,20 @@
 
 - **Frontend**: Botón "Revincular GDB" agregado en Gestión de Predios
 
+### Feature: Certificado Catastral Especial - Rediseño (January 8, 2026)
+- **Status**: 🔄 TESTING
+- **Task**: Rediseño del PDF según plantilla proporcionada por usuario
+- **Changes Implemented**:
+  - ✅ Barras de sección en color VERDE (antes eran azul celeste)
+  - ✅ Footer con barra verde y contacto
+  - ✅ Título "CERTIFICADO CATASTRAL ESPECIAL"
+  - ✅ Sección PREDIOS COLINDANTES agregada
+  - ✅ Número de RADICADO agregado
+  - ✅ Formato de número editable: COM-F03-____-GC-____
+  - ✅ Diseño de encabezado con "Gestor Catastral" en verde
+  - ✅ NOTA expandida con lista de municipios
+  
+- **Endpoint**: GET `/api/predios/{predio_id}/certificado`
+- **Test**: PDF generado exitosamente (218KB)
+- **Pending**: Verificación visual por usuario
+
