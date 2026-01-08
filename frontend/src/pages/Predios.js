@@ -1982,15 +1982,21 @@ export default function Predios() {
       </Dialog>
 
       {/* Reapariciones Pendientes Dialog */}
-      <Dialog open={showReaparicionesDialog} onOpenChange={setShowReaparicionesDialog}>
+      <Dialog open={showReaparicionesDialog} onOpenChange={(open) => { 
+        setShowReaparicionesDialog(open); 
+        if (!open && !filterVigencia) setFilterMunicipio(''); // Reset municipio solo si no estamos dentro de uno
+      }}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-outfit flex items-center gap-2 text-amber-700">
               <AlertTriangle className="w-5 h-5" />
-              Reapariciones Pendientes de Aprobación
+              Reapariciones Pendientes {filterMunicipio ? `- ${filterMunicipio}` : '(Todos los municipios)'}
             </DialogTitle>
           </DialogHeader>
-          <ReaparicionesPendientes />
+          <ReaparicionesPendientes 
+            municipio={filterMunicipio || null} 
+            onUpdate={() => { fetchReaparicionesConteo(); fetchPredios(); }}
+          />
         </DialogContent>
       </Dialog>
 
