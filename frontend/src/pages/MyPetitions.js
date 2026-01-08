@@ -41,7 +41,8 @@ export default function MyPetitions() {
 
   const fetchPetitions = async () => {
     try {
-      const response = await axios.get(`${API}/petitions`);
+      // Usar el endpoint específico para "mis peticiones" (creadas por el usuario actual)
+      const response = await axios.get(`${API}/petitions/mis-peticiones`);
       setPetitions(response.data);
       setFilteredPetitions(response.data);
     } catch (error) {
