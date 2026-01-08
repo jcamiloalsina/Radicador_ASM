@@ -3805,7 +3805,7 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
     meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
              'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
     
-    # === ENCABEZADO ===
+    # === ENCABEZADO - Protagonismo a ASOMUNICIPIOS ===
     y = height - 1.2 * cm
     
     # Logo de Asomunicipios (izquierda)
@@ -3813,25 +3813,39 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
     if not logo_path.exists():
         logo_path = Path("/app/backend/logo_asomunicipios.png")
     if logo_path.exists():
-        logo_width = 4.5 * cm
-        logo_height = 2.5 * cm
-        c.drawImage(str(logo_path), left_margin, height - 3.5 * cm, width=logo_width, height=logo_height, preserveAspectRatio=True, mask='auto')
+        logo_width = 4 * cm
+        logo_height = 2.2 * cm
+        c.drawImage(str(logo_path), left_margin, height - 3.2 * cm, width=logo_width, height=logo_height, preserveAspectRatio=True, mask='auto')
     
-    # "Gestor Catastral" en verde a la derecha del logo (separado por barra vertical)
-    header_x = left_margin + 5 * cm
+    # Texto del encabezado a la derecha del logo
+    header_x = left_margin + 4.5 * cm
+    
+    # Barra vertical verde separadora
     c.setStrokeColor(verde_gestor)
     c.setLineWidth(2)
-    c.line(header_x - 0.3*cm, height - 1.5*cm, header_x - 0.3*cm, height - 3.2*cm)
+    c.line(header_x - 0.3*cm, height - 1.3*cm, header_x - 0.3*cm, height - 3*cm)
     
+    # ASOMUNICIPIOS - Título principal grande
+    c.setFillColor(negro)
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(header_x, height - 1.6*cm, "ASOMUNICIPIOS")
+    
+    # Nombre completo de la institución (más pequeño, debajo)
+    c.setFont("Helvetica", 7)
+    c.setFillColor(gris_claro)
+    c.drawString(header_x, height - 2.1*cm, "Asociación de Municipios del Catatumbo")
+    c.drawString(header_x, height - 2.45*cm, "Provincia de Ocaña y Sur del Cesar")
+    
+    # "Gestor Catastral" en verde
     c.setFillColor(verde_gestor)
-    c.setFont("Helvetica", 18)
-    c.drawString(header_x, height - 2.3*cm, "Gestor Catastral")
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(header_x, height - 2.9*cm, "Gestor Catastral")
     
     # Fecha (izquierda, debajo del logo)
     fecha_str = f"{fecha_actual.day} de {meses[fecha_actual.month-1]} del {fecha_actual.year}"
     c.setFont("Helvetica", 9)
     c.setFillColor(negro)
-    c.drawString(left_margin, height - 4*cm, fecha_str)
+    c.drawString(left_margin, height - 3.6*cm, fecha_str)
     
     # Número de certificado (derecha superior) - COM-F03-XXXX-GC-XXXX (EDITABLE)
     cert_numero = numero_certificado or "COM-F03-____-GC-____"
@@ -3839,7 +3853,7 @@ def generate_certificado_catastral(predio: dict, firmante: dict, proyectado_por:
     c.setFillColor(negro)
     c.drawRightString(right_margin, height - 1.5*cm, f"CERTIFICADO: {cert_numero}")
     
-    y = height - 4.5 * cm
+    y = height - 4.2 * cm
     
     # === TÍTULO PRINCIPAL ===
     c.setFillColor(negro)
