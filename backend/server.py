@@ -2507,7 +2507,478 @@ async def verificar_codigo_eliminado(
     }
 
 
-@api_router.get("/predios/reapariciones/pendientes")
+@api_router.get("/predios/estructura-codigo/{municipio}")
+async def get_estructura_codigo_predial(
+    municipio: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Retorna la estructura del código predial nacional para un municipio.
+    Incluye los primeros 5 dígitos fijos (departamento + municipio).
+    """
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    divipola = MUNICIPIOS_DIVIPOLA.get(municipio)
+    if not divipola:
+        raise HTTPException(status_code=404, detail=f"Municipio {municipio} no encontrado")
+    
+    # Estructura del código predial nacional (30 dígitos)
+    estructura = {
+        "departamento": {"posicion": "1-2", "valor": divipola["departamento"], "editable": False, "descripcion": "Departamento"},
+        "municipio": {"posicion": "3-5", "valor": divipola["municipio"], "editable": False, "descripcion": "Municipio"},
+        "zona": {"posicion": "6-7", "valor": "", "editable": True, "descripcion": "Zona (00=Rural, 01+=Urbana)"},
+        "sector": {"posicion": "8-9", "valor": "", "editable": True, "descripcion": "Sector"},
+        "comuna": {"posicion": "10-11", "valor": "", "editable": True, "descripcion": "Comuna"},
+        "barrio": {"posicion": "12-13", "valor": "", "editable": True, "descripcion": "Barrio"},
+        "manzana_vereda": {"posicion": "14-17", "valor": "", "editable": True, "descripcion": "Vereda o Manzana"},
+        "terreno": {"posicion": "18-21", "valor": "", "editable": True, "descripcion": "Condición del Predio (Terreno)"},
+        "edificio": {"posicion": "22", "valor": "0", "editable": True, "descripcion": "No. Edificio o Torre"},
+        "piso": {"posicion": "23-26", "valor": "0000", "editable": True, "descripcion": "No. del Piso"},
+        "unidad": {"posicion": "27-30", "valor": "0000", "editable": True, "descripcion": "No. Unidad PH/Mejora"}
+    }
+    
+    prefijo = divipola["departamento"] + divipola["municipio"]
+    
+    return {
+        "municipio": municipio,
+        "prefijo_fijo": prefijo,
+        "estructura": estructura,
+        "total_digitos": 30
+    }
+
+
+@api_router.get("/predios/sugerir-codigo/{municipio}")
+async def sugerir_codigo_disponible(
+    municipio: str,
+    zona: str = "00",
+    sector: str = "00",
+    comuna: str = "00",
+    barrio: str = "00",
+    manzana_vereda: str = "0000",
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Sugiere el próximo código de terreno disponible para una manzana/vereda específica.
+    También verifica si hay geometría GDB disponible.
+    """
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    divipola = MUNICIPIOS_DIVIPOLA.get(municipio)
+    if not divipola:
+        raise HTTPException(status_code=404, detail=f"Municipio {municipio} no encontrado")
+    
+    # Construir prefijo base (primeros 17 dígitos)
+    prefijo_base = f"{divipola['departamento']}{divipola['municipio']}{zona}{sector}{comuna}{barrio}{manzana_vereda}"
+    
+    # Buscar predios existentes en esta manzana
+    regex_pattern = f"^{prefijo_base}"
+    predios_existentes = await db.predios.find(
+        {"codigo_predial_nacional": {"$regex": regex_pattern}},
+        {"_id": 0, "codigo_predial_nacional": 1}
+    ).to_list(10000)
+    
+    # Buscar predios eliminados en esta manzana
+    predios_eliminados = await db.predios_eliminados.find(
+        {"codigo_predial_nacional": {"$regex": regex_pattern}},
+        {"_id": 0, "codigo_predial_nacional": 1, "vigencia_eliminacion": 1}
+    ).to_list(10000)
+    
+    # Extraer los números de terreno usados (posiciones 18-21)
+    terrenos_usados = set()
+    for p in predios_existentes:
+        codigo = p["codigo_predial_nacional"]
+        if len(codigo) >= 21:
+            terreno = codigo[17:21]
+            terrenos_usados.add(terreno)
+    
+    terrenos_eliminados = []
+    for p in predios_eliminados:
+        codigo = p["codigo_predial_nacional"]
+        if len(codigo) >= 21:
+            terreno = codigo[17:21]
+            terrenos_eliminados.append({
+                "numero": terreno,
+                "codigo_completo": codigo,
+                "vigencia_eliminacion": p.get("vigencia_eliminacion")
+            })
+            terrenos_usados.add(terreno)  # También marcar como usados
+    
+    # Encontrar el siguiente terreno disponible
+    siguiente_terreno = "0001"
+    for i in range(1, 10000):
+        candidato = str(i).zfill(4)
+        if candidato not in terrenos_usados:
+            siguiente_terreno = candidato
+            break
+    
+    # Construir código sugerido completo
+    codigo_sugerido = f"{prefijo_base}{siguiente_terreno}000000000"
+    
+    # Verificar si hay geometría GDB disponible para este prefijo
+    geometria_disponible = await db.gdb_geometrias.find_one(
+        {"municipio": municipio, "codigo": {"$regex": f"^{prefijo_base}"}},
+        {"_id": 0, "codigo": 1}
+    )
+    
+    return {
+        "prefijo_base": prefijo_base,
+        "total_activos": len(predios_existentes),
+        "terrenos_usados": list(terrenos_usados)[:20],  # Limitar para la respuesta
+        "terrenos_eliminados": terrenos_eliminados,
+        "siguiente_terreno": siguiente_terreno,
+        "codigo_sugerido": codigo_sugerido,
+        "tiene_geometria_gdb": geometria_disponible is not None,
+        "mensaje_geometria": "Hay información gráfica disponible para esta zona" if geometria_disponible else "⚠️ No hay información gráfica (GDB) para esta zona. Se relacionará cuando se cargue el GDB."
+    }
+
+
+@api_router.get("/predios/verificar-codigo-completo/{codigo}")
+async def verificar_codigo_completo(
+    codigo: str,
+    municipio: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Verifica un código predial completo de 30 dígitos:
+    - Si ya existe activo
+    - Si está eliminado (y ofrece reactivar)
+    - Si está disponible
+    - Si tiene geometría GDB
+    """
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    if len(codigo) != 30:
+        raise HTTPException(status_code=400, detail="El código predial debe tener exactamente 30 dígitos")
+    
+    # Verificar si ya existe activo
+    predio_existente = await db.predios.find_one(
+        {"codigo_predial_nacional": codigo},
+        {"_id": 0, "id": 1, "municipio": 1, "nombre_propietario": 1, "estado": 1}
+    )
+    
+    if predio_existente:
+        return {
+            "estado": "existente",
+            "disponible": False,
+            "mensaje": "Este código predial ya está registrado en la base de datos",
+            "predio": predio_existente
+        }
+    
+    # Verificar si está eliminado
+    eliminado = await db.predios_eliminados.find_one(
+        {"codigo_predial_nacional": codigo},
+        {"_id": 0}
+    )
+    
+    # Verificar si tiene geometría GDB
+    geometria = await db.gdb_geometrias.find_one(
+        {"codigo": codigo[:21], "municipio": municipio},  # Los primeros 21 caracteres para terreno
+        {"_id": 0, "area_m2": 1}
+    )
+    
+    if eliminado:
+        # Verificar si ya tiene aprobación de reaparición
+        aprobacion = await db.predios_reapariciones_aprobadas.find_one(
+            {"codigo_predial_nacional": codigo, "estado": "aprobado"}
+        )
+        
+        return {
+            "estado": "eliminado",
+            "disponible": aprobacion is not None,
+            "puede_reactivar": True,
+            "mensaje": "⚠️ Este código pertenece a un predio ELIMINADO. ¿Desea reactivarlo?",
+            "detalles_eliminacion": {
+                "municipio": eliminado.get("municipio"),
+                "vigencia_origen": eliminado.get("vigencia_origen"),
+                "vigencia_eliminacion": eliminado.get("vigencia_eliminacion"),
+                "motivo": eliminado.get("motivo", "Mutación catastral")
+            },
+            "aprobacion_existente": aprobacion is not None,
+            "tiene_geometria": geometria is not None,
+            "area_gdb": geometria.get("area_m2") if geometria else None
+        }
+    
+    # Código disponible
+    return {
+        "estado": "disponible",
+        "disponible": True,
+        "mensaje": "✅ Este código predial está disponible para usar",
+        "tiene_geometria": geometria is not None,
+        "area_gdb": geometria.get("area_m2") if geometria else None,
+        "mensaje_geometria": "Tiene información gráfica (GDB)" if geometria else "⚠️ Sin información gráfica. Se relacionará cuando se cargue el GDB."
+    }
+
+
+@api_router.post("/predios/crear-con-workflow")
+async def crear_predio_con_workflow(
+    request: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Crea un nuevo predio con el flujo de aprobación completo.
+    Solo staff puede crear predios.
+    El predio queda pendiente de aprobación del coordinador.
+    """
+    # Solo staff puede crear predios
+    if current_user['role'] not in [UserRole.ATENCION_USUARIO, UserRole.GESTOR, UserRole.GESTOR_AUXILIAR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo usuarios staff pueden crear predios")
+    
+    codigo_predial = request.get("codigo_predial_nacional")
+    municipio = request.get("municipio")
+    es_reactivacion = request.get("es_reactivacion", False)
+    justificacion = request.get("justificacion", "Creación de nuevo predio")
+    
+    if not codigo_predial or len(codigo_predial) != 30:
+        raise HTTPException(status_code=400, detail="El código predial debe tener exactamente 30 dígitos")
+    
+    # Verificar que el municipio coincida con el código
+    divipola = MUNICIPIOS_DIVIPOLA.get(municipio)
+    if not divipola:
+        raise HTTPException(status_code=400, detail=f"Municipio {municipio} no válido")
+    
+    prefijo_esperado = divipola["departamento"] + divipola["municipio"]
+    if not codigo_predial.startswith(prefijo_esperado):
+        raise HTTPException(status_code=400, detail=f"El código no corresponde al municipio {municipio}")
+    
+    # Verificar si ya existe
+    existente = await db.predios.find_one({"codigo_predial_nacional": codigo_predial})
+    if existente:
+        raise HTTPException(status_code=400, detail="Este código predial ya existe")
+    
+    # Si es reactivación, verificar que esté eliminado
+    if es_reactivacion:
+        eliminado = await db.predios_eliminados.find_one({"codigo_predial_nacional": codigo_predial})
+        if not eliminado:
+            raise HTTPException(status_code=400, detail="Este código no está en la lista de eliminados")
+    
+    # Verificar geometría GDB
+    geometria = await db.gdb_geometrias.find_one(
+        {"codigo": codigo_predial[:21], "municipio": municipio},
+        {"_id": 0, "area_m2": 1, "geometry": 1}
+    )
+    
+    # Crear propuesta de cambio
+    cambio_id = str(uuid.uuid4())
+    propuesta = {
+        "id": cambio_id,
+        "tipo_cambio": "creacion",
+        "municipio": municipio,
+        "codigo_predial_nacional": codigo_predial,
+        "es_reactivacion": es_reactivacion,
+        "datos_propuestos": {
+            "codigo_predial_nacional": codigo_predial,
+            "municipio": municipio,
+            "nombre_propietario": request.get("nombre_propietario", ""),
+            "tipo_documento": request.get("tipo_documento", "C"),
+            "numero_documento": request.get("numero_documento", ""),
+            "direccion": request.get("direccion", ""),
+            "destino_economico": request.get("destino_economico", "D"),
+            "area_terreno": request.get("area_terreno", 0),
+            "area_construida": request.get("area_construida", 0),
+            "avaluo": request.get("avaluo", 0),
+            "zona": codigo_predial[5:7],
+            "sector": codigo_predial[7:9],
+            "comuna": codigo_predial[9:11],
+            "barrio": codigo_predial[11:13],
+            "manzana_vereda": codigo_predial[13:17],
+            "condicion_predio": codigo_predial[17:21],
+            "predio_horizontal": codigo_predial[21:30],
+            "tiene_geometria_gdb": geometria is not None,
+            "area_gdb": geometria.get("area_m2") if geometria else None
+        },
+        "justificacion": justificacion,
+        "estado": "pendiente_aprobacion",
+        "creado_por": current_user["id"],
+        "creado_por_nombre": current_user["full_name"],
+        "creado_por_rol": current_user["role"],
+        "gestor_asignado": None,
+        "gestor_asignado_nombre": None,
+        "historial": [{
+            "accion": "Creación de propuesta",
+            "usuario": current_user["full_name"],
+            "usuario_id": current_user["id"],
+            "rol": current_user["role"],
+            "fecha": datetime.now(timezone.utc).isoformat(),
+            "notas": justificacion
+        }],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.predios_cambios_propuestos.insert_one(propuesta)
+    
+    # Si es coordinador o admin, puede aprobar directamente
+    requiere_aprobacion = current_user["role"] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]
+    
+    # Actualizar contador de trámites del gestor
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$inc": {"tramites_creados": 1}}
+    )
+    
+    return {
+        "cambio_id": cambio_id,
+        "requiere_aprobacion": requiere_aprobacion,
+        "mensaje": "Predio propuesto. Pendiente de aprobación del coordinador." if requiere_aprobacion else "Predio listo para aprobar.",
+        "tiene_geometria": geometria is not None
+    }
+
+
+@api_router.post("/predios/cambios/{cambio_id}/asignar-gestor")
+async def asignar_gestor_a_cambio(
+    cambio_id: str,
+    gestor_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Coordinador asigna un gestor para revisar el cambio propuesto.
+    """
+    if current_user["role"] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden asignar gestores")
+    
+    cambio = await db.predios_cambios_propuestos.find_one({"id": cambio_id})
+    if not cambio:
+        raise HTTPException(status_code=404, detail="Cambio no encontrado")
+    
+    gestor = await db.users.find_one({"id": gestor_id}, {"_id": 0, "full_name": 1, "role": 1})
+    if not gestor:
+        raise HTTPException(status_code=404, detail="Gestor no encontrado")
+    
+    # Actualizar cambio
+    historial_entry = {
+        "accion": "Asignación de gestor para revisión",
+        "usuario": current_user["full_name"],
+        "usuario_id": current_user["id"],
+        "rol": current_user["role"],
+        "fecha": datetime.now(timezone.utc).isoformat(),
+        "notas": f"Gestor asignado: {gestor['full_name']}"
+    }
+    
+    await db.predios_cambios_propuestos.update_one(
+        {"id": cambio_id},
+        {
+            "$set": {
+                "gestor_asignado": gestor_id,
+                "gestor_asignado_nombre": gestor["full_name"],
+                "estado": "en_revision_gestor",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            },
+            "$push": {"historial": historial_entry}
+        }
+    )
+    
+    return {"mensaje": f"Gestor {gestor['full_name']} asignado para revisar el cambio"}
+
+
+@api_router.post("/predios/cambios/{cambio_id}/revision-gestor")
+async def revision_gestor_cambio(
+    cambio_id: str,
+    request: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Gestor asignado realiza la revisión y puede aplicar ajustes.
+    El cambio queda pendiente de revisión final del coordinador.
+    """
+    if current_user["role"] not in [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso para revisar cambios")
+    
+    cambio = await db.predios_cambios_propuestos.find_one({"id": cambio_id})
+    if not cambio:
+        raise HTTPException(status_code=404, detail="Cambio no encontrado")
+    
+    # Verificar que sea el gestor asignado (o coordinador/admin)
+    if current_user["role"] in [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]:
+        if cambio.get("gestor_asignado") != current_user["id"]:
+            raise HTTPException(status_code=403, detail="No está asignado a este cambio")
+    
+    observaciones = request.get("observaciones", "")
+    datos_revisados = request.get("datos_revisados", {})
+    
+    historial_entry = {
+        "accion": "Revisión completada por gestor",
+        "usuario": current_user["full_name"],
+        "usuario_id": current_user["id"],
+        "rol": current_user["role"],
+        "fecha": datetime.now(timezone.utc).isoformat(),
+        "notas": observaciones
+    }
+    
+    update_data = {
+        "estado": "pendiente_revision_final",
+        "observaciones_gestor": observaciones,
+        "fecha_revision_gestor": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if datos_revisados:
+        update_data["datos_revisados"] = datos_revisados
+    
+    await db.predios_cambios_propuestos.update_one(
+        {"id": cambio_id},
+        {
+            "$set": update_data,
+            "$push": {"historial": historial_entry}
+        }
+    )
+    
+    # Actualizar contador de trámites del gestor
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$inc": {"tramites_revisados": 1}}
+    )
+    
+    return {"mensaje": "Revisión completada. Pendiente de aprobación final del coordinador."}
+
+
+@api_router.get("/predios/cambios/estadisticas-gestores")
+async def get_estadisticas_gestores(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Obtiene estadísticas de trámites por gestor para informes.
+    """
+    if current_user["role"] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden ver estadísticas")
+    
+    # Obtener todos los gestores con sus contadores
+    gestores = await db.users.find(
+        {"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR, UserRole.ATENCION_USUARIO]}},
+        {"_id": 0, "id": 1, "full_name": 1, "role": 1, "tramites_creados": 1, "tramites_revisados": 1, "tramites_aprobados": 1}
+    ).to_list(100)
+    
+    # Obtener conteo de cambios por gestor desde la colección de cambios
+    pipeline = [
+        {"$match": {"gestor_asignado": {"$ne": None}}},
+        {"$group": {
+            "_id": "$gestor_asignado",
+            "total_asignados": {"$sum": 1},
+            "pendientes": {"$sum": {"$cond": [{"$eq": ["$estado", "pendiente_revision_final"]}, 1, 0]}},
+            "aprobados": {"$sum": {"$cond": [{"$eq": ["$estado", "aprobado"]}, 1, 0]}}
+        }}
+    ]
+    
+    stats_cambios = await db.predios_cambios_propuestos.aggregate(pipeline).to_list(100)
+    stats_dict = {s["_id"]: s for s in stats_cambios}
+    
+    resultado = []
+    for gestor in gestores:
+        stats = stats_dict.get(gestor["id"], {})
+        resultado.append({
+            "id": gestor["id"],
+            "nombre": gestor["full_name"],
+            "rol": gestor["role"],
+            "tramites_creados": gestor.get("tramites_creados", 0),
+            "tramites_revisados": gestor.get("tramites_revisados", 0),
+            "cambios_asignados": stats.get("total_asignados", 0),
+            "cambios_pendientes": stats.get("pendientes", 0),
+            "cambios_aprobados": stats.get("aprobados", 0)
+        })
+    
+    return {"gestores": resultado}
 async def get_reapariciones_pendientes(
     municipio: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
