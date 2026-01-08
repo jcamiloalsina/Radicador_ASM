@@ -3914,6 +3914,172 @@ async def get_gdb_layers(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Error listando capas: {str(e)}")
 
 
+# ===== NOTIFICACIONES Y ALERTAS GDB =====
+
+@api_router.get("/notificaciones")
+async def get_notificaciones(
+    leidas: Optional[bool] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obtiene las notificaciones del usuario actual"""
+    query = {"usuario_id": current_user['id']}
+    if leidas is not None:
+        query["leida"] = leidas
+    
+    notificaciones = await db.notificaciones.find(query, {"_id": 0}).sort("fecha", -1).limit(50).to_list(50)
+    no_leidas = await db.notificaciones.count_documents({"usuario_id": current_user['id'], "leida": False})
+    
+    return {
+        "notificaciones": notificaciones,
+        "no_leidas": no_leidas
+    }
+
+@api_router.patch("/notificaciones/{notificacion_id}/leer")
+async def marcar_notificacion_leida(
+    notificacion_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Marca una notificación como leída"""
+    result = await db.notificaciones.update_one(
+        {"id": notificacion_id, "usuario_id": current_user['id']},
+        {"$set": {"leida": True, "fecha_lectura": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Notificación no encontrada")
+    
+    return {"message": "Notificación marcada como leída"}
+
+@api_router.post("/notificaciones/marcar-todas-leidas")
+async def marcar_todas_leidas(current_user: dict = Depends(get_current_user)):
+    """Marca todas las notificaciones del usuario como leídas"""
+    result = await db.notificaciones.update_many(
+        {"usuario_id": current_user['id'], "leida": False},
+        {"$set": {"leida": True, "fecha_lectura": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": f"{result.modified_count} notificaciones marcadas como leídas"}
+
+async def crear_notificacion(usuario_id: str, titulo: str, mensaje: str, tipo: str = "info", enviar_email: bool = False):
+    """Crea una notificación para un usuario y opcionalmente envía email"""
+    notificacion = {
+        "id": str(uuid.uuid4()),
+        "usuario_id": usuario_id,
+        "titulo": titulo,
+        "mensaje": mensaje,
+        "tipo": tipo,  # info, warning, success, error
+        "leida": False,
+        "fecha": datetime.now(timezone.utc).isoformat()
+    }
+    await db.notificaciones.insert_one(notificacion)
+    
+    # Enviar email si está habilitado
+    if enviar_email:
+        user = await db.users.find_one({"id": usuario_id}, {"_id": 0, "email": 1, "full_name": 1})
+        if user and user.get('email'):
+            try:
+                await send_notification_email(user['email'], user.get('full_name', ''), titulo, mensaje)
+            except Exception as e:
+                logger.error(f"Error enviando email de notificación: {e}")
+    
+    return notificacion
+
+async def send_notification_email(to_email: str, to_name: str, subject: str, message: str):
+    """Envía un email de notificación"""
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SMTP_FROM
+        msg['To'] = to_email
+        msg['Subject'] = f"[Asomunicipios] {subject}"
+        
+        html_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: #059669;">Asomunicipios</h2>
+                </div>
+                <p>Hola {to_name},</p>
+                <div style="background-color: #f0fdf4; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; color: #166534;">{subject}</h3>
+                    <p>{message}</p>
+                </div>
+                <p style="color: #666; font-size: 12px;">Este es un mensaje automático del sistema de gestión catastral.</p>
+            </div>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(html_body, 'html'))
+        
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.send_message(msg)
+            
+        logger.info(f"Email de notificación enviado a {to_email}")
+    except Exception as e:
+        logger.error(f"Error enviando email: {e}")
+        raise
+
+@api_router.post("/gdb/enviar-alertas-mensuales")
+async def enviar_alertas_mensuales_gdb(current_user: dict = Depends(get_current_user)):
+    """Envía alertas mensuales a los gestores con permiso GDB (ejecutar el día 1 de cada mes)"""
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden enviar alertas")
+    
+    # Buscar gestores con permiso GDB
+    gestores_gdb = await db.users.find(
+        {"puede_actualizar_gdb": True, "role": UserRole.GESTOR},
+        {"_id": 0}
+    ).to_list(100)
+    
+    alertas_enviadas = 0
+    mes_actual = datetime.now().strftime("%B %Y")
+    
+    for gestor in gestores_gdb:
+        titulo = "Recordatorio: Cargar Base Gráfica Mensual"
+        mensaje = f"Es momento de cargar la base gráfica (GDB) correspondiente al mes de {mes_actual}. Por favor, acceda a Gestión de Predios > Base Gráfica para realizar la carga."
+        
+        await crear_notificacion(
+            usuario_id=gestor['id'],
+            titulo=titulo,
+            mensaje=mensaje,
+            tipo="warning",
+            enviar_email=True
+        )
+        alertas_enviadas += 1
+    
+    return {
+        "message": f"Alertas enviadas a {alertas_enviadas} gestores",
+        "gestores_notificados": [g['full_name'] for g in gestores_gdb]
+    }
+
+@api_router.get("/gdb/verificar-alerta-mensual")
+async def verificar_alerta_mensual(current_user: dict = Depends(get_current_user)):
+    """Verifica si es día 1 del mes y si se debe mostrar alerta de carga GDB"""
+    hoy = datetime.now()
+    es_dia_1 = hoy.day == 1
+    
+    # Verificar si el usuario tiene permiso GDB
+    user_db = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
+    tiene_permiso_gdb = user_db.get('puede_actualizar_gdb', False) if user_db else False
+    
+    # Verificar si ya cargó este mes
+    mes_actual = hoy.strftime("%Y-%m")
+    carga_este_mes = await db.gdb_cargas.find_one({
+        "mes": mes_actual,
+        "uploaded_by": current_user['id']
+    })
+    
+    mostrar_alerta = es_dia_1 and tiene_permiso_gdb and not carga_este_mes
+    
+    return {
+        "es_dia_1": es_dia_1,
+        "tiene_permiso_gdb": tiene_permiso_gdb,
+        "ya_cargo_este_mes": carga_este_mes is not None,
+        "mostrar_alerta": mostrar_alerta,
+        "mes_actual": mes_actual
+    }
+
 @api_router.post("/gdb/upload")
 async def upload_gdb_file(
     file: UploadFile = File(...),
