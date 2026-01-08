@@ -6096,6 +6096,108 @@ async def revincular_predios_gdb(
     return resultados
 
 
+
+@api_router.post("/gdb/recalcular-areas")
+async def recalcular_areas_gdb(
+    municipio: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Recalcula las áreas de las geometrías GDB existentes y actualiza los predios relacionados.
+    Útil para geometrías que se cargaron antes de implementar el cálculo de área.
+    """
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        raise HTTPException(status_code=403, detail="Solo administradores y coordinadores")
+    
+    from shapely.geometry import shape
+    
+    query = {}
+    if municipio:
+        query["municipio"] = municipio
+    
+    # Obtener geometrías sin área o con área 0
+    geometrias = await db.gdb_geometrias.find(
+        {**query, "$or": [{"area_m2": {"$exists": False}}, {"area_m2": 0}]},
+        {"_id": 1, "codigo": 1, "geometry": 1}
+    ).to_list(100000)
+    
+    actualizadas = 0
+    errores = 0
+    
+    for geo in geometrias:
+        try:
+            geom_shape = shape(geo.get("geometry"))
+            area_deg = geom_shape.area
+            area_m2 = round(area_deg * (111320 ** 2), 2)
+            
+            await db.gdb_geometrias.update_one(
+                {"_id": geo["_id"]},
+                {"$set": {"area_m2": area_m2}}
+            )
+            
+            # Actualizar predios que tengan este código GDB
+            if geo.get("codigo"):
+                await db.predios.update_many(
+                    {"codigo_gdb": geo["codigo"]},
+                    {"$set": {"area_gdb": area_m2}}
+                )
+            
+            actualizadas += 1
+        except Exception as e:
+            errores += 1
+    
+    return {
+        "mensaje": f"Áreas recalculadas",
+        "geometrias_procesadas": len(geometrias),
+        "actualizadas": actualizadas,
+        "errores": errores
+    }
+
+
+@api_router.post("/gdb/sincronizar-areas-predios")
+async def sincronizar_areas_predios(
+    municipio: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Sincroniza las áreas de GDB con los predios que ya tienen geometría vinculada.
+    """
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        raise HTTPException(status_code=403, detail="Solo administradores y coordinadores")
+    
+    query = {"tiene_geometria": True, "codigo_gdb": {"$exists": True}}
+    if municipio:
+        query["municipio"] = municipio
+    
+    predios = await db.predios.find(
+        query,
+        {"_id": 0, "id": 1, "codigo_gdb": 1}
+    ).to_list(200000)
+    
+    actualizados = 0
+    
+    for predio in predios:
+        codigo_gdb = predio.get("codigo_gdb")
+        if codigo_gdb:
+            gdb_geo = await db.gdb_geometrias.find_one(
+                {"codigo": codigo_gdb},
+                {"_id": 0, "area_m2": 1}
+            )
+            if gdb_geo and gdb_geo.get("area_m2"):
+                await db.predios.update_one(
+                    {"id": predio["id"]},
+                    {"$set": {"area_gdb": gdb_geo["area_m2"]}}
+                )
+                actualizados += 1
+    
+    return {
+        "mensaje": "Áreas sincronizadas",
+        "predios_procesados": len(predios),
+        "actualizados": actualizados
+    }
+
+
+
 @api_router.get("/gdb/predios-con-geometria")
 async def get_predios_con_geometria(
     municipio: Optional[str] = None,
