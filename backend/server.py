@@ -4801,8 +4801,15 @@ async def get_geometrias_filtradas(
 
 
 @api_router.get("/gdb/limites-municipios")
-async def get_limites_municipios(current_user: dict = Depends(get_current_user)):
-    """Obtiene los límites de todos los municipios (desde colección limites_municipales o calculados)"""
+async def get_limites_municipios(
+    fuente: str = "gdb",  # "gdb" para calculados con líneas internas, "oficial" para DANE/IGAC
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Obtiene los límites de todos los municipios.
+    - fuente="gdb": Límites calculados desde geometrías GDB (muestra líneas internas para revisar errores)
+    - fuente="oficial": Límites oficiales DANE/IGAC (limpios, sin líneas internas)
+    """
     from shapely.geometry import shape, mapping, box, Polygon
     from shapely.ops import unary_union
     
@@ -4813,47 +4820,85 @@ async def get_limites_municipios(current_user: dict = Depends(get_current_user))
         features = []
         municipios_con_limite = set()
         
-        # 1. Primero obtener límites guardados directamente de la colección limites_municipales
-        async for doc in db.limites_municipales.find({}, {"_id": 0}):
+        # Si se piden límites oficiales, usar la colección limites_municipales
+        if fuente == "oficial":
+            async for doc in db.limites_municipales.find({}, {"_id": 0}):
+                municipio = doc.get("municipio")
+                geometry = doc.get("geometry")
+                sin_gdb = doc.get("sin_gdb", False)
+                
+                if municipio and geometry:
+                    municipios_con_limite.add(municipio)
+                    # Obtener stats de predios
+                    stats = await db.gdb_geometrias.aggregate([
+                        {"$match": {"municipio": municipio}},
+                        {"$group": {"_id": "$tipo", "count": {"$sum": 1}}}
+                    ]).to_list(10)
+                    rural_count = 0
+                    urbano_count = 0
+                    for s in stats:
+                        if s["_id"] == "rural":
+                            rural_count = s["count"]
+                        else:
+                            urbano_count = s["count"]
+                    
+                    try:
+                        geom = shape(geometry)
+                        geom_simplified = geom.simplify(0.0005, preserve_topology=True)
+                        centroid = geom_simplified.centroid
+                        
+                        features.append({
+                            "type": "Feature",
+                            "geometry": mapping(geom_simplified),
+                            "properties": {
+                                "municipio": municipio,
+                                "total_predios": rural_count + urbano_count,
+                                "rurales": rural_count,
+                                "urbanos": urbano_count,
+                                "centroid": [centroid.x, centroid.y],
+                                "fuente": doc.get("fuente", "dane_igac"),
+                                "sin_gdb": sin_gdb
+                            }
+                        })
+                    except Exception as e:
+                        logger.warning(f"Error procesando límite oficial de {municipio}: {e}")
+            
+            # Ordenar y retornar
+            features.sort(key=lambda x: x["properties"]["municipio"])
+            return {
+                "type": "FeatureCollection",
+                "total_municipios": len(features),
+                "fuente": "oficial",
+                "features": features
+            }
+        
+        # Si se piden límites GDB (calculados), usar geometrías para mostrar líneas internas
+        # Primero agregar municipios sin GDB desde límites oficiales
+        async for doc in db.limites_municipales.find({"sin_gdb": True}, {"_id": 0}):
             municipio = doc.get("municipio")
             geometry = doc.get("geometry")
             if municipio and geometry:
                 municipios_con_limite.add(municipio)
-                # Obtener stats de predios
-                stats = await db.gdb_geometrias.aggregate([
-                    {"$match": {"municipio": municipio}},
-                    {"$group": {"_id": "$tipo", "count": {"$sum": 1}}}
-                ]).to_list(10)
-                rural_count = 0
-                urbano_count = 0
-                for s in stats:
-                    if s["_id"] == "rural":
-                        rural_count = s["count"]
-                    else:
-                        urbano_count = s["count"]
-                
                 try:
                     geom = shape(geometry)
-                    # Simplificar geometría para mejor rendimiento (tolerancia 0.0005 ~ 50m)
-                    geom_simplified = geom.simplify(0.0005, preserve_topology=True)
-                    centroid = geom_simplified.centroid
-                    
+                    centroid = geom.centroid
                     features.append({
                         "type": "Feature",
-                        "geometry": mapping(geom_simplified),
+                        "geometry": geometry,
                         "properties": {
                             "municipio": municipio,
-                            "total_predios": rural_count + urbano_count,
-                            "rurales": rural_count,
-                            "urbanos": urbano_count,
+                            "total_predios": 0,
+                            "rurales": 0,
+                            "urbanos": 0,
                             "centroid": [centroid.x, centroid.y],
-                            "fuente": "gdb_limite"
+                            "fuente": "dane_igac",
+                            "sin_gdb": True
                         }
                     })
                 except Exception as e:
                     logger.warning(f"Error procesando límite de {municipio}: {e}")
         
-        # 2. Para municipios sin límite guardado, calcular desde geometrías GDB
+        # Calcular límites desde geometrías GDB (muestra líneas internas)
         municipios_gdb = await db.gdb_geometrias.distinct("municipio")
         
         for municipio in municipios_gdb:
