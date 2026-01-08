@@ -5077,6 +5077,9 @@ async def upload_gdb_file(
     import zipfile
     import shutil
     import geopandas as gpd
+    import pandas as pd
+    from pyproj import CRS, Transformer
+    from shapely.ops import transform
     
     # Check if user is an authorized gestor
     user_db = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
@@ -5091,6 +5094,16 @@ async def upload_gdb_file(
                 status_code=403, 
                 detail="No tiene permiso para actualizar la base gráfica. Contacte al coordinador."
             )
+    
+    # Setup coordinate transformation (MAGNA-SIRGAS to WGS84)
+    try:
+        crs_magna = CRS.from_epsg(3116)  # MAGNA-SIRGAS Colombia Bogota zone
+        crs_wgs84 = CRS.from_epsg(4326)  # WGS84
+        transformer = Transformer.from_crs(crs_magna, crs_wgs84, always_xy=True)
+        project = transformer.transform
+    except Exception as e:
+        logger.warning(f"Error setting up CRS transformation: {e}")
+        project = None
     
     try:
         gdb_data_dir = Path("/app/gdb_data")
