@@ -2342,6 +2342,14 @@ export default function Predios() {
                     <p className="text-xs text-slate-500">Código Predial Nacional (30 dígitos)</p>
                     <p className="font-mono text-sm text-slate-700">{selectedPredio.codigo_predial_nacional}</p>
                   </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Matrícula Inmobiliaria</p>
+                    <p className="font-medium text-slate-700">
+                      {selectedPredio.r2_registros?.[0]?.matricula_inmobiliaria || (
+                        <span className="text-slate-400 italic">Sin información de matrícula</span>
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
               
