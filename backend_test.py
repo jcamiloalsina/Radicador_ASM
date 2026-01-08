@@ -3380,6 +3380,9 @@ def main():
     # PRIORITY TESTS FROM REVIEW REQUEST - P0, P1, P2
     print("\n🎯 PRIORITY TESTS from Review Request...")
     
+    # NEW: Review Request Features Test (HIGHEST PRIORITY)
+    review_features_success = tester.test_review_request_features()
+    
     # NEW: Reapariciones Management System (from current review request)
     tester.test_reapariciones_management_system()
     
