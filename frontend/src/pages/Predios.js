@@ -311,21 +311,25 @@ function PrediosEliminadosView({ municipio }) {
 }
 
 // Componente para gestionar reapariciones de predios
-function ReaparicionesPendientes() {
+function ReaparicionesPendientes({ municipio = null, onUpdate }) {
   const [reapariciones, setReapariciones] = useState([]);
+  const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [procesando, setProcesando] = useState(null);
   const [justificacion, setJustificacion] = useState('');
   const [selectedReaparicion, setSelectedReaparicion] = useState(null);
+  const [activeTab, setActiveTab] = useState('reapariciones');
 
   useEffect(() => {
     fetchReapariciones();
-  }, []);
+    fetchSolicitudes();
+  }, [municipio]);
 
   const fetchReapariciones = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API}/predios/reapariciones/pendientes`, {
+      const params = municipio ? `?municipio=${encodeURIComponent(municipio)}` : '';
+      const response = await axios.get(`${API}/predios/reapariciones/pendientes${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setReapariciones(response.data.reapariciones || []);
@@ -333,6 +337,19 @@ function ReaparicionesPendientes() {
       console.error('Error loading reapariciones:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSolicitudes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const params = municipio ? `?municipio=${encodeURIComponent(municipio)}` : '';
+      const response = await axios.get(`${API}/predios/reapariciones/solicitudes-pendientes${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSolicitudes(response.data.solicitudes || []);
+    } catch (error) {
+      console.error('Error loading solicitudes:', error);
     }
   };
 
