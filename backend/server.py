@@ -3718,10 +3718,18 @@ async def create_predio(predio_data: PredioCreate, current_user: dict = Depends(
         terreno, r1.condicion_predio, r1.predio_horizontal
     )
     
-    # Verificar que no exista (incluyendo eliminados)
+    # Verificar que no exista
     existing = await db.predios.find_one({"codigo_predial_nacional": codigo_predial})
     if existing:
         raise HTTPException(status_code=400, detail="Ya existe un predio con este código predial")
+    
+    # Verificar que no sea un código eliminado (NO se puede reutilizar)
+    eliminado = await db.predios_eliminados.find_one({"codigo_predial_nacional": codigo_predial})
+    if eliminado:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Este código predial fue ELIMINADO en vigencia {eliminado.get('vigencia_eliminacion')} y NO puede ser reutilizado. Motivo: {eliminado.get('motivo', 'N/A')}"
+        )
     
     # Generar código homologado
     codigo_homologado, numero_predio = await generate_codigo_homologado(r1.municipio)
