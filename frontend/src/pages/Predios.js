@@ -12,7 +12,7 @@ import axios from 'axios';
 import { 
   Plus, Search, Edit, Trash2, MapPin, FileText, Building, 
   User, DollarSign, LayoutGrid, Eye, History, Download, AlertTriangle, Users,
-  Clock, CheckCircle, XCircle, Bell, Map, Upload, Loader2, RefreshCw
+  Clock, CheckCircle, XCircle, Bell, Map, Upload, Loader2, RefreshCw, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import PredioMap from '../components/PredioMap';
