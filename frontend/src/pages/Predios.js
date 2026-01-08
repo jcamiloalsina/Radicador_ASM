@@ -1370,21 +1370,38 @@ export default function Predios() {
                     const vigenciaReciente = vigencias.length > 0 ? vigencias[0].vigencia : null;
                     // Extraer el año de la vigencia (puede ser 2025 o 01012025 o 1012025)
                     const vigenciaYear = vigenciaReciente ? (String(vigenciaReciente).length >= 7 ? String(vigenciaReciente).slice(-4) : vigenciaReciente) : '---';
+                    // Conteo de reapariciones para este municipio
+                    const reaparicionesCount = reaparicionesConteo[item.municipio] || 0;
                     
                     return (
-                      <Button
-                        key={item.municipio}
-                        variant="outline"
-                        className="h-auto py-4 flex flex-col items-start justify-start text-left hover:bg-emerald-50 hover:border-emerald-300"
-                        onClick={() => {
-                          setFilterMunicipio(item.municipio);
-                          setFilterVigencia(String(vigenciaReciente || '2025'));
-                        }}
-                      >
-                        <span className="font-medium text-slate-900">{item.municipio}</span>
-                        <span className="text-xl font-bold text-emerald-700">{item.count?.toLocaleString()}</span>
-                        <span className="text-xs text-slate-500">predios · vigencia {vigenciaYear}</span>
-                      </Button>
+                      <div key={item.municipio} className="relative">
+                        <Button
+                          variant="outline"
+                          className="w-full h-auto py-4 flex flex-col items-start justify-start text-left hover:bg-emerald-50 hover:border-emerald-300"
+                          onClick={() => {
+                            setFilterMunicipio(item.municipio);
+                            setFilterVigencia(String(vigenciaReciente || '2025'));
+                          }}
+                        >
+                          <span className="font-medium text-slate-900">{item.municipio}</span>
+                          <span className="text-xl font-bold text-emerald-700">{item.count?.toLocaleString()}</span>
+                          <span className="text-xs text-slate-500">predios · vigencia {vigenciaYear}</span>
+                        </Button>
+                        {/* Badge de reapariciones pendientes */}
+                        {reaparicionesCount > 0 && user && ['coordinador', 'administrador'].includes(user.role) && (
+                          <button
+                            className="absolute -top-2 -right-2 bg-amber-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center hover:bg-amber-600 shadow-md"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFilterMunicipio(item.municipio);
+                              setShowReaparicionesDialog(true);
+                            }}
+                            title={`${reaparicionesCount} reapariciones pendientes`}
+                          >
+                            {reaparicionesCount}
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
