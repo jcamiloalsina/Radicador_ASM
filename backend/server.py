@@ -4802,26 +4802,70 @@ async def get_geometrias_filtradas(
 
 @api_router.get("/gdb/limites-municipios")
 async def get_limites_municipios(current_user: dict = Depends(get_current_user)):
-    """Obtiene los límites/contornos de todos los municipios basándose en la UNIÓN REAL de las geometrías GDB"""
-    from shapely.geometry import shape, mapping
+    """Obtiene los límites de todos los municipios (desde colección limites_municipales o calculados)"""
+    from shapely.geometry import shape, mapping, box, Polygon
     from shapely.ops import unary_union
     
     if current_user['role'] == UserRole.CIUDADANO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     try:
-        # Obtener municipios únicos
-        municipios = await db.gdb_geometrias.distinct("municipio")
-        
         features = []
+        municipios_con_limite = set()
         
-        for municipio in municipios:
+        # 1. Primero obtener límites guardados directamente de la colección limites_municipales
+        async for doc in db.limites_municipales.find({}, {"_id": 0}):
+            municipio = doc.get("municipio")
+            geometry = doc.get("geometry")
+            if municipio and geometry:
+                municipios_con_limite.add(municipio)
+                # Obtener stats de predios
+                stats = await db.gdb_geometrias.aggregate([
+                    {"$match": {"municipio": municipio}},
+                    {"$group": {"_id": "$tipo", "count": {"$sum": 1}}}
+                ]).to_list(10)
+                rural_count = 0
+                urbano_count = 0
+                for s in stats:
+                    if s["_id"] == "rural":
+                        rural_count = s["count"]
+                    else:
+                        urbano_count = s["count"]
+                
+                try:
+                    geom = shape(geometry)
+                    # Simplificar geometría para mejor rendimiento (tolerancia 0.0005 ~ 50m)
+                    geom_simplified = geom.simplify(0.0005, preserve_topology=True)
+                    centroid = geom_simplified.centroid
+                    
+                    features.append({
+                        "type": "Feature",
+                        "geometry": mapping(geom_simplified),
+                        "properties": {
+                            "municipio": municipio,
+                            "total_predios": rural_count + urbano_count,
+                            "rurales": rural_count,
+                            "urbanos": urbano_count,
+                            "centroid": [centroid.x, centroid.y],
+                            "fuente": "gdb_limite"
+                        }
+                    })
+                except Exception as e:
+                    logger.warning(f"Error procesando límite de {municipio}: {e}")
+        
+        # 2. Para municipios sin límite guardado, calcular desde geometrías GDB
+        municipios_gdb = await db.gdb_geometrias.distinct("municipio")
+        
+        for municipio in municipios_gdb:
+            if municipio in municipios_con_limite:
+                continue
+            
             try:
-                # Obtener todas las geometrías del municipio
+                # Usar solo el exterior (boundary) simplificado
                 geometrias_cursor = db.gdb_geometrias.find(
                     {"municipio": municipio},
                     {"_id": 0, "geometry": 1, "tipo": 1}
-                )
+                ).limit(5000)  # Limitar para rendimiento
                 
                 shapes = []
                 rural_count = 0
@@ -4842,34 +4886,68 @@ async def get_limites_municipios(current_user: dict = Depends(get_current_user))
                             continue
                 
                 if shapes:
-                    # Crear el contorno REAL del municipio (unión de todas las geometrías - NO convex hull)
-                    try:
-                        union_geom = unary_union(shapes)
-                        # Usar la unión real, NO convex hull
-                        limite = union_geom
-                        
-                        # Calcular el centroide para posicionar el label
-                        centroid = limite.centroid
-                        
-                        feature = {
-                            "type": "Feature",
-                            "geometry": mapping(limite),
-                            "properties": {
-                                "municipio": municipio,
-                                "total_predios": len(shapes),
-                                "rurales": rural_count,
-                                "urbanos": urbano_count,
-                                "centroid": [centroid.x, centroid.y]
-                            }
+                    # Crear unión y simplificar
+                    union_geom = unary_union(shapes)
+                    # Simplificar para rendimiento
+                    limite = union_geom.simplify(0.001, preserve_topology=True)
+                    centroid = limite.centroid
+                    
+                    features.append({
+                        "type": "Feature",
+                        "geometry": mapping(limite),
+                        "properties": {
+                            "municipio": municipio,
+                            "total_predios": len(shapes),
+                            "rurales": rural_count,
+                            "urbanos": urbano_count,
+                            "centroid": [centroid.x, centroid.y],
+                            "fuente": "calculado"
                         }
-                        features.append(feature)
-                    except Exception as e:
-                        logger.warning(f"Error creating union for {municipio}: {e}")
-                        continue
-                        
+                    })
+                    municipios_con_limite.add(municipio)
             except Exception as e:
-                logger.warning(f"Error processing municipality {municipio}: {e}")
-                continue
+                logger.warning(f"Error procesando {municipio}: {e}")
+        
+        # 3. Agregar municipios asociados sin GDB (Ocaña, Tibú, La Esperanza, González)
+        # Coordenadas aproximadas del centro de cada municipio
+        municipios_sin_gdb = {
+            "Ocaña": {"lat": 8.237, "lon": -73.358, "dept": "Norte de Santander"},
+            "Tibú": {"lat": 8.65, "lon": -72.983, "dept": "Norte de Santander"},
+            "La Esperanza": {"lat": 7.64, "lon": -73.336, "dept": "Norte de Santander"},
+            "González": {"lat": 8.383, "lon": -73.317, "dept": "Cesar"}
+        }
+        
+        for mun_nombre, coords in municipios_sin_gdb.items():
+            if mun_nombre not in municipios_con_limite:
+                # Crear un polígono aproximado (círculo simplificado de ~15km de radio)
+                lat, lon = coords["lat"], coords["lon"]
+                # Aproximación: 0.15 grados ~ 15km
+                radius = 0.15
+                # Crear polígono circular aproximado
+                from math import cos, sin, pi
+                points = []
+                for i in range(12):  # 12 puntos para el círculo
+                    angle = 2 * pi * i / 12
+                    px = lon + radius * cos(angle)
+                    py = lat + radius * sin(angle) * 0.9  # Ajuste por latitud
+                    points.append((px, py))
+                
+                poly = Polygon(points)
+                centroid = poly.centroid
+                
+                features.append({
+                    "type": "Feature",
+                    "geometry": mapping(poly),
+                    "properties": {
+                        "municipio": mun_nombre,
+                        "total_predios": 0,
+                        "rurales": 0,
+                        "urbanos": 0,
+                        "centroid": [centroid.x, centroid.y],
+                        "fuente": "aproximado",
+                        "sin_gdb": True
+                    }
+                })
         
         # Ordenar por nombre de municipio
         features.sort(key=lambda x: x["properties"]["municipio"])
