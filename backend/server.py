@@ -731,8 +731,23 @@ async def get_petitions(current_user: dict = Depends(get_current_user)):
     elif current_user['role'] in [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]:
         query = {"gestores_asignados": current_user['id']}
     else:
-        # Staff can see all petitions
+        # Staff (atencion_usuario, coordinador, administrador) see all petitions
         query = {}
+    
+    petitions = await db.petitions.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    for petition in petitions:
+        if isinstance(petition['created_at'], str):
+            petition['created_at'] = datetime.fromisoformat(petition['created_at'])
+        if isinstance(petition['updated_at'], str):
+            petition['updated_at'] = datetime.fromisoformat(petition['updated_at'])
+    
+    return petitions
+
+@api_router.get("/petitions/mis-peticiones")
+async def get_my_petitions(current_user: dict = Depends(get_current_user)):
+    """Obtener peticiones creadas por el usuario actual (para todos los roles)"""
+    query = {"user_id": current_user['id']}
     
     petitions = await db.petitions.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     
