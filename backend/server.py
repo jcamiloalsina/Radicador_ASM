@@ -2366,7 +2366,7 @@ async def import_predios_excel(
                     'area_terreno': parse_number(get_col(row, 'area_terreno')),
                     'area_construida': parse_number(get_col(row, 'area_construida')),
                     'avaluo': parse_number(get_col(row, 'avaluo')),
-                    'vigencia': vigencia,
+                    'vigencia': vigencia_int,
                     'tipo_mutacion': str(get_col(row, 'tipo_mutacion') or '').strip(),
                     'numero_resolucion': str(get_col(row, 'numero_resolucion') or '').strip(),
                     'fecha_resolucion': str(get_col(row, 'fecha_resolucion') or '').strip(),
