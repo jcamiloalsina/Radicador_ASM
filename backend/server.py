@@ -5636,6 +5636,11 @@ async def upload_gdb_file(
                     gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
                     if len(gdf_urban) == 0:
                         continue
+                    
+                    # Get transformer based on this layer's CRS
+                    project = get_transformer_for_gdf(gdf_urban)
+                    logger.info(f"GDB {municipio_nombre}: CRS urbano ({urban_layer}): {gdf_urban.crs}")
+                    
                     total_urban = len(gdf_urban)
                     for idx, row in gdf_urban.iterrows():
                         if idx % 500 == 0:
