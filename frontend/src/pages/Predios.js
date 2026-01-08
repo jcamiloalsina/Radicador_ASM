@@ -1472,8 +1472,7 @@ export default function Predios() {
       nombre_propietario: '',
       tipo_documento: 'C',
       numero_documento: '',
-      estado_civil: '',
-      porcentaje: 100
+      estado_civil: ''
     }]);
     setZonasFisicas([{
       zona_fisica: '0',
