@@ -2034,7 +2034,7 @@ async def get_predios(
             {"propietarios.nombre_propietario": {"$regex": search, "$options": "i"}},
             {"propietarios.numero_documento": {"$regex": search, "$options": "i"}},
             {"direccion": {"$regex": search, "$options": "i"}},
-            {"matriculas": {"$regex": search, "$options": "i"}}  # Búsqueda por matrícula
+            {"r2_registros.matricula_inmobiliaria": {"$regex": search, "$options": "i"}}  # Búsqueda por matrícula inmobiliaria
         ]
     
     total = await db.predios.count_documents(query)
