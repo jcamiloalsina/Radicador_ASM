@@ -683,7 +683,7 @@ async def update_user_role(role_update: UserRoleUpdate, current_user: dict = Dep
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para cambiar roles")
     
     # Validate new role
-    valid_roles = [UserRole.CIUDADANO, UserRole.ATENCION_USUARIO, UserRole.GESTOR, UserRole.GESTOR_AUXILIAR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]
+    valid_roles = [UserRole.CIUDADANO, UserRole.ATENCION_USUARIO, UserRole.GESTOR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]
     if role_update.new_role not in valid_roles:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rol inválido")
     
@@ -722,7 +722,7 @@ async def get_users_with_permissions(current_user: dict = Depends(get_current_us
     
     # Obtener usuarios que pueden tener permisos (gestores, coordinadores)
     users = await db.users.find(
-        {"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR, UserRole.COORDINADOR]}},
+        {"role": {"$in": [UserRole.GESTOR, UserRole.COORDINADOR]}},
         {"_id": 0, "password_hash": 0}
     ).to_list(1000)
     
@@ -885,7 +885,7 @@ async def get_petitions(current_user: dict = Depends(get_current_user)):
     if current_user['role'] == UserRole.CIUDADANO:
         query = {"user_id": current_user['id']}
     # Gestores see assigned petitions
-    elif current_user['role'] in [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]:
+    elif current_user['role'] in [UserRole.GESTOR]:
         query = {"gestores_asignados": current_user['id']}
     else:
         # Staff (atencion_usuario, coordinador, administrador) see all petitions
@@ -928,7 +928,7 @@ async def get_petition(petition_id: str, current_user: dict = Depends(get_curren
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para ver esta petición")
     
     # Gestores can only see assigned petitions
-    if current_user['role'] in [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]:
+    if current_user['role'] in [UserRole.GESTOR]:
         if current_user['id'] not in petition.get('gestores_asignados', []):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para ver esta petición")
     
@@ -1160,7 +1160,7 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
             update_dict['estado'] = update_data.estado
         if update_data.notas:
             update_dict['notas'] = update_data.notas
-    elif current_user['role'] in [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]:
+    elif current_user['role'] in [UserRole.GESTOR]:
         # Gestores can only update notes and send to revision
         if update_data.notas:
             update_dict['notas'] = update_data.notas
@@ -1232,7 +1232,7 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     if current_user['role'] == UserRole.CIUDADANO:
         query = {"user_id": current_user['id']}
-    elif current_user['role'] in [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]:
+    elif current_user['role'] in [UserRole.GESTOR]:
         query = {"gestores_asignados": current_user['id']}
     else:
         query = {}
@@ -1259,7 +1259,7 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
 async def get_gestores(current_user: dict = Depends(get_current_user)):
     # Get all gestores and auxiliares
     gestores = await db.users.find(
-        {"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]}},
+        {"role": {"$in": [UserRole.GESTOR]}},
         {"_id": 0, "password": 0}
     ).to_list(1000)
     
@@ -1520,7 +1520,7 @@ async def get_gestor_productivity(current_user: dict = Depends(get_current_user)
     
     # Get all gestores and auxiliares
     gestores = await db.users.find(
-        {"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]}},
+        {"role": {"$in": [UserRole.GESTOR]}},
         {"_id": 0, "password": 0}
     ).to_list(1000)
     
@@ -1606,7 +1606,7 @@ async def export_gestor_productivity_pdf(current_user: dict = Depends(get_curren
     
     # Get productivity data
     gestores = await db.users.find(
-        {"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]}},
+        {"role": {"$in": [UserRole.GESTOR]}},
         {"_id": 0, "password": 0}
     ).to_list(1000)
     
@@ -1995,7 +1995,7 @@ async def get_stats_by_gestor(current_user: dict = Depends(get_current_user)):
     
     # Get all gestores
     gestores = await db.users.find(
-        {"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]}},
+        {"role": {"$in": [UserRole.GESTOR]}},
         {"_id": 0, "id": 1, "full_name": 1, "role": 1}
     ).to_list(100)
     
@@ -2043,13 +2043,13 @@ async def get_stats_summary(current_user: dict = Depends(get_current_user)):
     # Total counts
     total_petitions = await db.petitions.count_documents({})
     total_users = await db.users.count_documents({})
-    total_gestores = await db.users.count_documents({"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]}})
+    total_gestores = await db.users.count_documents({"role": {"$in": [UserRole.GESTOR]}})
     
     # Staff counts by role
     staff_counts = {
         "coordinadores": await db.users.count_documents({"role": UserRole.COORDINADOR}),
         "gestores": await db.users.count_documents({"role": UserRole.GESTOR}),
-        "gestores_auxiliares": await db.users.count_documents({"role": UserRole.GESTOR_AUXILIAR}),
+        "gestores_auxiliares": await db.users.count_documents({"role": }),
         "atencion_usuario": await db.users.count_documents({"role": UserRole.ATENCION_USUARIO}),
         "administradores": await db.users.count_documents({"role": UserRole.ADMINISTRADOR}),
         "ciudadanos": await db.users.count_documents({"role": UserRole.CIUDADANO})
@@ -2546,7 +2546,7 @@ async def solicitar_reaparicion(
     current_user: dict = Depends(get_current_user)
 ):
     """Permite al gestor solicitar la reaparición de un predio eliminado para aprobación del coordinador"""
-    if current_user['role'] not in [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+    if current_user['role'] not in [UserRole.GESTOR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
         raise HTTPException(status_code=403, detail="No tiene permiso para solicitar reapariciones")
     
     # Verificar que el predio esté en eliminados
@@ -2904,7 +2904,7 @@ async def crear_predio_con_workflow(
     El predio queda pendiente de aprobación del coordinador.
     """
     # Solo staff puede crear predios
-    if current_user['role'] not in [UserRole.ATENCION_USUARIO, UserRole.GESTOR, UserRole.GESTOR_AUXILIAR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+    if current_user['role'] not in [UserRole.ATENCION_USUARIO, UserRole.GESTOR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
         raise HTTPException(status_code=403, detail="Solo usuarios staff pueden crear predios")
     
     codigo_predial = request.get("codigo_predial_nacional")
@@ -3086,7 +3086,7 @@ async def revision_gestor_cambio(
     Gestor asignado realiza la revisión y puede aplicar ajustes.
     El cambio queda pendiente de revisión final del coordinador.
     """
-    if current_user["role"] not in [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+    if current_user["role"] not in [UserRole.GESTOR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
         raise HTTPException(status_code=403, detail="No tiene permiso para revisar cambios")
     
     cambio = await db.predios_cambios_propuestos.find_one({"id": cambio_id})
@@ -3094,7 +3094,7 @@ async def revision_gestor_cambio(
         raise HTTPException(status_code=404, detail="Cambio no encontrado")
     
     # Verificar que sea el gestor asignado (o coordinador/admin)
-    if current_user["role"] in [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR]:
+    if current_user["role"] in [UserRole.GESTOR]:
         if cambio.get("gestor_asignado") != current_user["id"]:
             raise HTTPException(status_code=403, detail="No está asignado a este cambio")
     
@@ -3149,7 +3149,7 @@ async def get_estadisticas_gestores(
     
     # Obtener todos los gestores con sus contadores
     gestores = await db.users.find(
-        {"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR, UserRole.ATENCION_USUARIO]}},
+        {"role": {"$in": [UserRole.GESTOR, UserRole.ATENCION_USUARIO]}},
         {"_id": 0, "id": 1, "full_name": 1, "role": 1, "tramites_creados": 1, "tramites_revisados": 1, "tramites_aprobados": 1}
     ).to_list(100)
     
