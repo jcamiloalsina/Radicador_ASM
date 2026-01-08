@@ -4082,10 +4082,15 @@ async def verificar_alerta_mensual(current_user: dict = Depends(get_current_user
 
 @api_router.post("/gdb/upload")
 async def upload_gdb_file(
-    file: UploadFile = File(...),
+    files: List[UploadFile] = File(...),
+    municipio: Optional[str] = Form(None),
     current_user: dict = Depends(get_current_user)
 ):
-    """Upload a new GDB file to update the geographic database. Only authorized gestors can do this."""
+    """Upload GDB files (ZIP or multiple files from a GDB folder). Only authorized gestors can do this."""
+    import zipfile
+    import shutil
+    import geopandas as gpd
+    
     # Check if user is an authorized gestor
     user_db = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
     
@@ -4100,84 +4105,195 @@ async def upload_gdb_file(
                 detail="No tiene permiso para actualizar la base gráfica. Contacte al coordinador."
             )
     
-    # Validate file
-    if not file.filename.endswith('.zip'):
-        raise HTTPException(status_code=400, detail="El archivo debe ser un .zip que contenga el .gdb")
-    
     try:
-        import zipfile
-        import shutil
-        
-        # Save uploaded file temporarily
-        temp_zip = UPLOAD_DIR / f"temp_gdb_{uuid.uuid4()}.zip"
-        with open(temp_zip, 'wb') as f:
-            content = await file.read()
-            f.write(content)
-        
-        # Backup current GDB if exists
-        if GDB_PATH.exists():
-            backup_path = Path(f"/app/gdb_data/backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
-            shutil.move(str(GDB_PATH), str(backup_path))
-            logger.info(f"GDB backup created at {backup_path}")
-        
-        # Extract new GDB
         gdb_data_dir = Path("/app/gdb_data")
         gdb_data_dir.mkdir(exist_ok=True)
         
-        with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
-            zip_ref.extractall(gdb_data_dir)
-        
-        # Find the .gdb directory in extracted content
         gdb_found = None
-        for item in gdb_data_dir.iterdir():
-            if item.suffix == '.gdb' and item.is_dir():
-                gdb_found = item
-                break
+        is_zip = len(files) == 1 and files[0].filename.endswith('.zip')
         
-        if not gdb_found:
-            # Check nested directories
+        if is_zip:
+            # Proceso ZIP tradicional
+            file = files[0]
+            temp_zip = UPLOAD_DIR / f"temp_gdb_{uuid.uuid4()}.zip"
+            with open(temp_zip, 'wb') as f:
+                content = await file.read()
+                f.write(content)
+            
+            with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
+                zip_ref.extractall(gdb_data_dir)
+            
+            temp_zip.unlink()
+            
+            # Buscar carpeta .gdb
             for item in gdb_data_dir.iterdir():
-                if item.is_dir():
-                    for subitem in item.iterdir():
-                        if subitem.suffix == '.gdb' and subitem.is_dir():
-                            gdb_found = subitem
+                if item.suffix == '.gdb' and item.is_dir():
+                    gdb_found = item
+                    break
+            
+            if not gdb_found:
+                for item in gdb_data_dir.iterdir():
+                    if item.is_dir():
+                        for subitem in item.iterdir():
+                            if subitem.suffix == '.gdb' and subitem.is_dir():
+                                gdb_found = subitem
+                                break
+        else:
+            # Proceso para archivos de carpeta GDB (múltiples archivos)
+            # Determinar el nombre de la carpeta .gdb desde los archivos
+            gdb_folder_name = None
+            for file in files:
+                # Los archivos vienen con path relativo como "54003.gdb/archivo.ext"
+                parts = file.filename.split('/')
+                if len(parts) > 0:
+                    for part in parts:
+                        if part.endswith('.gdb'):
+                            gdb_folder_name = part
                             break
+                if gdb_folder_name:
+                    break
+            
+            if not gdb_folder_name:
+                # Intentar extraer del nombre del archivo
+                for file in files:
+                    if '.gdb' in file.filename:
+                        idx = file.filename.find('.gdb')
+                        start = file.filename.rfind('/', 0, idx)
+                        gdb_folder_name = file.filename[start+1:idx+4]
+                        break
+            
+            if not gdb_folder_name:
+                gdb_folder_name = f"{municipio or 'uploaded'}.gdb"
+            
+            gdb_found = gdb_data_dir / gdb_folder_name
+            gdb_found.mkdir(exist_ok=True)
+            
+            # Guardar todos los archivos
+            for file in files:
+                # Extraer solo el nombre del archivo (sin la ruta de carpeta GDB)
+                filename = file.filename
+                if '/' in filename:
+                    filename = filename.split('/')[-1]
+                elif '\\' in filename:
+                    filename = filename.split('\\')[-1]
+                
+                file_path = gdb_found / filename
+                content = await file.read()
+                with open(file_path, 'wb') as f:
+                    f.write(content)
         
-        if not gdb_found:
-            raise HTTPException(status_code=400, detail="No se encontró un archivo .gdb válido en el zip")
+        if not gdb_found or not gdb_found.exists():
+            raise HTTPException(status_code=400, detail="No se pudo crear/encontrar el archivo .gdb")
         
-        # Rename to standard path if needed
-        if gdb_found != GDB_PATH:
-            if GDB_PATH.exists():
-                shutil.rmtree(str(GDB_PATH))
-            shutil.move(str(gdb_found), str(GDB_PATH))
+        # Determinar código de municipio desde el nombre del GDB
+        gdb_name = gdb_found.stem  # ej: "54003"
         
-        # Clean up
-        temp_zip.unlink()
+        # Mapeo de códigos a nombres de municipio
+        CODIGO_TO_MUNICIPIO = {
+            '54003': 'Ábrego',
+            '54109': 'Bucarasica', 
+            '54128': 'Cáchira',
+            '54206': 'Convención',
+            '54245': 'El Carmen',
+            '54250': 'El Tarra',
+            '54344': 'Hacarí',
+            '54398': 'La Playa',
+            '54670': 'San Calixto',
+            '54720': 'Sardinata',
+            '54800': 'Teorama',
+            '20614': 'Río de Oro',
+        }
         
-        # Log the action
-        await db.gdb_updates.insert_one({
-            "id": str(uuid.uuid4()),
-            "uploaded_by": current_user['id'],
-            "uploaded_by_name": current_user['full_name'],
-            "filename": file.filename,
-            "fecha": datetime.now(timezone.utc).isoformat()
-        })
+        municipio_nombre = municipio or CODIGO_TO_MUNICIPIO.get(gdb_name, gdb_name)
         
-        # Get new stats
-        import geopandas as gpd
-        r_terreno = gpd.read_file(str(GDB_PATH), layer='R_TERRENO_1')
-        u_terreno = gpd.read_file(str(GDB_PATH), layer='U_TERRENO_1')
+        # Leer capas del GDB para obtener estadísticas y relacionar con predios
+        stats = {"rurales": 0, "urbanos": 0, "relacionados": 0}
+        codigos_gdb = set()
+        
+        try:
+            # Intentar diferentes nombres de capas
+            for rural_layer in ['R_TERRENO_1', 'R_TERRENO', 'R_Terreno']:
+                try:
+                    gdf_rural = gpd.read_file(str(gdb_found), layer=rural_layer)
+                    stats["rurales"] = len(gdf_rural)
+                    # Extraer códigos prediales
+                    for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
+                        if col in gdf_rural.columns:
+                            codigos_gdb.update(gdf_rural[col].dropna().astype(str).tolist())
+                            break
+                    break
+                except:
+                    continue
+            
+            for urban_layer in ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno']:
+                try:
+                    gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
+                    stats["urbanos"] = len(gdf_urban)
+                    for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
+                        if col in gdf_urban.columns:
+                            codigos_gdb.update(gdf_urban[col].dropna().astype(str).tolist())
+                            break
+                    break
+                except:
+                    continue
+        except Exception as e:
+            logger.warning(f"Error leyendo capas GDB: {e}")
+        
+        # Relacionar con predios existentes
+        if codigos_gdb:
+            # Actualizar predios con referencia a GDB
+            result = await db.predios.update_many(
+                {"codigo_predial_nacional": {"$in": list(codigos_gdb)}},
+                {"$set": {"tiene_geometria": True, "gdb_source": gdb_name, "gdb_updated": datetime.now(timezone.utc).isoformat()}}
+            )
+            stats["relacionados"] = result.modified_count
+        
+        # Registrar carga mensual
+        mes_actual = datetime.now().strftime("%Y-%m")
+        await db.gdb_cargas.update_one(
+            {"mes": mes_actual, "municipio": municipio_nombre},
+            {"$set": {
+                "id": str(uuid.uuid4()),
+                "mes": mes_actual,
+                "municipio": municipio_nombre,
+                "gdb_file": gdb_name,
+                "uploaded_by": current_user['id'],
+                "uploaded_by_name": current_user['full_name'],
+                "fecha": datetime.now(timezone.utc).isoformat(),
+                "predios_rurales": stats["rurales"],
+                "predios_urbanos": stats["urbanos"],
+                "predios_relacionados": stats["relacionados"]
+            }},
+            upsert=True
+        )
+        
+        # Notificar a coordinadores que se completó la carga
+        coordinadores = await db.users.find(
+            {"role": {"$in": [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]}},
+            {"_id": 0, "id": 1, "full_name": 1}
+        ).to_list(20)
+        
+        for coord in coordinadores:
+            await crear_notificacion(
+                usuario_id=coord['id'],
+                titulo=f"Base Gráfica Cargada - {municipio_nombre}",
+                mensaje=f"{current_user['full_name']} ha cargado la base gráfica de {municipio_nombre} para {mes_actual}. Total geometrías: {stats['rurales'] + stats['urbanos']}, predios relacionados: {stats['relacionados']}",
+                tipo="success",
+                enviar_email=True
+            )
         
         return {
-            "message": "Base gráfica actualizada exitosamente",
-            "predios_rurales": len(r_terreno),
-            "predios_urbanos": len(u_terreno),
-            "total_geometrias": len(r_terreno) + len(u_terreno)
+            "message": f"Base gráfica de {municipio_nombre} actualizada exitosamente",
+            "municipio": municipio_nombre,
+            "gdb_file": gdb_name,
+            "predios_rurales": stats["rurales"],
+            "predios_urbanos": stats["urbanos"],
+            "total_geometrias": stats["rurales"] + stats["urbanos"],
+            "predios_relacionados": stats["relacionados"]
         }
         
     except zipfile.BadZipFile:
-        raise HTTPException(status_code=400, detail="El archivo no es un ZIP válido")
+        raise HTTPException(status_code=400, detail="El archivo ZIP no es válido")
     except Exception as e:
         logger.error(f"Error uploading GDB: {e}")
         raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {str(e)}")
