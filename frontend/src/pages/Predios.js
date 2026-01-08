@@ -1522,6 +1522,7 @@ export default function Predios() {
     setEstructuraCodigo(null);
     setVerificacionCodigo(null);
     setTerrenoInfo(null);
+    setGestorAsignado('');
   };
 
   const formatCurrency = (value) => {
