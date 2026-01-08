@@ -3589,11 +3589,11 @@ class CatastralAPITester:
                 print("   ❌ Failed to login with admin credentials")
                 return False
         
-        # Test GET /api/predios/stats
+        # Test GET /api/predios/stats/summary (correct endpoint)
         success, response = self.run_test(
-            "Get Predios Stats",
+            "Get Predios Stats Summary",
             "GET",
-            "predios/stats",
+            "predios/stats/summary",
             200,
             token=self.tokens['admin']
         )
