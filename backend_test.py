@@ -2913,8 +2913,8 @@ def main():
     # PRIORITY TESTS FROM REVIEW REQUEST - P0, P1, P2
     print("\n🎯 PRIORITY TESTS from Review Request...")
     
-    # NEW: GDB Notification and Upload System (from current review request)
-    tester.test_gdb_notification_and_upload_system()
+    # NEW: Reapariciones Management System (from current review request)
+    tester.test_reapariciones_management_system()
     
     # P0: PREDIOS Dashboard - GET /api/predios/stats/summary
     tester.test_predios_dashboard_priority_p0()
