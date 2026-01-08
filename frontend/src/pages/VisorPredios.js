@@ -198,35 +198,52 @@ export default function VisorPredios() {
     if (formatoCoordenadas === 'decimal') {
       lat = parseFloat(coordenadasBusqueda.lat);
       lng = parseFloat(coordenadasBusqueda.lng);
+      // Si la longitud es positiva, asumimos que el usuario olvidó el signo negativo (Colombia es Oeste)
+      if (lng > 0 && lng > 60) {
+        lng = -lng;
+      }
     } else {
       lat = dmsToDecimal(
         coordenadasDMS.latGrados,
         coordenadasDMS.latMinutos,
         coordenadasDMS.latSegundos,
-        coordenadasDMS.latDireccion
+        'N' // Colombia siempre es Norte
       );
-      lng = dmsToDecimal(
+      // Para longitud en Colombia, siempre es Oeste (negativo)
+      lng = -Math.abs(dmsToDecimal(
         coordenadasDMS.lngGrados,
         coordenadasDMS.lngMinutos,
         coordenadasDMS.lngSegundos,
-        coordenadasDMS.lngDireccion
-      );
+        'E' // Usamos E para obtener positivo, luego negamos
+      ));
     }
     
-    // Validar coordenadas para Colombia
+    // Validar coordenadas
     if (isNaN(lat) || isNaN(lng)) {
-      toast.error('Coordenadas inválidas');
+      toast.error('Por favor ingrese coordenadas válidas');
       return;
     }
     
-    // Validar rango para Colombia (aproximado)
-    if (lat < -5 || lat > 13 || lng < -82 || lng > -66) {
-      toast.warning('Las coordenadas están fuera del rango típico de Colombia');
+    // Validar rango para Colombia
+    if (lat < -5 || lat > 13) {
+      toast.error('Latitud fuera de rango para Colombia (0° a 12°N)');
+      return;
+    }
+    if (lng > -66 || lng < -82) {
+      toast.error('Longitud fuera de rango para Colombia (-67° a -79°W)');
+      return;
     }
     
     // Establecer marcador y hacer zoom
     setMarcadorCoordenadas([lat, lng]);
-    toast.success(`Ubicación: ${lat.toFixed(6)}°, ${lng.toFixed(6)}°`);
+    
+    // Mostrar coordenadas en ambos formatos
+    const latDMS = decimalToDMS(lat, true);
+    const lngDMS = decimalToDMS(Math.abs(lng), false);
+    toast.success(
+      `Ubicación: ${lat.toFixed(6)}°, ${lng.toFixed(6)}°\n` +
+      `${latDMS.grados}°${latDMS.minutos}'${latDMS.segundos}"N, ${lngDMS.grados}°${lngDMS.minutos}'${lngDMS.segundos}"W`
+    );
   };
 
   // Limpiar marcador de coordenadas
