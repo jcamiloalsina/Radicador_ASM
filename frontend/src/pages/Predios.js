@@ -833,6 +833,7 @@ export default function Predios() {
     fetchPrediosStats();
     fetchCambiosStats();
     fetchReaparicionesConteo();
+    fetchGdbStats();
   }, []);
 
   useEffect(() => {
@@ -840,7 +841,7 @@ export default function Predios() {
       fetchPredios();
       setShowDashboard(false);
     }
-  }, [filterMunicipio, filterVigencia]);
+  }, [filterMunicipio, filterVigencia, filterGeometria]);
 
   // Obtener info del terreno cuando cambia la ubicación
   useEffect(() => {
