@@ -2293,7 +2293,7 @@ export default function Predios() {
           <DialogHeader>
             <DialogTitle className="text-xl font-outfit flex items-center gap-2">
               <MapPin className="w-5 h-5 text-emerald-700" />
-              Detalle del Predio - {selectedPredio?.codigo_homologado}
+              Detalle del Predio - {selectedPredio?.codigo_predial_nacional}
             </DialogTitle>
           </DialogHeader>
           
@@ -2331,24 +2331,26 @@ export default function Predios() {
                 </div>
               )}
               
-              {/* Códigos */}
+              {/* Códigos - Orden: CNP, Matrícula, Homologado */}
               <div className="bg-emerald-50 p-4 rounded-lg">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-slate-500">Código Homologado</p>
-                    <p className="font-bold text-lg text-emerald-800">{selectedPredio.codigo_homologado}</p>
-                  </div>
+                <div className="grid grid-cols-1 gap-4">
                   <div>
                     <p className="text-xs text-slate-500">Código Predial Nacional (30 dígitos)</p>
-                    <p className="font-mono text-sm text-slate-700">{selectedPredio.codigo_predial_nacional}</p>
+                    <p className="font-mono text-lg font-bold text-emerald-800">{selectedPredio.codigo_predial_nacional}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-500">Matrícula Inmobiliaria</p>
-                    <p className="font-medium text-slate-700">
-                      {selectedPredio.r2_registros?.[0]?.matricula_inmobiliaria || (
-                        <span className="text-slate-400 italic">Sin información de matrícula</span>
-                      )}
-                    </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-slate-500">Matrícula Inmobiliaria</p>
+                      <p className="font-medium text-slate-700">
+                        {selectedPredio.r2_registros?.[0]?.matricula_inmobiliaria || (
+                          <span className="text-slate-400 italic">Sin información de matrícula</span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Código Homologado</p>
+                      <p className="font-medium text-slate-700">{selectedPredio.codigo_homologado}</p>
+                    </div>
                   </div>
                 </div>
               </div>
