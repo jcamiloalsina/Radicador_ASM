@@ -54,7 +54,7 @@ export default function VisorPredios() {
   const [selectedPredio, setSelectedPredio] = useState(null);
   const [geometry, setGeometry] = useState(null);
   const [gdbStats, setGdbStats] = useState(null);
-  const [mapType, setMapType] = useState('satellite'); // satellite por defecto
+  const [mapType, setMapType] = useState('topographic'); // topográfico por defecto
   const [showUploadGdb, setShowUploadGdb] = useState(false);
   const [uploadingGdb, setUploadingGdb] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null); // Estado del progreso de carga
