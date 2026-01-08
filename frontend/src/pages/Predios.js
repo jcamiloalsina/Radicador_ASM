@@ -818,6 +818,9 @@ export default function Predios() {
     estado_civil: ''
   }]);
   
+  // Estado para mostrar diálogo de confirmación al cerrar sin completar
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
+  
   // Estado para múltiples zonas físicas (R2)
   const [zonasFisicas, setZonasFisicas] = useState([{
     zona_fisica: '0',
