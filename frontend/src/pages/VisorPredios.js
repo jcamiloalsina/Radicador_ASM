@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Popup, useMap, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Popup, useMap, Tooltip, Marker, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { 
   Map, Search, MapPin, Building, User, DollarSign, 
-  Layers, ZoomIn, ZoomOut, Home, FileText, AlertCircle, Eye, EyeOff
+  Layers, ZoomIn, ZoomOut, Home, FileText, AlertCircle, Eye, EyeOff, Navigation, Crosshair
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
