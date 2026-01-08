@@ -5364,6 +5364,7 @@ async def upload_gdb_file(
             "predios_rurales": stats["rurales"],
             "predios_urbanos": stats["urbanos"],
             "total_geometrias": stats["rurales"] + stats["urbanos"],
+            "geometrias_guardadas": stats.get("geometrias_guardadas", 0),
             "predios_relacionados": stats["relacionados"]
         }
         
