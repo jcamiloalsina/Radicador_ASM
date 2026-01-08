@@ -129,11 +129,90 @@ export default function VisorPredios() {
   const [tipoLimites, setTipoLimites] = useState('gdb'); // 'gdb' para ver errores, 'oficial' para límites limpios
   const [gdbCargadaEsteMes, setGdbCargadaEsteMes] = useState(null); // null = no verificado, true/false
   const [mostrarPreguntaGdb, setMostrarPreguntaGdb] = useState(false);
+  const [coordenadasBusqueda, setCoordenadasBusqueda] = useState({ lat: '', lng: '' });
+  const [formatoCoordenadas, setFormatoCoordenadas] = useState('decimal'); // 'decimal' o 'dms'
+  const [coordenadasDMS, setCoordenadasDMS] = useState({
+    latGrados: '', latMinutos: '', latSegundos: '', latDireccion: 'N',
+    lngGrados: '', lngMinutos: '', lngSegundos: '', lngDireccion: 'W'
+  });
+  const [marcadorCoordenadas, setMarcadorCoordenadas] = useState(null); // [lat, lng] del marcador
   const mapRef = useRef(null);
 
   // Default center: Norte de Santander, Colombia
   const defaultCenter = [8.0, -73.0];
   const defaultZoom = 9;
+
+  // Función para convertir DMS a decimal
+  const dmsToDecimal = (grados, minutos, segundos, direccion) => {
+    const g = parseFloat(grados) || 0;
+    const m = parseFloat(minutos) || 0;
+    const s = parseFloat(segundos) || 0;
+    let decimal = g + (m / 60) + (s / 3600);
+    if (direccion === 'S' || direccion === 'W') {
+      decimal = -decimal;
+    }
+    return decimal;
+  };
+
+  // Función para convertir decimal a DMS
+  const decimalToDMS = (decimal, isLat) => {
+    const abs = Math.abs(decimal);
+    const grados = Math.floor(abs);
+    const minutos = Math.floor((abs - grados) * 60);
+    const segundos = ((abs - grados - minutos / 60) * 3600).toFixed(2);
+    const direccion = isLat 
+      ? (decimal >= 0 ? 'N' : 'S')
+      : (decimal >= 0 ? 'E' : 'W');
+    return { grados, minutos, segundos, direccion };
+  };
+
+  // Función para ir a coordenadas
+  const irACoordenadas = () => {
+    let lat, lng;
+    
+    if (formatoCoordenadas === 'decimal') {
+      lat = parseFloat(coordenadasBusqueda.lat);
+      lng = parseFloat(coordenadasBusqueda.lng);
+    } else {
+      lat = dmsToDecimal(
+        coordenadasDMS.latGrados,
+        coordenadasDMS.latMinutos,
+        coordenadasDMS.latSegundos,
+        coordenadasDMS.latDireccion
+      );
+      lng = dmsToDecimal(
+        coordenadasDMS.lngGrados,
+        coordenadasDMS.lngMinutos,
+        coordenadasDMS.lngSegundos,
+        coordenadasDMS.lngDireccion
+      );
+    }
+    
+    // Validar coordenadas para Colombia
+    if (isNaN(lat) || isNaN(lng)) {
+      toast.error('Coordenadas inválidas');
+      return;
+    }
+    
+    // Validar rango para Colombia (aproximado)
+    if (lat < -5 || lat > 13 || lng < -82 || lng > -66) {
+      toast.warning('Las coordenadas están fuera del rango típico de Colombia');
+    }
+    
+    // Establecer marcador y hacer zoom
+    setMarcadorCoordenadas([lat, lng]);
+    toast.success(`Ubicación: ${lat.toFixed(6)}°, ${lng.toFixed(6)}°`);
+  };
+
+  // Limpiar marcador de coordenadas
+  const limpiarMarcadorCoordenadas = () => {
+    setMarcadorCoordenadas(null);
+    setCoordenadasBusqueda({ lat: '', lng: '' });
+    setCoordenadasDMS({
+      latGrados: '', latMinutos: '', latSegundos: '', latDireccion: 'N',
+      lngGrados: '', lngMinutos: '', lngSegundos: '', lngDireccion: 'W'
+    });
+  };
 
   useEffect(() => {
     fetchGdbStats();
