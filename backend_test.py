@@ -2754,8 +2754,17 @@ def main():
     # NEW FUNCTIONALITY TESTS - Testing specific features mentioned in review request
     print("\n🎯 Testing NEW Functionalities from Review Request...")
     
-    # Test 2: Dashboard "Gestión de Predios" with Vigencia/Municipio Filters
-    tester.test_predios_dashboard_with_filters()
+    # Test 2: Dashboard Vigencia Logic (CRITICAL) - Should show only highest vigencia (2025)
+    tester.test_predios_dashboard_vigencia_logic()
+    
+    # Test 3: Predios Eliminados Endpoints
+    tester.test_predios_eliminados_endpoints()
+    
+    # Test 4: Import R1/R2 Verification
+    tester.test_import_r1_r2_verification()
+    
+    # Test 5: Available Vigencias Verification
+    tester.test_available_vigencias()
     
     # Test 2: Map Viewer Filters (Visor de Predios)
     tester.test_map_viewer_filters()
