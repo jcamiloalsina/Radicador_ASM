@@ -2020,7 +2020,7 @@ async def get_predios(
     vigencia: Optional[int] = None,
     destino_economico: Optional[str] = None,
     zona: Optional[str] = None,  # '00' = urbano, otros = rural
-    tiene_geometria: Optional[bool] = None,  # Filtro para predios con/sin geometría GDB
+    tiene_geometria: Optional[str] = None,  # Filtro para predios con/sin geometría GDB ('true' o 'false')
     search: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
@@ -2043,8 +2043,17 @@ async def get_predios(
             query["zona"] = "00"
         elif zona == 'rural':
             query["zona"] = {"$ne": "00"}
+    
+    # Filtro de geometría - convertir string a booleano
     if tiene_geometria is not None:
-        query["tiene_geometria"] = tiene_geometria
+        if tiene_geometria.lower() == 'true':
+            query["tiene_geometria"] = True
+        elif tiene_geometria.lower() == 'false':
+            query["$or"] = [
+                {"tiene_geometria": False},
+                {"tiene_geometria": {"$exists": False}}
+            ]
+    
     if search:
         query["$or"] = [
             {"codigo_predial_nacional": {"$regex": search, "$options": "i"}},
