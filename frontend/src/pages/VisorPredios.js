@@ -365,7 +365,7 @@ export default function VisorPredios() {
               </div>
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Zona</label>
-                <Select value={filterZona} onValueChange={setFilterZona} disabled={!filterMunicipio}>
+                <Select value={filterZona} onValueChange={setFilterZona} disabled={!filterMunicipio || !mostrarPredios}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todas las zonas" />
                   </SelectTrigger>
@@ -376,15 +376,36 @@ export default function VisorPredios() {
                   </SelectContent>
                 </Select>
               </div>
-              {loadingGeometries && (
-                <div className="flex items-center gap-2 text-sm text-emerald-600">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-700"></div>
-                  Cargando geometrías...
-                </div>
+              {/* Botón para mostrar/ocultar predios */}
+              {filterMunicipio && (
+                <Button
+                  variant={mostrarPredios ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setMostrarPredios(!mostrarPredios)}
+                  className={mostrarPredios ? "bg-emerald-600 hover:bg-emerald-700" : "border-emerald-500 text-emerald-700"}
+                  disabled={loadingGeometries}
+                >
+                  {loadingGeometries ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Cargando...
+                    </>
+                  ) : mostrarPredios ? (
+                    <>
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ocultar Predios
+                    </>
+                  ) : (
+                    <>
+                      <Map className="w-4 h-4 mr-2" />
+                      Ver Predios
+                    </>
+                  )}
+                </Button>
               )}
-              {allGeometries && (
+              {allGeometries && mostrarPredios && (
                 <Badge className="bg-emerald-100 text-emerald-800">
-                  {allGeometries.total} polígonos cargados
+                  {allGeometries.total} predios visibles
                 </Badge>
               )}
             </CardContent>
