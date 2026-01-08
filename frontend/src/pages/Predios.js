@@ -955,6 +955,13 @@ export default function Predios() {
     }
   }, [filterMunicipio, filterVigencia, filterGeometria]);
 
+  // Auto-seleccionar municipio cuando se abre el diálogo
+  useEffect(() => {
+    if (showCreateDialog && filterMunicipio) {
+      setFormData(prev => ({ ...prev, municipio: filterMunicipio }));
+    }
+  }, [showCreateDialog, filterMunicipio]);
+
   // Obtener info del terreno cuando cambia la ubicación
   useEffect(() => {
     if (formData.municipio && showCreateDialog) {
