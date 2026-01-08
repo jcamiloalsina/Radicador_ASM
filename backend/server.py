@@ -5446,15 +5446,30 @@ async def upload_gdb_file(
                                     "geometry": geom_wgs84.__geo_interface__
                                 })
                                 geometrias_guardadas += 1
+                                rural_guardadas += 1
                             except:
                                 pass
+                    logger.info(f"GDB {municipio_nombre}: Guardadas {rural_guardadas} geometrías rurales desde capa {rural_layer}")
                     break
                 except:
                     continue
             
             update_progress("guardando_urbano", 65, "Procesando geometrías urbanas...")
-            urban_layers = ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno']
-            for urban_layer in urban_layers:
+            urban_layers_save = [
+                'U_TERRENO_1', 'U_TERRENO', 'U_Terreno', 'u_terreno', 'u_terreno_1',
+                'URBANO', 'Urbano', 'urbano',
+                'TERRENO_U', 'terreno_u', 'Terreno_U',
+                'U_PREDIO', 'U_Predio', 'u_predio'
+            ]
+            # También buscar capas dinámicamente
+            for layer_name in available_layers:
+                if layer_name.upper().startswith('U_') and layer_name not in urban_layers_save:
+                    urban_layers_save.insert(0, layer_name)
+                elif 'URBAN' in layer_name.upper() and layer_name not in urban_layers_save:
+                    urban_layers_save.insert(0, layer_name)
+            
+            urban_guardadas = 0
+            for urban_layer in urban_layers_save:
                 try:
                     gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
                     if len(gdf_urban) == 0:
