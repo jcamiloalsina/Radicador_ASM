@@ -5428,9 +5428,11 @@ async def upload_gdb_file(
             "gdb_file": gdb_name,
             "predios_rurales": stats["rurales"],
             "predios_urbanos": stats["urbanos"],
-            "total_geometrias": stats["rurales"] + stats["urbanos"],
+            "total_geometrias_gdb": stats["rurales"] + stats["urbanos"],
+            "codigos_unicos_gdb": stats.get("codigos_gdb_unicos", 0),
             "geometrias_guardadas": stats.get("geometrias_guardadas", 0),
-            "predios_relacionados": stats["relacionados"]
+            "predios_relacionados": stats["relacionados"],
+            "metodo_match": stats.get("metodo_match", "directo")
         }
         
     except zipfile.BadZipFile:
