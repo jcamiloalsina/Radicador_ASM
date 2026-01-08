@@ -5334,10 +5334,15 @@ async def upload_gdb_file(
                     except:
                         continue
                 
+                update_progress("guardando_urbano", 65, "Procesando geometrías urbanas...")
                 for urban_layer in ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno']:
                     try:
                         gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
+                        total_urban = len(gdf_urban)
                         for idx, row in gdf_urban.iterrows():
+                            if idx % 500 == 0:
+                                pct = 65 + int((idx / total_urban) * 10)
+                                update_progress("guardando_urbano", pct, f"Procesando geometrías urbanas: {idx}/{total_urban}")
                             codigo = None
                             for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED']:
                                 if col in gdf_urban.columns and pd.notna(row.get(col)):
@@ -5361,6 +5366,8 @@ async def upload_gdb_file(
                         continue
             except Exception as e:
                 logger.warning(f"Error guardando geometrías: {e}")
+        
+        update_progress("relacionando", 75, f"Relacionando {len(codigos_gdb)} códigos GDB con predios...")
         
         # Relacionar con predios existentes - matching mejorado
         if codigos_gdb:
