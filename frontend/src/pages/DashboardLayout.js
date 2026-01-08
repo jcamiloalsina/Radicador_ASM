@@ -16,14 +16,31 @@ export default function DashboardLayout() {
   const [notificaciones, setNotificaciones] = useState([]);
   const [noLeidas, setNoLeidas] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [cambiosPendientesCount, setCambiosPendientesCount] = useState(0);
 
   useEffect(() => {
     if (user) {
       fetchNotificaciones();
       // Verificar alerta GDB
       checkGdbAlert();
+      // Cargar conteo de cambios pendientes si es coordinador o admin
+      if (['administrador', 'coordinador'].includes(user.role)) {
+        fetchCambiosPendientes();
+      }
     }
   }, [user]);
+
+  const fetchCambiosPendientes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/predios/cambios/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCambiosPendientesCount(response.data.total_pendientes || 0);
+    } catch (error) {
+      console.error('Error fetching pending changes:', error);
+    }
+  };
 
   const fetchNotificaciones = async () => {
     try {
