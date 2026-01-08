@@ -4886,12 +4886,10 @@ async def get_limites_municipios(current_user: dict = Depends(get_current_user))
                             continue
                 
                 if shapes:
-                    # Crear el contorno EXTERIOR del municipio (sin líneas internas)
+                    # Crear el límite REAL del municipio usando unary_union
                     union_geom = unary_union(shapes)
-                    # Usar CONVEX_HULL para obtener solo el contorno exterior (sin líneas internas)
-                    limite = union_geom.convex_hull
-                    # Simplificar para rendimiento
-                    limite = limite.simplify(0.001, preserve_topology=True)
+                    # Simplificar para rendimiento pero mantener forma real
+                    limite = union_geom.simplify(0.0008, preserve_topology=True)
                     centroid = limite.centroid
                     
                     features.append({
