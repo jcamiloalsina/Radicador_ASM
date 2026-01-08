@@ -131,6 +131,7 @@ class Petition(BaseModel):
     telefono: str
     tipo_tramite: str
     municipio: str
+    descripcion: str = ""
     estado: str = PetitionStatus.RADICADO
     notas: str = ""
     gestor_id: Optional[str] = None
