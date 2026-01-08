@@ -2577,6 +2577,9 @@ async def aprobar_reaparicion(
     
     await db.predios_reapariciones_aprobadas.insert_one(aprobacion)
     
+    # Remover _id antes de retornar
+    aprobacion.pop("_id", None)
+    
     # Opcionalmente, remover de eliminados ya que fue aprobada la reaparición
     await db.predios_eliminados.delete_one({
         "codigo_predial_nacional": codigo_predial,
