@@ -41,6 +41,7 @@ function App() {
             <Route path="predios" element={<Predios />} />
             <Route path="visor-predios" element={<VisorPredios />} />
             <Route path="pendientes" element={<Pendientes />} />
+            <Route path="permisos" element={<PermissionsManagement />} />
           </Route>
         </Routes>
       </BrowserRouter>
