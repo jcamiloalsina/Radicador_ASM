@@ -1623,6 +1623,74 @@ class CatastralAPITester:
         
         return False
 
+    def test_petition_creation_with_description(self):
+        """Test petition creation with new description field as requested in review"""
+        print("\n📝 Testing Petition Creation with Description Field (Review Request)...")
+        
+        # Step 1: Login with admin credentials
+        admin_success = self.test_login_with_credentials(
+            "catastro@asomunicipios.gov.co",
+            "Asm*123*",
+            "admin"
+        )
+        
+        if not admin_success:
+            print("   ❌ Failed to login with admin credentials")
+            return False
+        
+        # Step 2: Create petition with description field as specified in review request
+        petition_data = {
+            "nombre_completo": "Test User",
+            "correo": "test@test.com",
+            "telefono": "3001234567",
+            "tipo_tramite": "Rectificaciones",
+            "municipio": "Ábrego",
+            "descripcion": "Esta es una descripción de prueba para la petición de rectificación catastral"
+        }
+        
+        success, response = self.run_test(
+            "Create petition with description field",
+            "POST",
+            "petitions",
+            200,
+            data=petition_data,
+            token=self.tokens['admin'],
+            form_data=True
+        )
+        
+        if success and 'id' in response:
+            petition_id = response['id']
+            print(f"   ✅ Petition created with radicado: {response.get('radicado', 'Unknown')}")
+            
+            # Step 3: Verify the description was saved correctly
+            success, petition_detail = self.run_test(
+                "Verify petition description was saved",
+                "GET",
+                f"petitions/{petition_id}",
+                200,
+                token=self.tokens['admin']
+            )
+            
+            if success:
+                saved_description = petition_detail.get('descripcion', '')
+                expected_description = petition_data['descripcion']
+                
+                if saved_description == expected_description:
+                    print(f"   ✅ Description field saved correctly")
+                    print(f"   - Saved: {saved_description}")
+                    return True
+                else:
+                    print(f"   ❌ Description not saved correctly")
+                    print(f"   - Expected: {expected_description}")
+                    print(f"   - Saved: {saved_description}")
+                    return False
+            else:
+                print(f"   ❌ Failed to retrieve petition details")
+                return False
+        else:
+            print(f"   ❌ Failed to create petition with description")
+            return False
+
     def test_cadastral_certificate_generation(self):
         """Test cadastral certificate generation endpoint as requested in review"""
         print("\n📋 Testing Cadastral Certificate Generation (Review Request)...")
