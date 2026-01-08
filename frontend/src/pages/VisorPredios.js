@@ -583,9 +583,11 @@ export default function VisorPredios() {
                   onValueChange={(v) => {
                     const newValue = v === "none" ? "" : v;
                     setFilterMunicipio(newValue);
-                    // Si se limpia el filtro, también ocultar predios
+                    // Si se limpia el filtro, también ocultar predios y limpiar selección
                     if (!newValue) {
                       setMostrarPredios(false);
+                      setSelectedPredio(null);
+                      setGeometry(null);
                     }
                   }}
                 >
