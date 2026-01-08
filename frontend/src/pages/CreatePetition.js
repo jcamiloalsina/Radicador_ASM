@@ -68,6 +68,7 @@ export default function CreatePetition() {
       const tipoTramiteCompleto = getTramiteCompleto(formData.tipo_tramite, formData.sub_tipo_tramite);
       formDataToSend.append('tipo_tramite', tipoTramiteCompleto);
       formDataToSend.append('municipio', formData.municipio);
+      formDataToSend.append('descripcion', formData.descripcion);
       
       files.forEach((file) => {
         formDataToSend.append('files', file);
