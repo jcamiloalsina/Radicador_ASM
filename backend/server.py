@@ -5907,8 +5907,8 @@ async def revincular_predios_gdb(
     
     for muni in municipios:
         try:
-            # Obtener códigos GDB del municipio
-            codigos_gdb = await db.gdb_geometrias.distinct("codigo_predial", {"municipio": muni})
+            # Obtener códigos GDB del municipio (el campo es 'codigo', no 'codigo_predial')
+            codigos_gdb = await db.gdb_geometrias.distinct("codigo", {"municipio": muni})
             
             if not codigos_gdb:
                 resultados["errores"].append(f"{muni}: Sin geometrías GDB")
