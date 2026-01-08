@@ -1707,6 +1707,19 @@ export default function Predios() {
         </DialogContent>
       </Dialog>
 
+      {/* Reapariciones Pendientes Dialog */}
+      <Dialog open={showReaparicionesDialog} onOpenChange={setShowReaparicionesDialog}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-outfit flex items-center gap-2 text-amber-700">
+              <AlertTriangle className="w-5 h-5" />
+              Reapariciones Pendientes de Aprobación
+            </DialogTitle>
+          </DialogHeader>
+          <ReaparicionesPendientes />
+        </DialogContent>
+      </Dialog>
+
       {/* Cambios Pendientes Dialog */}
       <Dialog open={showPendientesDialog} onOpenChange={setShowPendientesDialog}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
