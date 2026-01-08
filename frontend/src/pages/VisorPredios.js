@@ -676,7 +676,7 @@ export default function VisorPredios() {
                   className="text-xs flex-1"
                   onClick={() => setFormatoCoordenadas('decimal')}
                 >
-                  Decimal
+                  Decimales
                 </Button>
                 <Button
                   variant={formatoCoordenadas === 'dms' ? 'default' : 'outline'}
@@ -684,119 +684,102 @@ export default function VisorPredios() {
                   className="text-xs flex-1"
                   onClick={() => setFormatoCoordenadas('dms')}
                 >
-                  Grados°Min'Seg"
+                  GMS
                 </Button>
               </div>
 
               {/* Formato Decimal */}
               {formatoCoordenadas === 'decimal' && (
                 <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <label className="text-xs text-slate-600">Latitud (N)</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-slate-600 font-medium">Latitud</label>
                       <Input
-                        placeholder="8.2305"
+                        placeholder="8.230500"
                         value={coordenadasBusqueda.lat}
                         onChange={(e) => setCoordenadasBusqueda(prev => ({ ...prev, lat: e.target.value }))}
-                        className="text-sm h-8"
+                        className="text-sm h-8 font-mono"
                       />
                     </div>
-                    <div className="flex-1">
-                      <label className="text-xs text-slate-600">Longitud (W)</label>
+                    <div>
+                      <label className="text-xs text-slate-600 font-medium">Longitud</label>
                       <Input
-                        placeholder="-73.3563"
+                        placeholder="-73.356300"
                         value={coordenadasBusqueda.lng}
                         onChange={(e) => setCoordenadasBusqueda(prev => ({ ...prev, lng: e.target.value }))}
-                        className="text-sm h-8"
+                        className="text-sm h-8 font-mono"
                       />
                     </div>
                   </div>
-                  <p className="text-xs text-slate-500">Ej: Lat 8.2305, Lng -73.3563 (Ocaña)</p>
+                  <p className="text-xs text-slate-500 bg-slate-100 p-1.5 rounded">
+                    <strong>Colombia:</strong> Lat 0° a 12°N, Lon -67° a -79°W<br/>
+                    <span className="text-blue-600">Ej: 8.230500, -73.356300</span>
+                  </p>
                 </div>
               )}
 
-              {/* Formato DMS (Grados, Minutos, Segundos) */}
+              {/* Formato GMS (Grados, Minutos, Segundos) */}
               {formatoCoordenadas === 'dms' && (
                 <div className="space-y-2">
                   {/* Latitud */}
                   <div>
-                    <label className="text-xs text-slate-600 block mb-1">Latitud</label>
-                    <div className="flex gap-1 items-center">
+                    <label className="text-xs text-slate-600 font-medium block mb-1">Latitud (Norte)</label>
+                    <div className="flex gap-1 items-center bg-white p-1 rounded border">
                       <Input
                         placeholder="8"
                         value={coordenadasDMS.latGrados}
                         onChange={(e) => setCoordenadasDMS(prev => ({ ...prev, latGrados: e.target.value }))}
-                        className="text-sm h-7 w-12 text-center"
+                        className="text-sm h-7 w-10 text-center font-mono border-0 p-0"
                       />
-                      <span className="text-xs">°</span>
+                      <span className="text-sm font-bold">°</span>
                       <Input
                         placeholder="13"
                         value={coordenadasDMS.latMinutos}
                         onChange={(e) => setCoordenadasDMS(prev => ({ ...prev, latMinutos: e.target.value }))}
-                        className="text-sm h-7 w-12 text-center"
+                        className="text-sm h-7 w-10 text-center font-mono border-0 p-0"
                       />
-                      <span className="text-xs">'</span>
+                      <span className="text-sm font-bold">'</span>
                       <Input
-                        placeholder="49.8"
+                        placeholder="49.80"
                         value={coordenadasDMS.latSegundos}
                         onChange={(e) => setCoordenadasDMS(prev => ({ ...prev, latSegundos: e.target.value }))}
-                        className="text-sm h-7 w-14 text-center"
+                        className="text-sm h-7 w-14 text-center font-mono border-0 p-0"
                       />
-                      <span className="text-xs">"</span>
-                      <Select 
-                        value={coordenadasDMS.latDireccion} 
-                        onValueChange={(v) => setCoordenadasDMS(prev => ({ ...prev, latDireccion: v }))}
-                      >
-                        <SelectTrigger className="h-7 w-14 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="N">N</SelectItem>
-                          <SelectItem value="S">S</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <span className="text-sm font-bold">"</span>
+                      <span className="text-sm font-bold text-emerald-600 ml-1">N</span>
                     </div>
                   </div>
                   {/* Longitud */}
                   <div>
-                    <label className="text-xs text-slate-600 block mb-1">Longitud</label>
-                    <div className="flex gap-1 items-center">
+                    <label className="text-xs text-slate-600 font-medium block mb-1">Longitud (Oeste)</label>
+                    <div className="flex gap-1 items-center bg-white p-1 rounded border">
                       <Input
                         placeholder="73"
                         value={coordenadasDMS.lngGrados}
                         onChange={(e) => setCoordenadasDMS(prev => ({ ...prev, lngGrados: e.target.value }))}
-                        className="text-sm h-7 w-12 text-center"
+                        className="text-sm h-7 w-10 text-center font-mono border-0 p-0"
                       />
-                      <span className="text-xs">°</span>
+                      <span className="text-sm font-bold">°</span>
                       <Input
                         placeholder="21"
                         value={coordenadasDMS.lngMinutos}
                         onChange={(e) => setCoordenadasDMS(prev => ({ ...prev, lngMinutos: e.target.value }))}
-                        className="text-sm h-7 w-12 text-center"
+                        className="text-sm h-7 w-10 text-center font-mono border-0 p-0"
                       />
-                      <span className="text-xs">'</span>
+                      <span className="text-sm font-bold">'</span>
                       <Input
-                        placeholder="22.7"
+                        placeholder="22.68"
                         value={coordenadasDMS.lngSegundos}
                         onChange={(e) => setCoordenadasDMS(prev => ({ ...prev, lngSegundos: e.target.value }))}
-                        className="text-sm h-7 w-14 text-center"
+                        className="text-sm h-7 w-14 text-center font-mono border-0 p-0"
                       />
-                      <span className="text-xs">"</span>
-                      <Select 
-                        value={coordenadasDMS.lngDireccion} 
-                        onValueChange={(v) => setCoordenadasDMS(prev => ({ ...prev, lngDireccion: v }))}
-                      >
-                        <SelectTrigger className="h-7 w-14 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="W">W</SelectItem>
-                          <SelectItem value="E">E</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <span className="text-sm font-bold">"</span>
+                      <span className="text-sm font-bold text-blue-600 ml-1">W</span>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-500">Ej: 8°13'49.8"N, 73°21'22.7"W</p>
+                  <p className="text-xs text-slate-500 bg-slate-100 p-1.5 rounded">
+                    <span className="text-blue-600">Ej: 8°13'49.80"N, 73°21'22.68"W</span>
+                  </p>
                 </div>
               )}
 
@@ -807,7 +790,7 @@ export default function VisorPredios() {
                   size="sm"
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-xs"
                 >
-                  <Navigation className="w-3 h-3 mr-1" /> Ir
+                  <Navigation className="w-3 h-3 mr-1" /> Ir a ubicación
                 </Button>
                 {marcadorCoordenadas && (
                   <Button
