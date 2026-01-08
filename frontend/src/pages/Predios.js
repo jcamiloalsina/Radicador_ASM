@@ -861,8 +861,81 @@ export default function Predios() {
   useEffect(() => {
     if (formData.municipio && showCreateDialog) {
       fetchTerrenoInfo();
+      fetchEstructuraCodigo();
     }
-  }, [formData.municipio, formData.zona, formData.sector, formData.manzana_vereda, showCreateDialog]);
+  }, [formData.municipio, showCreateDialog]);
+
+  // Sugerir código cuando cambian los campos del código manual
+  useEffect(() => {
+    if (formData.municipio && showCreateDialog && codigoManual.zona && codigoManual.manzana_vereda) {
+      fetchSugerenciaCodigo();
+    }
+  }, [codigoManual.zona, codigoManual.sector, codigoManual.comuna, codigoManual.barrio, codigoManual.manzana_vereda, formData.municipio, showCreateDialog]);
+
+  // Función para obtener la estructura del código según el municipio
+  const fetchEstructuraCodigo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/predios/estructura-codigo/${formData.municipio}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEstructuraCodigo(res.data);
+    } catch (error) {
+      console.log('Error obteniendo estructura de código');
+    }
+  };
+
+  // Función para obtener sugerencia de próximo código disponible
+  const fetchSugerenciaCodigo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        zona: codigoManual.zona,
+        sector: codigoManual.sector,
+        comuna: codigoManual.comuna,
+        barrio: codigoManual.barrio,
+        manzana_vereda: codigoManual.manzana_vereda
+      });
+      const res = await axios.get(`${API}/predios/sugerir-codigo/${formData.municipio}?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTerrenoInfo(res.data);
+      // Auto-llenar el terreno sugerido
+      if (res.data.siguiente_terreno) {
+        setCodigoManual(prev => ({ ...prev, terreno: res.data.siguiente_terreno }));
+      }
+    } catch (error) {
+      console.log('Error obteniendo sugerencia de código');
+    }
+  };
+
+  // Función para verificar el código completo
+  const verificarCodigoCompleto = async () => {
+    if (!estructuraCodigo) return;
+    
+    const codigoCompleto = construirCodigoCompleto();
+    if (codigoCompleto.length !== 30) {
+      toast.error('El código debe tener exactamente 30 dígitos');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/predios/verificar-codigo-completo/${codigoCompleto}?municipio=${formData.municipio}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setVerificacionCodigo(res.data);
+    } catch (error) {
+      toast.error('Error al verificar código');
+    }
+  };
+
+  // Construir el código completo de 30 dígitos
+  const construirCodigoCompleto = () => {
+    if (!estructuraCodigo) return '';
+    const prefijo = estructuraCodigo.prefijo_fijo;
+    return `${prefijo}${codigoManual.zona}${codigoManual.sector}${codigoManual.comuna}${codigoManual.barrio}${codigoManual.manzana_vereda}${codigoManual.terreno}${codigoManual.edificio}${codigoManual.piso}${codigoManual.unidad}`;
+  };
 
   const fetchCatalogos = async () => {
     try {
