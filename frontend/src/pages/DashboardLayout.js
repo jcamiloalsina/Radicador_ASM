@@ -147,6 +147,10 @@ export default function DashboardLayout() {
     menuItems.push({ path: '/dashboard/estadisticas', label: 'Estadísticas y Reportes', icon: BarChart3 });
   }
 
+  if (['administrador', 'coordinador'].includes(user.role)) {
+    menuItems.push({ path: '/dashboard/permisos', label: 'Gestión de Permisos', icon: Shield });
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Sidebar - Desktop */}
