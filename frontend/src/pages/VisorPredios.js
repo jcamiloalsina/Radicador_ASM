@@ -357,8 +357,8 @@ export default function VisorPredios() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todas las zonas</SelectItem>
-                    <SelectItem value="urbano">Urbano</SelectItem>
-                    <SelectItem value="rural">Rural</SelectItem>
+                    <SelectItem value="urbano">Solo Urbano ({gdbStats?.municipios?.[filterMunicipio]?.urbanos || 0})</SelectItem>
+                    <SelectItem value="rural">Solo Rural ({gdbStats?.municipios?.[filterMunicipio]?.rurales || 0})</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
