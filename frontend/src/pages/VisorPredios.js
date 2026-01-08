@@ -67,26 +67,25 @@ function MunicipalityLimits({ limitesMunicipios, filterMunicipio, setFilterMunic
               color: isSelected ? '#10B981' : '#FFFFFF',
               weight: isSelected ? 4 : 2,
               opacity: 1,
-              // Siempre tener un fill para poder hacer click (muy transparente si no es sinGdb)
+              // Siempre tener un fill para poder hacer click
               fillColor: sinGdb ? '#6366F1' : (isSelected ? '#10B981' : '#FFFFFF'),
               fillOpacity: sinGdb ? 0.25 : (isSelected ? 0.15 : 0.05)
             })}
-            eventHandlers={{
-              click: (e) => {
-                const props = feature.properties;
-                console.log('Clicked on municipality:', props?.municipio);
+            onEachFeature={(feat, layer) => {
+              const props = feat.properties;
+              
+              // Registrar evento click directamente en Leaflet
+              layer.on('click', (e) => {
                 if (!props?.sin_gdb) {
                   setFilterMunicipio(props?.municipio);
                   // Hacer zoom al municipio
-                  const bounds = e.target.getBounds();
+                  const bounds = layer.getBounds();
                   if (bounds.isValid()) {
                     map.fitBounds(bounds, { padding: [50, 50] });
                   }
                 }
-              }
-            }}
-            onEachFeature={(feat, layer) => {
-              const props = feat.properties;
+              });
+              
               layer.bindTooltip(props?.municipio || '', {
                 permanent: true,
                 direction: 'center',
