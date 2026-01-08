@@ -26,6 +26,18 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Función auxiliar para convertir decimal a DMS (usada en popup)
+const decimalToDMSHelper = (decimal, isLat) => {
+  const abs = Math.abs(decimal);
+  const grados = Math.floor(abs);
+  const minutos = Math.floor((abs - grados) * 60);
+  const segundos = ((abs - grados - minutos / 60) * 3600).toFixed(2);
+  const direccion = isLat 
+    ? (decimal >= 0 ? 'N' : 'S')
+    : (decimal >= 0 ? 'E' : 'W');
+  return { grados, minutos, segundos, direccion };
+};
+
 // Component to fit bounds when geometry changes
 function FitBounds({ geometry }) {
   const map = useMap();
