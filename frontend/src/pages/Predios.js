@@ -1345,6 +1345,11 @@ export default function Predios() {
         toast.success('Predio creado exitosamente');
       }
 
+      if (gestorAsignado) {
+        const gestorNombre = gestoresDisponibles.find(g => g.id === gestorAsignado)?.full_name;
+        toast.info(`Asignado a ${gestorNombre} para continuar el diligenciamiento.`, { duration: 4000 });
+      }
+
       if (!res.data.tiene_geometria) {
         toast.info('⚠️ Este predio no tiene información gráfica (GDB). Se relacionará cuando se cargue el archivo GDB.', { duration: 5000 });
       }
