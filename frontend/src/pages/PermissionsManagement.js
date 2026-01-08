@@ -114,7 +114,6 @@ export default function PermissionsManagement() {
   const getRoleBadgeColor = (role) => {
     const colors = {
       gestor: 'bg-blue-100 text-blue-800',
-      gestor_auxiliar: 'bg-cyan-100 text-cyan-800',
       coordinador: 'bg-purple-100 text-purple-800'
     };
     return colors[role] || 'bg-gray-100 text-gray-800';
@@ -123,7 +122,6 @@ export default function PermissionsManagement() {
   const getRoleName = (role) => {
     const roles = {
       gestor: 'Gestor',
-      gestor_auxiliar: 'Gestor Auxiliar',
       coordinador: 'Coordinador'
     };
     return roles[role] || role;
