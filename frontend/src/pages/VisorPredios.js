@@ -708,7 +708,7 @@ export default function VisorPredios() {
                     key={`limite-${feature.properties?.municipio}-${idx}`}
                     data={feature}
                     style={() => ({
-                      color: filterMunicipio === feature.properties?.municipio ? '#059669' : '#1a1a1a',
+                      color: filterMunicipio === feature.properties?.municipio ? '#10B981' : '#FFFFFF',
                       weight: filterMunicipio === feature.properties?.municipio ? 4 : 2.5,
                       opacity: 1,
                       fillColor: 'transparent',
