@@ -74,8 +74,8 @@
 
 ## Test Credentials
 - **Admin**: catastro@asomunicipios.gov.co / Asm*123* ✅ WORKING
-- **Frontend URL**: https://land-registry-11.preview.emergentagent.com
-- **Backend API**: https://land-registry-11.preview.emergentagent.com/api
+- **Frontend URL**: https://catastro-portal.preview.emergentagent.com
+- **Backend API**: https://catastro-portal.preview.emergentagent.com/api
 
 ## Test Environment
 - **Date**: January 8, 2026
