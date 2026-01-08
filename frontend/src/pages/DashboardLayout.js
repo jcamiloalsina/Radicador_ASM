@@ -120,7 +120,6 @@ export default function DashboardLayout() {
       ciudadano: 'Ciudadano',
       atencion_usuario: 'Atención al Usuario',
       gestor: 'Gestor',
-      gestor_auxiliar: 'Gestor Auxiliar',
       coordinador: 'Coordinador',
       administrador: 'Administrador'
     };
