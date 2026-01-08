@@ -2239,11 +2239,13 @@ async def import_predios_excel(
         
         # Leer R1 (propietarios)
         r1_data = {}
+        rows_read = 0
         
         for row in ws_r1.iter_rows(min_row=2, values_only=True):
             if not row[0]:  # Sin departamento = fila vacía
                 continue
             
+            rows_read += 1
             codigo_predial = str(row[3] or '').strip()
             if not codigo_predial:
                 continue
