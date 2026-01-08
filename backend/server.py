@@ -2376,7 +2376,7 @@ async def import_predios_excel(
                 })
         
         # Buscar hoja R2 con nombres alternativos (normalizando espacios)
-        r2_sheet_names = ['REGISTRO_R2', 'R2', 'Registro_R2', 'registro_r2', 'Hoja2', 'Sheet2']
+        r2_sheet_names = ['REGISTRO_R2', 'REGISTRO R2', 'R2', 'Registro_R2', 'Registro R2', 'registro_r2', 'Hoja2', 'Sheet2']
         ws_r2 = None
         # Primero intentar coincidencia exacta
         for name in r2_sheet_names:
