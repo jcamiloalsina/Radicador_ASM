@@ -1198,12 +1198,59 @@ export default function VisorPredios() {
                       fillOpacity: feature.properties?.tipo === 'Urbano' ? 0.5 : 0.3
                     })}
                     onEachFeature={(feature, layer) => {
+                      // Popup simple
                       layer.bindPopup(`
                         <div class="text-sm">
                           <p class="font-bold text-xs">${feature.properties?.codigo || 'Sin código'}</p>
                           <p class="text-xs">${feature.properties?.tipo || ''}</p>
+                          <p class="text-xs text-blue-600 mt-1">Clic para ver detalles</p>
                         </div>
                       `);
+                      
+                      // Click handler para cargar información completa del predio
+                      layer.on('click', async () => {
+                        const codigo = feature.properties?.codigo;
+                        if (!codigo) return;
+                        
+                        try {
+                          const token = localStorage.getItem('token');
+                          // Buscar predio en la base de datos
+                          const predioResponse = await fetch(`${API}/predios?search=${codigo}&limit=1`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                          });
+                          const predioData = await predioResponse.json();
+                          
+                          if (predioData.predios && predioData.predios.length > 0) {
+                            const predio = predioData.predios[0];
+                            setSelectedPredio(predio);
+                            
+                            // Obtener geometría para el área GDB
+                            try {
+                              const geoResponse = await fetch(`${API}/predios/codigo/${predio.codigo_predial_nacional}/geometria`, {
+                                headers: { Authorization: `Bearer ${token}` }
+                              });
+                              if (geoResponse.ok) {
+                                const geoData = await geoResponse.json();
+                                setGeometry(geoData);
+                              }
+                            } catch (e) {
+                              // Si no hay geometría, usar la del feature actual
+                              setGeometry({
+                                type: 'Feature',
+                                geometry: feature.geometry,
+                                properties: feature.properties
+                              });
+                            }
+                            
+                            toast.success('Predio seleccionado');
+                          } else {
+                            toast.warning('Predio no encontrado en la base de datos');
+                          }
+                        } catch (error) {
+                          console.error('Error al cargar predio:', error);
+                          toast.error('Error al cargar información del predio');
+                        }
+                      });
                     }}
                   />
                 )}
