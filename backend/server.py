@@ -4299,6 +4299,61 @@ async def upload_gdb_file(
         raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {str(e)}")
 
 
+@api_router.get("/gdb/cargas-mensuales")
+async def get_cargas_mensuales_gdb(
+    mes: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obtiene las cargas de GDB del mes actual o especificado"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    mes_consulta = mes or datetime.now().strftime("%Y-%m")
+    
+    cargas = await db.gdb_cargas.find(
+        {"mes": mes_consulta},
+        {"_id": 0}
+    ).to_list(50)
+    
+    return {
+        "mes": mes_consulta,
+        "total_cargas": len(cargas),
+        "cargas": cargas
+    }
+
+
+@api_router.get("/gdb/predios-con-geometria")
+async def get_predios_con_geometria(
+    municipio: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obtiene estadísticas de predios que tienen geometría GDB asociada"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    query = {"tiene_geometria": True}
+    if municipio:
+        query["municipio"] = municipio
+    
+    total_con_geometria = await db.predios.count_documents(query)
+    total_predios = await db.predios.count_documents({"municipio": municipio} if municipio else {})
+    
+    # Por municipio
+    pipeline = [
+        {"$match": {"tiene_geometria": True}},
+        {"$group": {"_id": "$municipio", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    por_municipio = await db.predios.aggregate(pipeline).to_list(50)
+    
+    return {
+        "total_con_geometria": total_con_geometria,
+        "total_predios": total_predios,
+        "porcentaje": round((total_con_geometria / total_predios * 100) if total_predios > 0 else 0, 2),
+        "por_municipio": [{"municipio": r["_id"], "count": r["count"]} for r in por_municipio]
+    }
+
+
 @api_router.patch("/users/{user_id}/gdb-permission")
 async def update_user_gdb_permission(
     user_id: str,
