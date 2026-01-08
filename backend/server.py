@@ -4802,49 +4802,55 @@ async def get_geometrias_filtradas(
 
 @api_router.get("/gdb/stats")
 async def get_gdb_stats(current_user: dict = Depends(get_current_user)):
-    """Get statistics about available geographic data from all GDB files"""
-    import geopandas as gpd
-    
+    """Get statistics about available geographic data from MongoDB collection"""
     # Only staff can access stats
     if current_user['role'] == UserRole.CIUDADANO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
-    GDB_FILES = {
-        'Ábrego': ('/app/gdb_data/54003.gdb', 'R_TERRENO_1', 'U_TERRENO_1'),
-        'Bucarasica': ('/app/gdb_data/54109.gdb', 'R_TERRENO', 'U_TERRENO'),
-        'Cáchira': ('/app/gdb_data/54128.gdb', 'R_TERRENO', 'U_TERRENO'),
-    }
-    
     try:
+        # Agregar por municipio y tipo
+        pipeline = [
+            {"$group": {
+                "_id": {"municipio": "$municipio", "tipo": "$tipo"},
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"_id.municipio": 1}}
+        ]
+        
+        resultados = await db.gdb_geometrias.aggregate(pipeline).to_list(100)
+        
         stats_by_municipio = {}
         total_rurales = 0
         total_urbanos = 0
         
-        for municipio, (path, rural_layer, urban_layer) in GDB_FILES.items():
-            if Path(path).exists():
-                try:
-                    r_count = len(gpd.read_file(path, layer=rural_layer))
-                    u_count = len(gpd.read_file(path, layer=urban_layer))
-                    stats_by_municipio[municipio] = {
-                        "rurales": r_count,
-                        "urbanos": u_count,
-                        "total": r_count + u_count
-                    }
-                    total_rurales += r_count
-                    total_urbanos += u_count
-                except Exception as e:
-                    stats_by_municipio[municipio] = {"error": str(e)}
+        for r in resultados:
+            mun = r["_id"]["municipio"]
+            tipo = r["_id"]["tipo"]
+            count = r["count"]
+            
+            if mun not in stats_by_municipio:
+                stats_by_municipio[mun] = {"rurales": 0, "urbanos": 0, "total": 0}
+            
+            if tipo == "rural":
+                stats_by_municipio[mun]["rurales"] = count
+                total_rurales += count
+            elif tipo == "urbano":
+                stats_by_municipio[mun]["urbanos"] = count
+                total_urbanos += count
+            
+            stats_by_municipio[mun]["total"] = stats_by_municipio[mun]["rurales"] + stats_by_municipio[mun]["urbanos"]
         
         return {
-            "gdb_disponible": True,
+            "gdb_disponible": len(stats_by_municipio) > 0,
             "predios_rurales": total_rurales,
             "predios_urbanos": total_urbanos,
             "total_geometrias": total_rurales + total_urbanos,
-            "municipios": stats_by_municipio
+            "municipios": stats_by_municipio,
+            "municipios_disponibles": list(stats_by_municipio.keys())
         }
     except Exception as e:
         logger.error(f"Error reading GDB stats: {e}")
-        raise HTTPException(status_code=500, detail=f"Error leyendo base de datos geográfica: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error leyendo estadísticas: {str(e)}")
 
 
 @api_router.get("/gdb/capas")
