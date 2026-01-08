@@ -517,7 +517,10 @@ export default function VisorPredios() {
         // Sin upload_id, mostrar resultado directo
         toast.success(`Base gráfica de ${response.data.municipio || 'municipio'} actualizada. ${response.data.total_geometrias_gdb || response.data.total_geometrias} geometrías, ${response.data.predios_relacionados} predios relacionados.`);
         fetchGdbStats();
+        verificarCargasMensuales(); // Actualizar estado de cargas mensuales
         setShowUploadGdb(false);
+        setMostrarPreguntaGdb(false);
+        setGdbCargadaEsteMes(true);
         setUploadProgress(null);
       }
       
