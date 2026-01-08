@@ -702,42 +702,52 @@ export default function VisorPredios() {
                   attribution={tileLayers[mapType].attribution}
                 />
                 
-                {/* Mostrar límites de municipios (siempre visibles) */}
-                {limitesMunicipios && limitesMunicipios.features && limitesMunicipios.features.map((feature, idx) => (
-                  <GeoJSON
-                    key={`limite-${feature.properties?.municipio}-${idx}`}
-                    data={feature}
-                    style={() => ({
-                      color: filterMunicipio === feature.properties?.municipio ? '#10B981' : '#FFFFFF',
-                      weight: filterMunicipio === feature.properties?.municipio ? 4 : 2.5,
-                      opacity: 1,
-                      fillColor: 'transparent',
-                      fillOpacity: 0
-                    })}
-                    onEachFeature={(feat, layer) => {
-                      const props = feat.properties;
-                      // Añadir tooltip permanente con el nombre del municipio
-                      layer.bindTooltip(props?.municipio || '', {
-                        permanent: true,
-                        direction: 'center',
-                        className: 'municipio-label'
-                      });
-                      layer.bindPopup(`
-                        <div class="text-sm p-1">
-                          <p class="font-bold text-base text-emerald-700 mb-1">${props?.municipio || 'Sin nombre'}</p>
-                          <p class="text-xs text-slate-600">Total predios: <strong>${props?.total_predios?.toLocaleString() || 0}</strong></p>
-                          <p class="text-xs text-slate-600">Rurales: <strong>${props?.rurales?.toLocaleString() || 0}</strong></p>
-                          <p class="text-xs text-slate-600">Urbanos: <strong>${props?.urbanos?.toLocaleString() || 0}</strong></p>
-                        </div>
-                      `);
-                      layer.on('click', () => {
-                        setFilterMunicipio(props?.municipio);
-                      });
-                    }}
-                  />
-                ))}
+                {/* Mostrar límites de municipios (solo contornos, sin líneas internas) */}
+                {limitesMunicipios && limitesMunicipios.features && limitesMunicipios.features.map((feature, idx) => {
+                  const isSelected = filterMunicipio === feature.properties?.municipio;
+                  const sinGdb = feature.properties?.sin_gdb;
+                  
+                  return (
+                    <GeoJSON
+                      key={`limite-${feature.properties?.municipio}-${idx}`}
+                      data={feature}
+                      style={() => ({
+                        color: isSelected ? '#10B981' : '#FFFFFF',
+                        weight: isSelected ? 4 : 2,
+                        opacity: 1,
+                        // Municipios sin GDB tienen color sólido con transparencia
+                        fillColor: sinGdb ? '#6366F1' : 'transparent',
+                        fillOpacity: sinGdb ? 0.25 : 0
+                      })}
+                      onEachFeature={(feat, layer) => {
+                        const props = feat.properties;
+                        // Añadir tooltip permanente con el nombre del municipio
+                        layer.bindTooltip(props?.municipio || '', {
+                          permanent: true,
+                          direction: 'center',
+                          className: 'municipio-label'
+                        });
+                        const sinGdbMsg = props?.sin_gdb ? '<p class="text-xs text-amber-600 mt-1">⚠️ Sin base gráfica GDB</p>' : '';
+                        layer.bindPopup(`
+                          <div class="text-sm p-1">
+                            <p class="font-bold text-base text-emerald-700 mb-1">${props?.municipio || 'Sin nombre'}</p>
+                            <p class="text-xs text-slate-600">Total predios: <strong>${props?.total_predios?.toLocaleString() || 0}</strong></p>
+                            <p class="text-xs text-slate-600">Rurales: <strong>${props?.rurales?.toLocaleString() || 0}</strong></p>
+                            <p class="text-xs text-slate-600">Urbanos: <strong>${props?.urbanos?.toLocaleString() || 0}</strong></p>
+                            ${sinGdbMsg}
+                          </div>
+                        `);
+                        layer.on('click', () => {
+                          if (!props?.sin_gdb) {
+                            setFilterMunicipio(props?.municipio);
+                          }
+                        });
+                      }}
+                    />
+                  );
+                })}
                 
-                {/* Mostrar predios individuales solo si está activado */}
+                {/* Mostrar predios individuales solo si está activado y se seleccionó un municipio */}
                 {mostrarPredios && allGeometries && allGeometries.features && allGeometries.features.length > 0 && (
                   <GeoJSON
                     key={`predios-${filterMunicipio}-${filterZona}-${allGeometries.total}-${Date.now()}`}
