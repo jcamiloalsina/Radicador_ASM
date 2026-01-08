@@ -2170,7 +2170,7 @@ async def get_predios_eliminados_stats(current_user: dict = Depends(get_current_
 @api_router.post("/predios/import-excel")
 async def import_predios_excel(
     file: UploadFile = File(...),
-    vigencia: int = 2025,
+    vigencia: int = Form(2025),
     current_user: dict = Depends(get_current_user)
 ):
     """Importa predios desde archivo Excel R1-R2 con soporte de vigencia"""
