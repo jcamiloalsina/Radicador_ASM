@@ -5315,33 +5315,39 @@ async def upload_gdb_file(
         codigos_gdb = set()
         
         try:
-            # Intentar diferentes nombres de capas
-            update_progress("leyendo_rural", 30, "Leyendo capa rural (R_TERRENO)...")
-            for rural_layer in ['R_TERRENO_1', 'R_TERRENO', 'R_Terreno']:
+            # Intentar diferentes nombres de capas rurales
+            update_progress("leyendo_rural", 30, "Leyendo capa rural...")
+            rural_layers = ['R_TERRENO_1', 'R_TERRENO', 'R_Terreno', 'TERRENO', 'Terreno', 'terreno']
+            gdf_rural = None
+            for rural_layer in rural_layers:
                 try:
                     gdf_rural = gpd.read_file(str(gdb_found), layer=rural_layer)
-                    stats["rurales"] = len(gdf_rural)
-                    update_progress("leyendo_rural", 35, f"Capa rural: {len(gdf_rural)} geometrías encontradas")
-                    # Extraer códigos prediales
-                    for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
-                        if col in gdf_rural.columns:
-                            codigos_gdb.update(gdf_rural[col].dropna().astype(str).tolist())
-                            break
-                    break
+                    if len(gdf_rural) > 0:
+                        stats["rurales"] = len(gdf_rural)
+                        update_progress("leyendo_rural", 35, f"Capa rural ({rural_layer}): {len(gdf_rural)} geometrías encontradas")
+                        # Extraer códigos prediales
+                        for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
+                            if col in gdf_rural.columns:
+                                codigos_gdb.update(gdf_rural[col].dropna().astype(str).tolist())
+                                break
+                        break
                 except:
                     continue
             
-            update_progress("leyendo_urbano", 40, "Leyendo capa urbana (U_TERRENO)...")
-            for urban_layer in ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno']:
+            update_progress("leyendo_urbano", 40, "Leyendo capa urbana...")
+            gdf_urban = None
+            urban_layers = ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno']
+            for urban_layer in urban_layers:
                 try:
                     gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
-                    stats["urbanos"] = len(gdf_urban)
-                    update_progress("leyendo_urbano", 45, f"Capa urbana: {len(gdf_urban)} geometrías encontradas")
-                    for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
-                        if col in gdf_urban.columns:
-                            codigos_gdb.update(gdf_urban[col].dropna().astype(str).tolist())
-                            break
-                    break
+                    if len(gdf_urban) > 0:
+                        stats["urbanos"] = len(gdf_urban)
+                        update_progress("leyendo_urbano", 45, f"Capa urbana ({urban_layer}): {len(gdf_urban)} geometrías encontradas")
+                        for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
+                            if col in gdf_urban.columns:
+                                codigos_gdb.update(gdf_urban[col].dropna().astype(str).tolist())
+                                break
+                        break
                 except:
                     continue
         except Exception as e:
