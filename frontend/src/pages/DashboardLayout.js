@@ -1,14 +1,87 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { Button } from '../components/ui/button';
-import { LogOut, FileText, Activity, Users, Menu, X, UserCog, BarChart3, PieChart, MapPin, Map, Clock } from 'lucide-react';
-import { useState } from 'react';
+import { LogOut, FileText, Activity, Users, Menu, X, UserCog, BarChart3, PieChart, MapPin, Map, Clock, Bell } from 'lucide-react';
+import axios from 'axios';
+import { toast } from 'sonner';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 export default function DashboardLayout() {
   const { user, logout, loading } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notificaciones, setNotificaciones] = useState([]);
+  const [noLeidas, setNoLeidas] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetchNotificaciones();
+      // Verificar alerta GDB
+      checkGdbAlert();
+    }
+  }, [user]);
+
+  const fetchNotificaciones = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/notificaciones`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotificaciones(response.data.notificaciones || []);
+      setNoLeidas(response.data.no_leidas || 0);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const checkGdbAlert = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/gdb/verificar-alerta-mensual`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.mostrar_alerta) {
+        toast.warning('Recordatorio: Es momento de cargar la base gráfica mensual', {
+          duration: 10000,
+          action: {
+            label: 'Ir a Visor',
+            onClick: () => window.location.href = '/dashboard/visor-predios'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error checking GDB alert:', error);
+    }
+  };
+
+  const marcarLeida = async (notificacionId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(`${API}/notificaciones/${notificacionId}/leer`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchNotificaciones();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const marcarTodasLeidas = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/notificaciones/marcar-todas-leidas`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchNotificaciones();
+      toast.success('Todas las notificaciones marcadas como leídas');
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
 
   if (loading) {
     return (
