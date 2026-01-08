@@ -4625,6 +4625,68 @@ async def get_cambios_stats(current_user: dict = Depends(get_current_user)):
 
 GDB_PATH = Path("/app/gdb_data/54003.gdb")
 
+async def get_gdb_geometry_async(codigo_predial: str) -> Optional[dict]:
+    """Get geometry for a property from MongoDB gdb_geometrias collection first, then fallback to GDB files"""
+    
+    try:
+        # PRIMERO: Buscar en la colección gdb_geometrias de MongoDB
+        geometria = await db.gdb_geometrias.find_one(
+            {"codigo": codigo_predial},
+            {"_id": 0}
+        )
+        
+        if geometria:
+            return {
+                "type": "Feature",
+                "geometry": geometria.get("geometry"),
+                "properties": {
+                    "codigo": codigo_predial,
+                    "tipo": geometria.get("tipo", "Rural"),
+                    "municipio": geometria.get("municipio", "")
+                }
+            }
+        
+        # Si no está en MongoDB, intentar buscar por coincidencia parcial
+        # (ignorando zona/sector)
+        if len(codigo_predial) >= 17:
+            depto_muni = codigo_predial[:5]
+            terreno_resto = codigo_predial[13:]
+            
+            # Buscar geometrías del mismo municipio
+            posibles = await db.gdb_geometrias.find(
+                {"codigo": {"$regex": f"^{depto_muni}"}},
+                {"_id": 0, "codigo": 1}
+            ).limit(5000).to_list(5000)
+            
+            for p in posibles:
+                codigo_gdb = p.get("codigo", "")
+                if len(codigo_gdb) >= 17:
+                    if codigo_gdb[13:] == terreno_resto:
+                        # Encontramos match por segmento terreno
+                        geometria = await db.gdb_geometrias.find_one(
+                            {"codigo": codigo_gdb},
+                            {"_id": 0}
+                        )
+                        if geometria:
+                            return {
+                                "type": "Feature",
+                                "geometry": geometria.get("geometry"),
+                                "properties": {
+                                    "codigo": codigo_gdb,
+                                    "codigo_original": codigo_predial,
+                                    "tipo": geometria.get("tipo", "Rural"),
+                                    "municipio": geometria.get("municipio", ""),
+                                    "match_method": "segmento"
+                                }
+                            }
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error getting geometry from MongoDB: {e}")
+        return None
+
+
 def get_gdb_geometry(codigo_predial: str) -> Optional[dict]:
     """Get geometry for a property from multiple GDB files, transformed to WGS84 for web mapping"""
     import geopandas as gpd
