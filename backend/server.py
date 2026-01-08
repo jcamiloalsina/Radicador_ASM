@@ -3770,9 +3770,10 @@ async def import_predios_excel(
         except:
             return default
     
-    # Solo coordinador o admin pueden importar
-    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
-        raise HTTPException(status_code=403, detail="Solo coordinadores pueden importar datos")
+    # Solo coordinador o admin pueden importar, o usuarios con permiso explícito
+    has_permission = await check_permission(current_user, Permission.IMPORT_R1R2)
+    if not has_permission:
+        raise HTTPException(status_code=403, detail="No tiene permiso para importar datos R1/R2")
     
     if not file.filename.endswith('.xlsx'):
         raise HTTPException(status_code=400, detail="El archivo debe ser .xlsx")
