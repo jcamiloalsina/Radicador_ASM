@@ -702,20 +702,25 @@ export default function VisorPredios() {
                 />
                 
                 {/* Mostrar límites de municipios (siempre visibles) */}
-                {limitesMunicipios && limitesMunicipios.features && (
+                {limitesMunicipios && limitesMunicipios.features && limitesMunicipios.features.map((feature, idx) => (
                   <GeoJSON
-                    key={`limites-${limitesMunicipios.total_municipios}`}
-                    data={limitesMunicipios}
-                    style={(feature) => ({
-                      color: filterMunicipio === feature.properties?.municipio ? '#10B981' : '#3B82F6',
-                      weight: filterMunicipio === feature.properties?.municipio ? 4 : 2,
+                    key={`limite-${feature.properties?.municipio}-${idx}`}
+                    data={feature}
+                    style={() => ({
+                      color: filterMunicipio === feature.properties?.municipio ? '#059669' : '#1a1a1a',
+                      weight: filterMunicipio === feature.properties?.municipio ? 4 : 2.5,
                       opacity: 1,
-                      fillColor: filterMunicipio === feature.properties?.municipio ? '#10B981' : '#3B82F6',
-                      fillOpacity: filterMunicipio === feature.properties?.municipio ? 0.15 : 0.05,
-                      dashArray: filterMunicipio === feature.properties?.municipio ? null : '5, 5'
+                      fillColor: 'transparent',
+                      fillOpacity: 0
                     })}
-                    onEachFeature={(feature, layer) => {
-                      const props = feature.properties;
+                    onEachFeature={(feat, layer) => {
+                      const props = feat.properties;
+                      // Añadir tooltip permanente con el nombre del municipio
+                      layer.bindTooltip(props?.municipio || '', {
+                        permanent: true,
+                        direction: 'center',
+                        className: 'municipio-label'
+                      });
                       layer.bindPopup(`
                         <div class="text-sm p-1">
                           <p class="font-bold text-base text-emerald-700 mb-1">${props?.municipio || 'Sin nombre'}</p>
@@ -729,7 +734,7 @@ export default function VisorPredios() {
                       });
                     }}
                   />
-                )}
+                ))}
                 
                 {/* Mostrar predios individuales solo si está activado */}
                 {mostrarPredios && allGeometries && allGeometries.features && allGeometries.features.length > 0 && (
@@ -737,11 +742,11 @@ export default function VisorPredios() {
                     key={`predios-${filterMunicipio}-${filterZona}-${allGeometries.total}-${Date.now()}`}
                     data={allGeometries}
                     style={(feature) => ({
-                      color: feature.properties?.tipo === 'Urbano' ? '#FF6B35' : '#00FFFF',
+                      color: feature.properties?.tipo === 'Urbano' ? '#DC2626' : '#2563EB',
                       weight: 1,
-                      opacity: 0.9,
-                      fillColor: feature.properties?.tipo === 'Urbano' ? '#FF6B35' : '#00FFFF',
-                      fillOpacity: 0.25
+                      opacity: 0.8,
+                      fillColor: feature.properties?.tipo === 'Urbano' ? '#DC2626' : '#2563EB',
+                      fillOpacity: 0.2
                     })}
                     onEachFeature={(feature, layer) => {
                       layer.bindPopup(`
