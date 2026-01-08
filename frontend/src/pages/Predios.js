@@ -1361,7 +1361,7 @@ export default function Predios() {
       {/* Dashboard de Selección */}
       {showDashboard ? (
         <div className="space-y-6">
-          {/* Estadísticas Generales */}
+          {/* Estadísticas Generales - Solo 4 tarjetas: Total Predios, Avalúo Total, Área R1, Geometrías GDB */}
           {prediosStats && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
@@ -1392,11 +1392,6 @@ export default function Predios() {
                     <div>
                       <p className="text-sm text-amber-600 font-medium">Área Total (R1)</p>
                       <p className="text-2xl font-bold text-amber-800">{formatAreaHectareas(prediosStats.total_area_terreno)}</p>
-                      {prediosStats.total_area_gdb > 0 && (
-                        <p className="text-xs text-amber-600 mt-1">
-                          GDB: {formatAreaHectareas(prediosStats.total_area_gdb)}
-                        </p>
-                      )}
                     </div>
                     <MapPin className="w-10 h-10 text-amber-300" />
                   </div>
@@ -1406,29 +1401,15 @@ export default function Predios() {
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-purple-600 font-medium">Registros R2</p>
-                      <p className="text-3xl font-bold text-purple-800">{(prediosStats.total_registros_r2 || 0).toLocaleString()}</p>
-                      <p className="text-xs text-purple-500 mt-1">
-                        {prediosStats.total_con_r2?.toLocaleString() || 0} predios con R2
-                      </p>
-                    </div>
-                    <FileText className="w-10 h-10 text-purple-300" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-teal-200 bg-gradient-to-br from-teal-50 to-white">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-teal-600 font-medium">Municipios</p>
-                      <p className="text-3xl font-bold text-teal-800">{prediosStats.by_municipio?.length || 0}</p>
-                      {prediosStats.total_con_geometria > 0 && (
-                        <p className="text-xs text-teal-500 mt-1">
-                          {prediosStats.total_con_geometria.toLocaleString()} con GDB
+                      <p className="text-sm text-purple-600 font-medium">Geometrías GDB</p>
+                      <p className="text-3xl font-bold text-purple-800">{(prediosStats.total_con_geometria || 0).toLocaleString()}</p>
+                      {prediosStats.total_area_gdb > 0 && (
+                        <p className="text-xs text-purple-500 mt-1">
+                          {formatAreaHectareas(prediosStats.total_area_gdb)}
                         </p>
                       )}
                     </div>
-                    <LayoutGrid className="w-10 h-10 text-teal-300" />
+                    <Map className="w-10 h-10 text-purple-300" />
                   </div>
                 </CardContent>
               </Card>
