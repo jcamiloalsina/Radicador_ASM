@@ -5278,10 +5278,12 @@ async def upload_gdb_file(
                 except:
                     continue
             
+            update_progress("leyendo_urbano", 40, "Leyendo capa urbana (U_TERRENO)...")
             for urban_layer in ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno']:
                 try:
                     gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
                     stats["urbanos"] = len(gdf_urban)
+                    update_progress("leyendo_urbano", 45, f"Capa urbana: {len(gdf_urban)} geometrías encontradas")
                     for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
                         if col in gdf_urban.columns:
                             codigos_gdb.update(gdf_urban[col].dropna().astype(str).tolist())
@@ -5291,6 +5293,8 @@ async def upload_gdb_file(
                     continue
         except Exception as e:
             logger.warning(f"Error leyendo capas GDB: {e}")
+        
+        update_progress("guardando_geometrias", 50, f"Guardando {len(codigos_gdb)} geometrías únicas...")
         
         # Guardar geometrías en colección para búsquedas posteriores
         geometrias_guardadas = 0
@@ -5303,7 +5307,11 @@ async def upload_gdb_file(
                 for rural_layer in ['R_TERRENO_1', 'R_TERRENO', 'R_Terreno']:
                     try:
                         gdf_rural = gpd.read_file(str(gdb_found), layer=rural_layer)
+                        total_rural = len(gdf_rural)
                         for idx, row in gdf_rural.iterrows():
+                            if idx % 500 == 0:
+                                pct = 50 + int((idx / total_rural) * 15)
+                                update_progress("guardando_rural", pct, f"Procesando geometrías rurales: {idx}/{total_rural}")
                             codigo = None
                             for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED']:
                                 if col in gdf_rural.columns and pd.notna(row.get(col)):
