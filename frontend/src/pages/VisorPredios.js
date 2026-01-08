@@ -829,10 +829,37 @@ export default function VisorPredios() {
           {(user?.role === 'administrador' || user?.role === 'coordinador' || (user?.role === 'gestor' && user?.puede_actualizar_gdb)) && (
             <Card className="border-amber-200 bg-amber-50">
               <CardContent className="py-3">
+                {/* Mostrar resumen de cargas del mes */}
+                {resumenCargasMensuales && (
+                  <div className="mb-3 pb-2 border-b border-amber-200">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-amber-700 font-medium">
+                        Estado GDB - {resumenCargasMensuales.mes}
+                      </span>
+                      <div className="flex gap-2">
+                        <Badge variant="outline" className="border-emerald-500 text-emerald-700 text-xs">
+                          {resumenCargasMensuales.total_cargados} cargados
+                        </Badge>
+                        {resumenCargasMensuales.total_pendientes > 0 && (
+                          <Badge variant="outline" className="border-amber-500 text-amber-700 text-xs">
+                            {resumenCargasMensuales.total_pendientes} pendientes
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    {resumenCargasMensuales.total_pendientes > 0 && resumenCargasMensuales.municipios_pendientes && (
+                      <p className="text-xs text-amber-600 mt-1 truncate" title={resumenCargasMensuales.municipios_pendientes.join(', ')}>
+                        Pendientes: {resumenCargasMensuales.municipios_pendientes.slice(0, 3).join(', ')}
+                        {resumenCargasMensuales.municipios_pendientes.length > 3 && ` +${resumenCargasMensuales.municipios_pendientes.length - 3} más`}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Pregunta si ya se cargó la GDB este mes */}
                 {gdbCargadaEsteMes === null && !mostrarPreguntaGdb && (
                   <div className="space-y-3">
-                    <p className="text-sm font-medium text-amber-800">¿Ya se actualizó la Base Gráfica este mes?</p>
+                    <p className="text-sm font-medium text-amber-800">¿Desea cargar la Base Gráfica de algún municipio?</p>
                     <div className="flex gap-2">
                       <Button 
                         variant="outline" 
@@ -840,7 +867,7 @@ export default function VisorPredios() {
                         className="flex-1 border-emerald-500 text-emerald-700 hover:bg-emerald-100"
                         onClick={() => setGdbCargadaEsteMes(true)}
                       >
-                        ✓ Sí, ya está actualizada
+                        No por ahora
                       </Button>
                       <Button 
                         variant="outline" 
@@ -851,7 +878,7 @@ export default function VisorPredios() {
                           setMostrarPreguntaGdb(true);
                         }}
                       >
-                        ✗ No, necesito cargarla
+                        Sí, cargar GDB
                       </Button>
                     </div>
                   </div>
@@ -862,7 +889,11 @@ export default function VisorPredios() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-emerald-600">✓</span>
-                      <p className="text-sm text-emerald-700">Base Gráfica actualizada este mes</p>
+                      <p className="text-sm text-emerald-700">
+                        {resumenCargasMensuales?.total_pendientes === 0 
+                          ? 'Todas las bases gráficas actualizadas este mes'
+                          : 'Carga de GDB no requerida por ahora'}
+                      </p>
                     </div>
                     <Button 
                       variant="ghost" 
@@ -873,7 +904,7 @@ export default function VisorPredios() {
                         setMostrarPreguntaGdb(false);
                       }}
                     >
-                      Cambiar
+                      Cargar GDB
                     </Button>
                   </div>
                 )}
