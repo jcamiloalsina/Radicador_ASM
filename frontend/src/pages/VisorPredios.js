@@ -693,17 +693,47 @@ export default function VisorPredios() {
                   attribution={tileLayers[mapType].attribution}
                 />
                 
-                {/* Mostrar todas las geometrías filtradas */}
-                {allGeometries && allGeometries.features && allGeometries.features.length > 0 && (
+                {/* Mostrar límites de municipios (siempre visibles) */}
+                {limitesMunicipios && limitesMunicipios.features && (
                   <GeoJSON
-                    key={`geojson-${filterMunicipio}-${filterZona}-${allGeometries.total}-${Date.now()}`}
+                    key={`limites-${limitesMunicipios.total_municipios}`}
+                    data={limitesMunicipios}
+                    style={(feature) => ({
+                      color: filterMunicipio === feature.properties?.municipio ? '#10B981' : '#3B82F6',
+                      weight: filterMunicipio === feature.properties?.municipio ? 4 : 2,
+                      opacity: 1,
+                      fillColor: filterMunicipio === feature.properties?.municipio ? '#10B981' : '#3B82F6',
+                      fillOpacity: filterMunicipio === feature.properties?.municipio ? 0.15 : 0.05,
+                      dashArray: filterMunicipio === feature.properties?.municipio ? null : '5, 5'
+                    })}
+                    onEachFeature={(feature, layer) => {
+                      const props = feature.properties;
+                      layer.bindPopup(`
+                        <div class="text-sm p-1">
+                          <p class="font-bold text-base text-emerald-700 mb-1">${props?.municipio || 'Sin nombre'}</p>
+                          <p class="text-xs text-slate-600">Total predios: <strong>${props?.total_predios?.toLocaleString() || 0}</strong></p>
+                          <p class="text-xs text-slate-600">Rurales: <strong>${props?.rurales?.toLocaleString() || 0}</strong></p>
+                          <p class="text-xs text-slate-600">Urbanos: <strong>${props?.urbanos?.toLocaleString() || 0}</strong></p>
+                        </div>
+                      `);
+                      layer.on('click', () => {
+                        setFilterMunicipio(props?.municipio);
+                      });
+                    }}
+                  />
+                )}
+                
+                {/* Mostrar predios individuales solo si está activado */}
+                {mostrarPredios && allGeometries && allGeometries.features && allGeometries.features.length > 0 && (
+                  <GeoJSON
+                    key={`predios-${filterMunicipio}-${filterZona}-${allGeometries.total}-${Date.now()}`}
                     data={allGeometries}
                     style={(feature) => ({
                       color: feature.properties?.tipo === 'Urbano' ? '#FF6B35' : '#00FFFF',
-                      weight: 2,
-                      opacity: 0.8,
+                      weight: 1,
+                      opacity: 0.9,
                       fillColor: feature.properties?.tipo === 'Urbano' ? '#FF6B35' : '#00FFFF',
-                      fillOpacity: 0.15
+                      fillOpacity: 0.25
                     })}
                     onEachFeature={(feature, layer) => {
                       layer.bindPopup(`
