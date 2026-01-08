@@ -1005,8 +1005,17 @@ export default function Predios() {
   // Construir el código completo de 30 dígitos
   const construirCodigoCompleto = () => {
     if (!estructuraCodigo) return '';
-    const prefijo = estructuraCodigo.prefijo_fijo;
-    return `${prefijo}${codigoManual.zona}${codigoManual.sector}${codigoManual.comuna}${codigoManual.barrio}${codigoManual.manzana_vereda}${codigoManual.terreno}${codigoManual.edificio}${codigoManual.piso}${codigoManual.unidad}`;
+    const prefijo = estructuraCodigo.prefijo_fijo; // 5 dígitos (depto + muni)
+    return `${prefijo}${codigoManual.zona}${codigoManual.sector}${codigoManual.comuna}${codigoManual.barrio}${codigoManual.manzana_vereda}${codigoManual.terreno}${codigoManual.condicion}${codigoManual.edificio}${codigoManual.piso}${codigoManual.unidad}`;
+  };
+  
+  // Función para manejar cambios en campos del código con validación
+  const handleCodigoChange = (campo, valor, maxLength) => {
+    // Solo permitir números
+    const soloNumeros = valor.replace(/[^0-9]/g, '');
+    // Limitar al máximo de dígitos
+    const valorFinal = soloNumeros.slice(0, maxLength);
+    setCodigoManual(prev => ({ ...prev, [campo]: valorFinal }));
   };
 
   const fetchCatalogos = async () => {
