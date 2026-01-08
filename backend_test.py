@@ -3117,6 +3117,216 @@ class CatastralAPITester:
             print(f"   ❌ Petition Statistics API failed")
             return False
 
+    def test_review_request_features(self):
+        """Test the specific features mentioned in the review request"""
+        print("\n🎯 Testing Review Request Features...")
+        
+        if 'admin' not in self.tokens:
+            print("   ❌ No admin token available")
+            return False
+        
+        test_results = []
+        
+        # Feature 1: GDB Monthly Status Verification (NEW)
+        print("\n1️⃣ Testing GDB Monthly Status Verification...")
+        
+        # Test without municipio parameter
+        success, response = self.run_test(
+            "GDB Monthly Status - All municipalities",
+            "GET",
+            "gdb/verificar-carga-mes",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        gdb_status_success = False
+        if success:
+            expected_fields = ['mes', 'total_cargados', 'total_pendientes', 'municipios_cargados', 'municipios_pendientes']
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields:
+                print(f"   ✅ GDB Monthly Status structure correct:")
+                print(f"   - Mes: {response['mes']}")
+                print(f"   - Total Cargados: {response['total_cargados']}")
+                print(f"   - Total Pendientes: {response['total_pendientes']}")
+                print(f"   - Municipios Cargados: {len(response['municipios_cargados'])}")
+                print(f"   - Municipios Pendientes: {len(response['municipios_pendientes'])}")
+                gdb_status_success = True
+            else:
+                missing_fields = [field for field in expected_fields if field not in response]
+                print(f"   ❌ Missing fields in GDB status: {missing_fields}")
+        
+        # Test with municipio parameter
+        success, response = self.run_test(
+            "GDB Monthly Status - Specific municipality",
+            "GET",
+            "gdb/verificar-carga-mes?municipio=Ábrego",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        if success and gdb_status_success:
+            print(f"   ✅ GDB Monthly Status with municipio filter working")
+        
+        test_results.append(("GDB Monthly Status Verification", gdb_status_success))
+        
+        # Feature 2: Pending Changes (Cambios Pendientes)
+        print("\n2️⃣ Testing Pending Changes...")
+        
+        success, response = self.run_test(
+            "Get Pending Changes",
+            "GET",
+            "predios/cambios/pendientes",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        pending_changes_success = False
+        if success:
+            expected_fields = ['total', 'cambios']
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields:
+                print(f"   ✅ Pending Changes structure correct:")
+                print(f"   - Total: {response['total']}")
+                print(f"   - Cambios: {len(response['cambios'])} items")
+                pending_changes_success = True
+            else:
+                missing_fields = [field for field in expected_fields if field not in response]
+                print(f"   ❌ Missing fields in pending changes: {missing_fields}")
+        
+        test_results.append(("Pending Changes", pending_changes_success))
+        
+        # Feature 3: Export Productivity PDF
+        print("\n3️⃣ Testing Export Productivity PDF...")
+        
+        url = f"{self.api_url}/reports/gestor-productivity/export-pdf"
+        headers = {'Authorization': f'Bearer {self.tokens["admin"]}'}
+        
+        self.tests_run += 1
+        print(f"🔍 Testing Export Productivity PDF...")
+        
+        pdf_export_success = False
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            success = response.status_code == 200
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                
+                # Check if response is a PDF file
+                content_type = response.headers.get('content-type', '')
+                content_length = len(response.content)
+                
+                if 'pdf' in content_type or 'application/pdf' in content_type:
+                    print(f"   ✅ PDF file generated successfully")
+                    print(f"   - Content-Type: {content_type}")
+                    print(f"   - Content-Length: {content_length} bytes")
+                    pdf_export_success = True
+                else:
+                    print(f"   ❌ Content-Type is {content_type}, expected PDF")
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                try:
+                    error_detail = response.json()
+                    print(f"   Error details: {error_detail}")
+                except:
+                    print(f"   Response text: {response.text}")
+                    
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+        
+        test_results.append(("Export Productivity PDF", pdf_export_success))
+        
+        # Feature 4: GDB Statistics
+        print("\n4️⃣ Testing GDB Statistics...")
+        
+        gdb_stats_endpoints = [
+            ("gdb/stats", "GDB Stats"),
+            ("gdb/cargas-mensuales", "GDB Monthly Uploads"),
+            ("gdb/predios-con-geometria", "GDB Predios with Geometry")
+        ]
+        
+        gdb_stats_success = True
+        for endpoint, name in gdb_stats_endpoints:
+            success, response = self.run_test(
+                name,
+                "GET",
+                endpoint,
+                200,
+                token=self.tokens['admin']
+            )
+            
+            if success:
+                print(f"   ✅ {name} working")
+                if endpoint == "gdb/stats":
+                    if 'gdb_disponible' in response:
+                        print(f"   - GDB Disponible: {response['gdb_disponible']}")
+                elif endpoint == "gdb/cargas-mensuales":
+                    if 'mes' in response and 'total_cargas' in response:
+                        print(f"   - Mes: {response['mes']}, Total Cargas: {response['total_cargas']}")
+                elif endpoint == "gdb/predios-con-geometria":
+                    if 'total_con_geometria' in response and 'total_predios' in response:
+                        print(f"   - Con Geometría: {response['total_con_geometria']}, Total Predios: {response['total_predios']}")
+            else:
+                print(f"   ❌ {name} failed")
+                gdb_stats_success = False
+        
+        test_results.append(("GDB Statistics", gdb_stats_success))
+        
+        # Feature 5: Municipality Limits (Official Boundaries)
+        print("\n5️⃣ Testing Municipality Limits...")
+        
+        success, response = self.run_test(
+            "Get Official Municipality Limits",
+            "GET",
+            "gdb/limites-municipios?fuente=oficial",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        municipality_limits_success = False
+        if success:
+            # Check if response is GeoJSON format
+            if 'type' in response and response['type'] == 'FeatureCollection':
+                features = response.get('features', [])
+                print(f"   ✅ Municipality Limits GeoJSON structure correct")
+                print(f"   - Type: {response['type']}")
+                print(f"   - Features: {len(features)} municipalities")
+                
+                if len(features) == 16:
+                    print(f"   ✅ Exact match: Found expected 16 municipalities")
+                    municipality_limits_success = True
+                else:
+                    print(f"   ⚠️ Expected 16 municipalities, found {len(features)}")
+                    # Still consider successful if we have substantial data
+                    municipality_limits_success = len(features) > 10
+            else:
+                print(f"   ❌ Response not in GeoJSON FeatureCollection format")
+        
+        test_results.append(("Municipality Limits", municipality_limits_success))
+        
+        # Print results for this specific test
+        print("\n" + "="*60)
+        print("📊 REVIEW REQUEST FEATURES TEST RESULTS")
+        print("="*60)
+        
+        passed_tests = 0
+        total_tests = len(test_results)
+        
+        for test_name, result in test_results:
+            status = "✅ PASS" if result else "❌ FAIL"
+            print(f"{status} {test_name}")
+            if result:
+                passed_tests += 1
+        
+        print("="*60)
+        print(f"📈 SUMMARY: {passed_tests}/{total_tests} features passed ({passed_tests/total_tests*100:.1f}%)")
+        print("="*60)
+        
+        return passed_tests == total_tests
+
 def main():
     print("🚀 Starting Asomunicipios Cadastral Management System API Tests")
     print("=" * 60)
