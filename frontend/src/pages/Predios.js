@@ -2263,16 +2263,6 @@ export default function Predios() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <Label className="text-xs">% Participación</Label>
-                      <Input 
-                        type="number" 
-                        value={prop.porcentaje} 
-                        onChange={(e) => actualizarPropietario(index, 'porcentaje', parseFloat(e.target.value) || 0)}
-                        min="0"
-                        max="100"
-                      />
-                    </div>
                   </div>
                 </div>
               ))}
