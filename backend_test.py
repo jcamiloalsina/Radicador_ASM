@@ -1623,6 +1623,190 @@ class CatastralAPITester:
         
         return False
 
+    def test_gdb_notification_and_upload_system(self):
+        """Test GDB notification and upload system for Asomunicipios"""
+        print("\n🗺️ Testing GDB Notification and Upload System...")
+        
+        # First login with admin credentials
+        admin_success = self.test_login_with_credentials(
+            "catastro@asomunicipios.gov.co",
+            "Asm*123*",
+            "admin"
+        )
+        
+        if not admin_success:
+            print("   ❌ Failed to login with admin credentials")
+            return False
+        
+        # Test 1: GET /api/notificaciones - Should return notifications structure
+        success, response = self.run_test(
+            "Get notifications",
+            "GET",
+            "notificaciones",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        notifications_success = False
+        if success:
+            expected_fields = ['notificaciones', 'no_leidas']
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields:
+                print(f"   ✅ Notifications endpoint working:")
+                print(f"   - Total notifications: {len(response['notificaciones'])}")
+                print(f"   - Unread count: {response['no_leidas']}")
+                notifications_success = True
+            else:
+                missing_fields = [field for field in expected_fields if field not in response]
+                print(f"   ❌ Missing fields in notifications response: {missing_fields}")
+        else:
+            print(f"   ❌ Failed to get notifications")
+        
+        # Test 2: POST /api/notificaciones/marcar-todas-leidas
+        success, response = self.run_test(
+            "Mark all notifications as read",
+            "POST",
+            "notificaciones/marcar-todas-leidas",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        mark_read_success = success
+        if success:
+            print(f"   ✅ Mark all as read working")
+        else:
+            print(f"   ❌ Failed to mark notifications as read")
+        
+        # Test 3: GET /api/gdb/verificar-alerta-mensual - Should return alert structure
+        success, response = self.run_test(
+            "Verify monthly GDB alert",
+            "GET",
+            "gdb/verificar-alerta-mensual",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        alert_success = False
+        if success:
+            expected_fields = ['es_dia_1', 'tiene_permiso_gdb', 'ya_cargo_este_mes', 'mostrar_alerta', 'mes_actual']
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields:
+                print(f"   ✅ Monthly alert verification working:")
+                print(f"   - Is day 1: {response['es_dia_1']}")
+                print(f"   - Has GDB permission: {response['tiene_permiso_gdb']}")
+                print(f"   - Already uploaded this month: {response['ya_cargo_este_mes']}")
+                print(f"   - Show alert: {response['mostrar_alerta']}")
+                print(f"   - Current month: {response['mes_actual']}")
+                alert_success = True
+            else:
+                missing_fields = [field for field in expected_fields if field not in response]
+                print(f"   ❌ Missing fields in alert response: {missing_fields}")
+        else:
+            print(f"   ❌ Failed to get monthly alert verification")
+        
+        # Test 4: POST /api/gdb/enviar-alertas-mensuales (Only coordinador/admin)
+        success, response = self.run_test(
+            "Send monthly GDB alerts",
+            "POST",
+            "gdb/enviar-alertas-mensuales",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        send_alerts_success = success
+        if success:
+            print(f"   ✅ Send monthly alerts working")
+            if 'gestores_notificados' in response:
+                print(f"   - Gestores notified: {len(response['gestores_notificados'])}")
+        else:
+            print(f"   ❌ Failed to send monthly alerts")
+        
+        # Test 5: GET /api/gdb/cargas-mensuales - Should return monthly uploads
+        success, response = self.run_test(
+            "Get monthly GDB uploads",
+            "GET",
+            "gdb/cargas-mensuales",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        uploads_success = False
+        if success:
+            expected_fields = ['mes', 'total_cargas', 'cargas']
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields:
+                print(f"   ✅ Monthly uploads tracking working:")
+                print(f"   - Month: {response['mes']}")
+                print(f"   - Total uploads: {response['total_cargas']}")
+                print(f"   - Uploads count: {len(response['cargas'])}")
+                uploads_success = True
+            else:
+                missing_fields = [field for field in expected_fields if field not in response]
+                print(f"   ❌ Missing fields in uploads response: {missing_fields}")
+        else:
+            print(f"   ❌ Failed to get monthly uploads")
+        
+        # Test 6: GET /api/gdb/predios-con-geometria - Should return predios with geometry relationship
+        success, response = self.run_test(
+            "Get predios with geometry relationship",
+            "GET",
+            "gdb/predios-con-geometria",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        predios_geometry_success = False
+        if success:
+            expected_fields = ['total_con_geometria', 'total_predios', 'porcentaje', 'por_municipio']
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields:
+                print(f"   ✅ Predios-GDB relationship working:")
+                print(f"   - Total with geometry: {response['total_con_geometria']}")
+                print(f"   - Total predios: {response['total_predios']}")
+                print(f"   - Percentage: {response['porcentaje']}%")
+                print(f"   - Municipalities: {len(response['por_municipio'])}")
+                predios_geometry_success = True
+            else:
+                missing_fields = [field for field in expected_fields if field not in response]
+                print(f"   ❌ Missing fields in predios-geometry response: {missing_fields}")
+        else:
+            print(f"   ❌ Failed to get predios with geometry")
+        
+        # Test 7: Test GDB upload endpoint structure (without actually uploading files)
+        # We'll test that the endpoint exists and requires proper authentication
+        url = f"{self.api_url}/gdb/upload"
+        headers = {'Authorization': f'Bearer {self.tokens["admin"]}'}
+        
+        self.tests_run += 1
+        print(f"\n🔍 Testing GDB Upload Endpoint Structure...")
+        
+        try:
+            # Test with no files (should return 400 or similar, but not 404/405)
+            response = requests.post(url, headers=headers, timeout=30)
+            
+            # We expect 400 (bad request) since no files provided, not 404/405
+            if response.status_code in [400, 422]:  # 422 for validation error
+                self.tests_passed += 1
+                print(f"✅ Passed - GDB upload endpoint exists and validates input")
+                print(f"   Status: {response.status_code} (expected for no files)")
+                upload_endpoint_success = True
+            else:
+                print(f"❌ Unexpected status code: {response.status_code}")
+                print(f"   Response: {response.text}")
+                upload_endpoint_success = False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            upload_endpoint_success = False
+        
+        return (notifications_success and mark_read_success and alert_success and 
+                send_alerts_success and uploads_success and predios_geometry_success and 
+                upload_endpoint_success)
+
     def test_predios_dashboard_vigencia_logic(self):
         """Test Dashboard Vigencia Logic - Should show only highest vigencia (2025) globally"""
         print("\n🏘️ Testing Dashboard Vigencia Logic (Critical)...")
