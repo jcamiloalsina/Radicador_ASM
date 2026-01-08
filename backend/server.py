@@ -5235,6 +5235,8 @@ async def upload_gdb_file(
         # Determinar código de municipio desde el nombre del GDB
         gdb_name = gdb_found.stem  # ej: "54003"
         
+        update_progress("identificando", 20, f"GDB identificado: {gdb_name}")
+        
         # Mapeo de códigos a nombres de municipio
         CODIGO_TO_MUNICIPIO = {
             '54003': 'Ábrego',
@@ -5253,16 +5255,20 @@ async def upload_gdb_file(
         
         municipio_nombre = municipio or CODIGO_TO_MUNICIPIO.get(gdb_name, gdb_name)
         
+        update_progress("leyendo", 25, f"Leyendo capas de {municipio_nombre}...")
+        
         # Leer capas del GDB para obtener estadísticas y relacionar con predios
         stats = {"rurales": 0, "urbanos": 0, "relacionados": 0}
         codigos_gdb = set()
         
         try:
             # Intentar diferentes nombres de capas
+            update_progress("leyendo_rural", 30, "Leyendo capa rural (R_TERRENO)...")
             for rural_layer in ['R_TERRENO_1', 'R_TERRENO', 'R_Terreno']:
                 try:
                     gdf_rural = gpd.read_file(str(gdb_found), layer=rural_layer)
                     stats["rurales"] = len(gdf_rural)
+                    update_progress("leyendo_rural", 35, f"Capa rural: {len(gdf_rural)} geometrías encontradas")
                     # Extraer códigos prediales
                     for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
                         if col in gdf_rural.columns:
