@@ -168,15 +168,33 @@ export default function PermissionsManagement() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {availablePermissions.map(perm => (
-              <div key={perm.key} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                <div>
-                  <p className="font-medium text-sm text-slate-700">{perm.description}</p>
-                  <p className="text-xs text-slate-400 font-mono">{perm.key}</p>
-                </div>
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <p className="font-semibold text-sm text-blue-800">GDB (Base Gráfica)</p>
               </div>
-            ))}
+              <p className="text-xs text-blue-600">
+                Permite subir archivos .gdb con las geometrías de los predios al Visor de Predios
+              </p>
+            </div>
+            <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <p className="font-semibold text-sm text-green-800">R1/R2 (Excel Catastral)</p>
+              </div>
+              <p className="text-xs text-green-600">
+                Permite importar archivos Excel con datos catastrales R1 y R2 por vigencia
+              </p>
+            </div>
+            <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                <p className="font-semibold text-sm text-purple-800">Aprobar Cambios Predios</p>
+              </div>
+              <p className="text-xs text-purple-600">
+                Permite aprobar o rechazar solicitudes de creación, modificación o eliminación de predios
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
