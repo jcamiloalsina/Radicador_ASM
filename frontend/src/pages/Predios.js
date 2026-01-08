@@ -1447,6 +1447,24 @@ export default function Predios() {
       piso: '0000',
       unidad: '0000'
     });
+    setPropietarios([{
+      nombre_propietario: '',
+      tipo_documento: 'C',
+      numero_documento: '',
+      estado_civil: '',
+      porcentaje: 100
+    }]);
+    setZonasFisicas([{
+      zona_fisica: '0',
+      zona_economica: '0',
+      area_terreno: '0',
+      habitaciones: '0',
+      banos: '0',
+      locales: '0',
+      pisos: '1',
+      puntaje: '0',
+      area_construida: '0'
+    }]);
     setEstructuraCodigo(null);
     setVerificacionCodigo(null);
     setTerrenoInfo(null);
