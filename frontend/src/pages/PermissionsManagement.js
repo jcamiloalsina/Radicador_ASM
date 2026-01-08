@@ -226,6 +226,16 @@ export default function PermissionsManagement() {
                       const isChecked = getCurrentPermissions(userData.id).includes(perm.key);
                       const isCoordinador = userData.role === 'coordinador';
                       
+                      // Etiquetas cortas pero claras para cada permiso
+                      const getShortLabel = (key) => {
+                        const labels = {
+                          'upload_gdb': 'GDB (Base Gráfica)',
+                          'import_r1r2': 'R1/R2 (Excel Catastral)',
+                          'approve_changes': 'Aprobar Cambios Predios'
+                        };
+                        return labels[key] || perm.description;
+                      };
+                      
                       return (
                         <div key={perm.key} className="flex items-center gap-2">
                           <Checkbox
@@ -239,7 +249,7 @@ export default function PermissionsManagement() {
                             htmlFor={`${userData.id}-${perm.key}`}
                             className={`text-sm cursor-pointer ${isCoordinador ? 'text-slate-400' : 'text-slate-700'}`}
                           >
-                            {perm.description.split(' ').slice(0, 2).join(' ')}
+                            {getShortLabel(perm.key)}
                             {isCoordinador && (
                               <span className="ml-1 text-xs text-emerald-600">(por rol)</span>
                             )}
