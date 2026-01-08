@@ -2637,6 +2637,9 @@ async def rechazar_reaparicion(
     
     await db.predios_reapariciones_aprobadas.insert_one(rechazo)
     
+    # Remover _id antes de retornar
+    rechazo.pop("_id", None)
+    
     # Eliminar el predio de la vigencia actual
     await db.predios.delete_one({
         "codigo_predial_nacional": codigo_predial,
