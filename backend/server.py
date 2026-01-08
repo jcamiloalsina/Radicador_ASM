@@ -2444,8 +2444,6 @@ async def verificar_codigo_eliminado(
                 "motivo": eliminado.get("motivo")
             }
         }
-            }
-        }
     
     if eliminado and aprobacion:
         return {
