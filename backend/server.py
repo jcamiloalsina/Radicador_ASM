@@ -5456,6 +5456,10 @@ async def upload_gdb_file(
                     try:
                         gdf_limite = gpd.read_file(str(gdb_found), layer=limite_layer)
                         if len(gdf_limite) > 0:
+                            # Get transformer based on GDF's CRS
+                            project = get_transformer_for_gdf(gdf_limite)
+                            logger.info(f"GDB {municipio_nombre}: CRS del límite: {gdf_limite.crs}")
+                            
                             # Guardar límite municipal
                             for idx, row in gdf_limite.iterrows():
                                 if row.geometry:
