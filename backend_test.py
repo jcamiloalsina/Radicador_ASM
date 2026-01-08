@@ -3471,6 +3471,9 @@ def main():
     # PRIORITY TESTS FROM REVIEW REQUEST - P0, P1, P2
     print("\n🎯 PRIORITY TESTS from Review Request...")
     
+    # CRITICAL: Cadastral Certificate Generation (Current Review Request)
+    tester.test_cadastral_certificate_generation()
+    
     # NEW: Review Request Features Test (HIGHEST PRIORITY)
     review_features_success = tester.test_review_request_features()
     
