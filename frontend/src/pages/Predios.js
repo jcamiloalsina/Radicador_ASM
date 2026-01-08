@@ -2401,9 +2401,17 @@ export default function Predios() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-3 gap-4 text-sm">
                   <div><span className="text-slate-500">Destino:</span> <strong>{selectedPredio.destino_economico} - {catalogos?.destino_economico?.[selectedPredio.destino_economico]}</strong></div>
-                  <div><span className="text-slate-500">Área Terreno:</span> <strong>{formatAreaHectareas(selectedPredio.area_terreno)}</strong></div>
+                  <div>
+                    <span className="text-slate-500">Área Terreno (R1):</span> <strong>{formatAreaHectareas(selectedPredio.area_terreno)}</strong>
+                    {selectedPredio.area_gdb > 0 && (
+                      <span className="ml-2 text-xs text-amber-600">(GDB: {formatAreaHectareas(selectedPredio.area_gdb)})</span>
+                    )}
+                  </div>
                   <div><span className="text-slate-500">Área Construida:</span> <strong>{formatAreaHectareas(selectedPredio.area_construida)}</strong></div>
                   <div className="col-span-2"><span className="text-slate-500">Avalúo:</span> <strong className="text-emerald-700">{formatCurrency(selectedPredio.avaluo)}</strong></div>
+                  {selectedPredio.tiene_geometria && (
+                    <div><span className="text-slate-500">GDB:</span> <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700">✓ Con geometría</Badge></div>
+                  )}
                 </CardContent>
               </Card>
 
