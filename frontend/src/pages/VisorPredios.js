@@ -556,60 +556,125 @@ export default function VisorPredios() {
             </CardContent>
           </Card>
 
-          {/* Botón Actualizar Base Gráfica - Solo administradores, coordinadores y gestores autorizados */}
+          {/* Sección de Base Gráfica - Solo administradores, coordinadores y gestores autorizados */}
           {(user?.role === 'administrador' || user?.role === 'coordinador' || (user?.role === 'gestor' && user?.puede_actualizar_gdb)) && (
             <Card className="border-amber-200 bg-amber-50">
               <CardContent className="py-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm">
-                    <p className="font-medium text-amber-800">Actualizar Base Gráfica</p>
-                    <p className="text-xs text-amber-600">Subir archivo .gdb.zip actualizado</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        accept=".zip"
-                        onChange={handleUploadGdb}
-                        className="hidden"
-                        disabled={uploadingGdb}
-                      />
+                {/* Pregunta si ya se cargó la GDB este mes */}
+                {gdbCargadaEsteMes === null && !mostrarPreguntaGdb && (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-amber-800">¿Ya se actualizó la Base Gráfica este mes?</p>
+                    <div className="flex gap-2">
                       <Button 
                         variant="outline" 
                         size="sm"
-                        className="border-amber-500 text-amber-700 hover:bg-amber-100"
-                        disabled={uploadingGdb}
-                        asChild
+                        className="flex-1 border-emerald-500 text-emerald-700 hover:bg-emerald-100"
+                        onClick={() => setGdbCargadaEsteMes(true)}
                       >
-                        <span>
-                          {uploadingGdb ? 'Procesando...' : 'Subir ZIP'}
-                        </span>
+                        ✓ Sí, ya está actualizada
                       </Button>
-                    </label>
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        webkitdirectory=""
-                        directory=""
-                        multiple
-                        onChange={handleUploadGdb}
-                        className="hidden"
-                        disabled={uploadingGdb}
-                      />
                       <Button 
                         variant="outline" 
                         size="sm"
-                        className="border-emerald-500 text-emerald-700 hover:bg-emerald-100"
-                        disabled={uploadingGdb}
-                        asChild
+                        className="flex-1 border-amber-500 text-amber-700 hover:bg-amber-100"
+                        onClick={() => {
+                          setGdbCargadaEsteMes(false);
+                          setMostrarPreguntaGdb(true);
+                        }}
                       >
-                        <span>
-                          {uploadingGdb ? 'Procesando...' : 'Subir Carpeta GDB'}
-                        </span>
+                        ✗ No, necesito cargarla
                       </Button>
-                    </label>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Si ya fue cargada, mostrar confirmación */}
+                {gdbCargadaEsteMes === true && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-emerald-600">✓</span>
+                      <p className="text-sm text-emerald-700">Base Gráfica actualizada este mes</p>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-xs text-slate-500"
+                      onClick={() => {
+                        setGdbCargadaEsteMes(null);
+                        setMostrarPreguntaGdb(false);
+                      }}
+                    >
+                      Cambiar
+                    </Button>
+                  </div>
+                )}
+
+                {/* Si no fue cargada, mostrar opciones de carga */}
+                {(gdbCargadaEsteMes === false || mostrarPreguntaGdb) && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm">
+                        <p className="font-medium text-amber-800">Actualizar Base Gráfica</p>
+                        <p className="text-xs text-amber-600">Subir archivo .gdb.zip actualizado</p>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-xs text-slate-500"
+                        onClick={() => {
+                          setGdbCargadaEsteMes(null);
+                          setMostrarPreguntaGdb(false);
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                    <div className="flex gap-2">
+                      <label className="cursor-pointer flex-1">
+                        <input
+                          type="file"
+                          accept=".zip"
+                          onChange={handleUploadGdb}
+                          className="hidden"
+                          disabled={uploadingGdb}
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="w-full border-amber-500 text-amber-700 hover:bg-amber-100"
+                          disabled={uploadingGdb}
+                          asChild
+                        >
+                          <span>
+                            {uploadingGdb ? 'Procesando...' : 'Subir ZIP'}
+                          </span>
+                        </Button>
+                      </label>
+                      <label className="cursor-pointer flex-1">
+                        <input
+                          type="file"
+                          webkitdirectory=""
+                          directory=""
+                          multiple
+                          onChange={handleUploadGdb}
+                          className="hidden"
+                          disabled={uploadingGdb}
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="w-full border-emerald-500 text-emerald-700 hover:bg-emerald-100"
+                          disabled={uploadingGdb}
+                          asChild
+                        >
+                          <span>
+                            {uploadingGdb ? 'Procesando...' : 'Subir Carpeta GDB'}
+                          </span>
+                        </Button>
+                      </label>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Indicador de Progreso */}
                 {uploadProgress && (
