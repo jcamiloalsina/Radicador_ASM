@@ -701,6 +701,18 @@ export default function Predios() {
     }
   };
 
+  const fetchReaparicionesConteo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/predios/reapariciones/conteo-por-municipio`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setReaparicionesConteo(res.data.conteo || {});
+    } catch (error) {
+      console.log('Conteo de reapariciones no disponible');
+    }
+  };
+
   const fetchCambiosPendientes = async () => {
     try {
       const token = localStorage.getItem('token');
