@@ -1356,19 +1356,9 @@ export default function Predios() {
                         <DialogHeader>
                           <DialogTitle className="text-lg font-outfit">Importar Predios R1/R2</DialogTitle>
                         </DialogHeader>
-                        <ImportR1R2Form onSuccess={() => { fetchPrediosStats(); fetchVigencias(); }} />
+                        <ImportR1R2Form onSuccess={() => { fetchPrediosStats(); fetchVigencias(); fetchReaparicionesConteo(); }} />
                       </DialogContent>
                     </Dialog>
-                  )}
-                  {user && ['coordinador', 'administrador'].includes(user.role) && (
-                    <Button 
-                      variant="outline" 
-                      className="border-amber-500 text-amber-700 hover:bg-amber-50"
-                      onClick={() => setShowReaparicionesDialog(true)}
-                    >
-                      <AlertTriangle className="w-4 h-4 mr-2" />
-                      Reapariciones Pendientes
-                    </Button>
                   )}
                 </div>
               </CardHeader>
