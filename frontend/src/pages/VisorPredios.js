@@ -127,6 +127,8 @@ export default function VisorPredios() {
   const [mostrarPredios, setMostrarPredios] = useState(false); // Controlar si mostrar predios individuales
   const [loadingGeometries, setLoadingGeometries] = useState(false);
   const [tipoLimites, setTipoLimites] = useState('gdb'); // 'gdb' para ver errores, 'oficial' para límites limpios
+  const [gdbCargadaEsteMes, setGdbCargadaEsteMes] = useState(null); // null = no verificado, true/false
+  const [mostrarPreguntaGdb, setMostrarPreguntaGdb] = useState(false);
   const mapRef = useRef(null);
 
   // Default center: Norte de Santander, Colombia
