@@ -2275,7 +2275,13 @@ async def verificar_codigo_eliminado(
         {"_id": 0}
     )
     
-    if eliminado:
+    # Verificar si está aprobado para reaparecer
+    aprobacion = await db.predios_reapariciones_aprobadas.find_one(
+        {"codigo_predial_nacional": codigo, "estado": "aprobado"},
+        {"_id": 0}
+    )
+    
+    if eliminado and not aprobacion:
         return {
             "eliminado": True,
             "mensaje": "Este código predial fue eliminado y NO puede ser reutilizado",
@@ -2288,9 +2294,229 @@ async def verificar_codigo_eliminado(
             }
         }
     
+    if eliminado and aprobacion:
+        return {
+            "eliminado": False,
+            "mensaje": "Este código predial fue eliminado pero su reaparición fue APROBADA",
+            "aprobacion": {
+                "aprobado_por": aprobacion.get("aprobado_por_nombre"),
+                "fecha_aprobacion": aprobacion.get("fecha_aprobacion"),
+                "justificacion": aprobacion.get("justificacion")
+            }
+        }
+    
     return {
         "eliminado": False,
         "mensaje": "Este código predial NO está en la lista de eliminados"
+    }
+
+
+@api_router.get("/predios/reapariciones/pendientes")
+async def get_reapariciones_pendientes(
+    municipio: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obtiene la lista de predios reaparecidos pendientes de aprobación"""
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden ver reapariciones pendientes")
+    
+    # Obtener todos los códigos eliminados
+    query_elim = {}
+    if municipio:
+        query_elim["municipio"] = municipio
+    
+    eliminados = await db.predios_eliminados.find(
+        query_elim, 
+        {"_id": 0, "codigo_predial_nacional": 1, "municipio": 1, "vigencia_eliminacion": 1, "vigencia_origen": 1}
+    ).to_list(50000)
+    
+    reapariciones_pendientes = []
+    
+    for elim in eliminados:
+        codigo = elim["codigo_predial_nacional"]
+        mun = elim["municipio"]
+        vig_elim = elim.get("vigencia_eliminacion", 0)
+        
+        # Verificar si ya fue aprobado/rechazado
+        decision = await db.predios_reapariciones_aprobadas.find_one({
+            "codigo_predial_nacional": codigo,
+            "municipio": mun
+        })
+        
+        if decision:
+            continue  # Ya tiene decisión, no está pendiente
+        
+        # Buscar si este código existe en vigencias posteriores (reaparición)
+        predio_actual = await db.predios.find_one({
+            "codigo_predial_nacional": codigo,
+            "municipio": mun,
+            "vigencia": {"$gt": vig_elim}
+        }, {"_id": 0})
+        
+        if predio_actual:
+            # Obtener datos del predio eliminado original
+            predio_eliminado = await db.predios_eliminados.find_one(
+                {"codigo_predial_nacional": codigo, "municipio": mun},
+                {"_id": 0}
+            )
+            
+            reapariciones_pendientes.append({
+                "codigo_predial_nacional": codigo,
+                "municipio": mun,
+                "vigencia_eliminacion": vig_elim,
+                "vigencia_origen": elim.get("vigencia_origen"),
+                "vigencia_reaparicion": predio_actual.get("vigencia"),
+                "propietario_anterior": predio_eliminado.get("propietarios", [{}])[0].get("nombre_propietario", "N/A") if predio_eliminado else "N/A",
+                "propietario_actual": predio_actual.get("propietarios", [{}])[0].get("nombre_propietario", "N/A") if predio_actual.get("propietarios") else "N/A",
+                "direccion": predio_actual.get("direccion", ""),
+                "avaluo_anterior": predio_eliminado.get("avaluo", 0) if predio_eliminado else 0,
+                "avaluo_actual": predio_actual.get("avaluo", 0),
+                "estado": "pendiente"
+            })
+    
+    return {
+        "total_pendientes": len(reapariciones_pendientes),
+        "reapariciones": reapariciones_pendientes,
+        "mensaje": f"Hay {len(reapariciones_pendientes)} reapariciones pendientes de revisión"
+    }
+
+
+@api_router.post("/predios/reapariciones/aprobar")
+async def aprobar_reaparicion(
+    codigo_predial: str = Form(...),
+    municipio: str = Form(...),
+    justificacion: str = Form(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Aprueba la reaparición de un predio eliminado después del análisis técnico"""
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden aprobar reapariciones")
+    
+    # Verificar que el predio esté en eliminados
+    eliminado = await db.predios_eliminados.find_one({
+        "codigo_predial_nacional": codigo_predial,
+        "municipio": municipio
+    })
+    
+    if not eliminado:
+        raise HTTPException(status_code=404, detail="Predio no encontrado en la lista de eliminados")
+    
+    # Verificar que exista la reaparición
+    predio_actual = await db.predios.find_one({
+        "codigo_predial_nacional": codigo_predial,
+        "municipio": municipio
+    })
+    
+    if not predio_actual:
+        raise HTTPException(status_code=404, detail="No se encontró el predio reaparecido en la vigencia actual")
+    
+    # Registrar aprobación
+    aprobacion = {
+        "id": str(uuid.uuid4()),
+        "codigo_predial_nacional": codigo_predial,
+        "municipio": municipio,
+        "vigencia_eliminacion": eliminado.get("vigencia_eliminacion"),
+        "vigencia_reaparicion": predio_actual.get("vigencia"),
+        "estado": "aprobado",
+        "justificacion": justificacion,
+        "aprobado_por": current_user['id'],
+        "aprobado_por_nombre": current_user['full_name'],
+        "fecha_aprobacion": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.predios_reapariciones_aprobadas.insert_one(aprobacion)
+    
+    # Opcionalmente, remover de eliminados ya que fue aprobada la reaparición
+    await db.predios_eliminados.delete_one({
+        "codigo_predial_nacional": codigo_predial,
+        "municipio": municipio
+    })
+    
+    return {
+        "message": f"Reaparición del predio {codigo_predial} APROBADA",
+        "aprobacion": aprobacion
+    }
+
+
+@api_router.post("/predios/reapariciones/rechazar")
+async def rechazar_reaparicion(
+    codigo_predial: str = Form(...),
+    municipio: str = Form(...),
+    justificacion: str = Form(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Rechaza la reaparición de un predio eliminado - el predio será eliminado de la vigencia actual"""
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden rechazar reapariciones")
+    
+    # Verificar que el predio esté en eliminados
+    eliminado = await db.predios_eliminados.find_one({
+        "codigo_predial_nacional": codigo_predial,
+        "municipio": municipio
+    })
+    
+    if not eliminado:
+        raise HTTPException(status_code=404, detail="Predio no encontrado en la lista de eliminados")
+    
+    # Obtener el predio actual antes de eliminarlo
+    predio_actual = await db.predios.find_one({
+        "codigo_predial_nacional": codigo_predial,
+        "municipio": municipio
+    }, {"_id": 0})
+    
+    if not predio_actual:
+        raise HTTPException(status_code=404, detail="No se encontró el predio reaparecido")
+    
+    # Registrar rechazo
+    rechazo = {
+        "id": str(uuid.uuid4()),
+        "codigo_predial_nacional": codigo_predial,
+        "municipio": municipio,
+        "vigencia_eliminacion": eliminado.get("vigencia_eliminacion"),
+        "vigencia_reaparicion": predio_actual.get("vigencia"),
+        "estado": "rechazado",
+        "justificacion": justificacion,
+        "rechazado_por": current_user['id'],
+        "rechazado_por_nombre": current_user['full_name'],
+        "fecha_rechazo": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.predios_reapariciones_aprobadas.insert_one(rechazo)
+    
+    # Eliminar el predio de la vigencia actual
+    await db.predios.delete_one({
+        "codigo_predial_nacional": codigo_predial,
+        "municipio": municipio,
+        "vigencia": predio_actual.get("vigencia")
+    })
+    
+    return {
+        "message": f"Reaparición del predio {codigo_predial} RECHAZADA - Predio eliminado de vigencia {predio_actual.get('vigencia')}",
+        "rechazo": rechazo
+    }
+
+
+@api_router.get("/predios/reapariciones/historial")
+async def get_historial_reapariciones(
+    municipio: Optional[str] = None,
+    estado: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obtiene el historial de decisiones sobre reapariciones"""
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR, UserRole.GESTOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    query = {}
+    if municipio:
+        query["municipio"] = municipio
+    if estado:
+        query["estado"] = estado
+    
+    historial = await db.predios_reapariciones_aprobadas.find(query, {"_id": 0}).sort("fecha_aprobacion", -1).to_list(500)
+    
+    return {
+        "total": len(historial),
+        "historial": historial
     }
 
 
