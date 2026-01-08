@@ -160,6 +160,7 @@ export default function VisorPredios() {
     lngGrados: '', lngMinutos: '', lngSegundos: '', lngDireccion: 'W'
   });
   const [marcadorCoordenadas, setMarcadorCoordenadas] = useState(null); // [lat, lng] del marcador
+  const [resumenCargasMensuales, setResumenCargasMensuales] = useState(null); // Resumen de cargas GDB del mes
   const mapRef = useRef(null);
 
   // Default center: Norte de Santander, Colombia
