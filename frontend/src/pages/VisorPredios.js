@@ -211,6 +211,14 @@ export default function VisorPredios() {
     satellite: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       attribution: '&copy; Esri'
+    },
+    topographic: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+      attribution: '&copy; Esri, HERE, Garmin'
+    },
+    terrain: {
+      url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
+      attribution: 'Map tiles by Stamen Design'
     }
   };
 
