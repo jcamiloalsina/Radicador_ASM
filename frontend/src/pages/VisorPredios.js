@@ -47,6 +47,19 @@ function FitBounds({ geometry }) {
   return null;
 }
 
+// Component to fly to coordinates
+function FlyToCoordinates({ coordinates }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (coordinates && coordinates.length === 2) {
+      map.flyTo(coordinates, 16, { duration: 1.5 });
+    }
+  }, [coordinates, map]);
+  
+  return null;
+}
+
 // Component to render municipality limits with zoom on click
 function MunicipalityLimits({ limitesMunicipios, filterMunicipio, setFilterMunicipio, tipoLimites }) {
   const map = useMap();
