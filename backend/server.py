@@ -6058,13 +6058,23 @@ async def revincular_predios_gdb(
                     if clave_bd2 in gdb_index:
                         codigo_gdb_match = gdb_index[clave_bd2]
                 
-                # Si encontramos match, actualizar predio
+                # Si encontramos match, actualizar predio con área de GDB
                 if codigo_gdb_match:
+                    # Obtener área de la geometría GDB
+                    area_gdb = 0
+                    gdb_geo = await db.gdb_geometrias.find_one(
+                        {"codigo": codigo_gdb_match},
+                        {"_id": 0, "area_m2": 1}
+                    )
+                    if gdb_geo:
+                        area_gdb = gdb_geo.get("area_m2", 0)
+                    
                     await db.predios.update_one(
                         {"id": predio["id"]},
                         {"$set": {
                             "tiene_geometria": True,
                             "codigo_gdb": codigo_gdb_match,
+                            "area_gdb": area_gdb,
                             "gdb_updated": datetime.now(timezone.utc).isoformat(),
                             "match_method": "revincular"
                         }}
