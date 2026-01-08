@@ -74,8 +74,8 @@
 
 ## Test Credentials
 - **Admin**: catastro@asomunicipios.gov.co / Asm*123* ✅ WORKING
-- **Frontend URL**: https://land-records-4.preview.emergentagent.com
-- **Backend API**: https://land-records-4.preview.emergentagent.com/api
+- **Frontend URL**: https://land-admin.preview.emergentagent.com
+- **Backend API**: https://land-admin.preview.emergentagent.com/api
 
 ## Test Environment
 - **Date**: January 8, 2026
@@ -270,8 +270,8 @@
 
 ## Test Credentials
 - **Admin**: catastro@asomunicipios.gov.co / Asm*123* ✅ WORKING
-- **Frontend URL**: https://land-records-4.preview.emergentagent.com
-- **Backend API**: https://land-records-4.preview.emergentagent.com/api
+- **Frontend URL**: https://land-admin.preview.emergentagent.com
+- **Backend API**: https://land-admin.preview.emergentagent.com/api
 
 ## Test Environment
 - **Date**: January 8, 2026
