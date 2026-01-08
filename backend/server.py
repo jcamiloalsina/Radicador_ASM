@@ -5491,10 +5491,16 @@ async def upload_gdb_file(
                 enviar_email=True
             )
         
+        update_progress("completado", 100, f"¡Completado! {stats['relacionados']} predios relacionados de {stats['rurales'] + stats['urbanos']} geometrías GDB")
+        
+        # Limpiar progreso después de 5 minutos
+        # (en producción esto se haría con un scheduler)
+        
         return {
             "message": f"Base gráfica de {municipio_nombre} actualizada exitosamente",
             "municipio": municipio_nombre,
             "gdb_file": gdb_name,
+            "upload_id": upload_id,
             "predios_rurales": stats["rurales"],
             "predios_urbanos": stats["urbanos"],
             "total_geometrias_gdb": stats["rurales"] + stats["urbanos"],
@@ -5505,8 +5511,10 @@ async def upload_gdb_file(
         }
         
     except zipfile.BadZipFile:
+        update_progress("error", 0, "El archivo ZIP no es válido")
         raise HTTPException(status_code=400, detail="El archivo ZIP no es válido")
     except Exception as e:
+        update_progress("error", 0, f"Error: {str(e)}")
         logger.error(f"Error uploading GDB: {e}")
         raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {str(e)}")
 
