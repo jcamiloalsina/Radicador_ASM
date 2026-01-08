@@ -672,6 +672,112 @@ async def update_user_role(role_update: UserRoleUpdate, current_user: dict = Dep
     return {"message": "Rol actualizado exitosamente", "new_role": role_update.new_role}
 
 
+# ===== PERMISSIONS MANAGEMENT =====
+
+@api_router.get("/permissions/available")
+async def get_available_permissions(current_user: dict = Depends(get_current_user)):
+    """Obtiene la lista de permisos disponibles en el sistema"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso para ver permisos")
+    
+    return {
+        "permissions": [
+            {"key": perm, "description": Permission.get_description(perm)}
+            for perm in Permission.all_permissions()
+        ]
+    }
+
+@api_router.get("/permissions/users")
+async def get_users_with_permissions(current_user: dict = Depends(get_current_user)):
+    """Obtiene usuarios con sus permisos (para gestores y coordinadores)"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso para gestionar permisos")
+    
+    # Obtener usuarios que pueden tener permisos (gestores, coordinadores)
+    users = await db.users.find(
+        {"role": {"$in": [UserRole.GESTOR, UserRole.GESTOR_AUXILIAR, UserRole.COORDINADOR]}},
+        {"_id": 0, "password_hash": 0}
+    ).to_list(1000)
+    
+    # Agregar descripciones de permisos
+    for user in users:
+        user_permissions = user.get('permissions', [])
+        user['permissions_detail'] = [
+            {"key": perm, "description": Permission.get_description(perm)}
+            for perm in user_permissions
+        ]
+    
+    return {"users": users}
+
+@api_router.patch("/permissions/user")
+async def update_user_permissions(
+    update: UserPermissionsUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Actualiza los permisos de un usuario"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso para modificar permisos")
+    
+    # Validar que los permisos sean válidos
+    valid_permissions = Permission.all_permissions()
+    for perm in update.permissions:
+        if perm not in valid_permissions:
+            raise HTTPException(status_code=400, detail=f"Permiso inválido: {perm}")
+    
+    # Buscar usuario
+    user = await db.users.find_one({"id": update.user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # No permitir modificar permisos de administradores
+    if user['role'] == UserRole.ADMINISTRADOR:
+        raise HTTPException(status_code=400, detail="No se pueden modificar permisos de administradores")
+    
+    # Actualizar permisos
+    await db.users.update_one(
+        {"id": update.user_id},
+        {"$set": {"permissions": update.permissions}}
+    )
+    
+    # Registrar el cambio en historial
+    await db.permissions_history.insert_one({
+        "user_id": update.user_id,
+        "changed_by": current_user['id'],
+        "changed_by_name": current_user['full_name'],
+        "old_permissions": user.get('permissions', []),
+        "new_permissions": update.permissions,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {
+        "message": "Permisos actualizados exitosamente",
+        "user_id": update.user_id,
+        "permissions": update.permissions
+    }
+
+@api_router.get("/permissions/user/{user_id}")
+async def get_user_permissions(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Obtiene los permisos de un usuario específico"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        # Un usuario puede ver sus propios permisos
+        if current_user['id'] != user_id:
+            raise HTTPException(status_code=403, detail="No tiene permiso para ver permisos de otros usuarios")
+    
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    permissions = user.get('permissions', [])
+    return {
+        "user_id": user_id,
+        "permissions": permissions,
+        "permissions_detail": [
+            {"key": perm, "description": Permission.get_description(perm)}
+            for perm in permissions
+        ]
+    }
+
+
 # ===== PETITION ROUTES =====
 
 @api_router.post("/petitions")
