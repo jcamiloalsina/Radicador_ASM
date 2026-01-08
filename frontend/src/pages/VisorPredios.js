@@ -435,7 +435,7 @@ export default function VisorPredios() {
                         asChild
                       >
                         <span>
-                          {uploadingGdb ? 'Subiendo...' : 'Subir ZIP'}
+                          {uploadingGdb ? 'Procesando...' : 'Subir ZIP'}
                         </span>
                       </Button>
                     </label>
@@ -457,12 +457,45 @@ export default function VisorPredios() {
                         asChild
                       >
                         <span>
-                          {uploadingGdb ? 'Subiendo...' : 'Subir Carpeta GDB'}
+                          {uploadingGdb ? 'Procesando...' : 'Subir Carpeta GDB'}
                         </span>
                       </Button>
                     </label>
                   </div>
                 </div>
+                
+                {/* Indicador de Progreso */}
+                {uploadProgress && (
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className={`font-medium ${uploadProgress.status === 'error' ? 'text-red-700' : uploadProgress.status === 'completado' ? 'text-emerald-700' : 'text-amber-700'}`}>
+                        {uploadProgress.message}
+                      </span>
+                      <span className="text-slate-600 font-bold">{uploadProgress.progress}%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          uploadProgress.status === 'error' ? 'bg-red-500' : 
+                          uploadProgress.status === 'completado' ? 'bg-emerald-500' : 
+                          'bg-amber-500'
+                        }`}
+                        style={{ width: `${uploadProgress.progress}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      {uploadProgress.status === 'subiendo' && <span>📤 Subiendo archivos...</span>}
+                      {uploadProgress.status === 'extrayendo' && <span>📦 Extrayendo ZIP...</span>}
+                      {uploadProgress.status === 'leyendo_rural' && <span>🌾 Leyendo capa rural...</span>}
+                      {uploadProgress.status === 'leyendo_urbano' && <span>🏘️ Leyendo capa urbana...</span>}
+                      {uploadProgress.status === 'guardando_geometrias' && <span>💾 Guardando geometrías...</span>}
+                      {uploadProgress.status === 'relacionando' && <span>🔗 Relacionando con predios...</span>}
+                      {uploadProgress.status === 'matching_avanzado' && <span>🔍 Búsqueda avanzada de coincidencias...</span>}
+                      {uploadProgress.status === 'completado' && <span>✅ ¡Proceso completado!</span>}
+                      {uploadProgress.status === 'error' && <span>❌ Error en el proceso</span>}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
