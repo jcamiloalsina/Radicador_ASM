@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { 
   Map, Search, MapPin, Building, User, DollarSign, 
-  Layers, ZoomIn, ZoomOut, Home, FileText, AlertCircle
+  Layers, ZoomIn, ZoomOut, Home, FileText, AlertCircle, Eye, EyeOff
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
