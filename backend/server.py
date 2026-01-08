@@ -3474,8 +3474,9 @@ async def get_vigencias_disponibles(current_user: dict = Depends(get_current_use
     if current_user['role'] == UserRole.CIUDADANO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
-    # Vigencias actuales
+    # Vigencias actuales - solo predios con vigencia definida
     pipeline = [
+        {"$match": {"vigencia": {"$ne": None}}},
         {"$group": {"_id": {"municipio": "$municipio", "vigencia": "$vigencia"}, "count": {"$sum": 1}}},
         {"$sort": {"_id.municipio": 1}}
     ]
@@ -3483,27 +3484,30 @@ async def get_vigencias_disponibles(current_user: dict = Depends(get_current_use
     
     vigencias = {}
     for r in result:
-        mun = r['_id']['municipio']
-        vig = r['_id']['vigencia']
-        if mun not in vigencias:
-            vigencias[mun] = []
-        vigencias[mun].append({"vigencia": vig, "predios": r['count']})
+        mun = r['_id'].get('municipio')
+        vig = r['_id'].get('vigencia')
+        if mun and vig:
+            if mun not in vigencias:
+                vigencias[mun] = []
+            vigencias[mun].append({"vigencia": vig, "predios": r['count']})
     
     # Vigencias históricas
     historico_pipeline = [
+        {"$match": {"vigencia": {"$ne": None}}},
         {"$group": {"_id": {"municipio": "$municipio", "vigencia": "$vigencia"}, "count": {"$sum": 1}}},
         {"$sort": {"_id.municipio": 1}}
     ]
     historico = await db.predios_historico.aggregate(historico_pipeline).to_list(1000)
     
     for h in historico:
-        mun = h['_id']['municipio']
-        vig = h['_id']['vigencia']
-        if mun not in vigencias:
-            vigencias[mun] = []
-        # Agregar si no existe
-        if not any(v['vigencia'] == vig for v in vigencias[mun]):
-            vigencias[mun].append({"vigencia": vig, "predios": h['count'], "historico": True})
+        mun = h['_id'].get('municipio')
+        vig = h['_id'].get('vigencia')
+        if mun and vig:
+            if mun not in vigencias:
+                vigencias[mun] = []
+            # Agregar si no existe
+            if not any(v['vigencia'] == vig for v in vigencias[mun]):
+                vigencias[mun].append({"vigencia": vig, "predios": h['count'], "historico": True})
     
     # Función para extraer el año de una vigencia (puede ser 2025, 01012025, 1012025)
     def get_year(vig):
