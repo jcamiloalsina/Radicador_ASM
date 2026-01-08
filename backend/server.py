@@ -2167,6 +2167,178 @@ async def get_predios_eliminados_stats(current_user: dict = Depends(get_current_
     }
 
 
+@api_router.post("/predios/analisis-historico")
+async def analisis_historico_predios(
+    current_user: dict = Depends(get_current_user)
+):
+    """Analiza todas las vigencias desde 2022 para detectar predios eliminados y reapariciones"""
+    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="Solo coordinadores pueden ejecutar análisis histórico")
+    
+    # Obtener todas las vigencias ordenadas
+    vigencias = await db.predios.distinct("vigencia")
+    vigencias = sorted([v for v in vigencias if v >= 2022])
+    
+    if len(vigencias) < 2:
+        return {"message": "Se necesitan al menos 2 vigencias para comparar", "vigencias": vigencias}
+    
+    # Obtener todos los municipios
+    municipios = await db.predios.distinct("municipio")
+    
+    resultados = {
+        "total_eliminados": 0,
+        "total_reapariciones": 0,
+        "por_municipio": [],
+        "reapariciones": [],
+        "vigencias_analizadas": vigencias
+    }
+    
+    for municipio in municipios:
+        eliminados_mun = 0
+        reapariciones_mun = []
+        
+        # Obtener todos los códigos por vigencia para este municipio
+        codigos_por_vigencia = {}
+        for vig in vigencias:
+            predios = await db.predios.find(
+                {"municipio": municipio, "vigencia": vig},
+                {"_id": 0, "codigo_predial_nacional": 1}
+            ).to_list(50000)
+            codigos_por_vigencia[vig] = {p['codigo_predial_nacional'] for p in predios}
+        
+        # Track de códigos eliminados históricamente
+        codigos_eliminados_historico = set()
+        
+        # Comparar vigencias consecutivas
+        for i in range(len(vigencias) - 1):
+            vig_anterior = vigencias[i]
+            vig_siguiente = vigencias[i + 1]
+            
+            codigos_anterior = codigos_por_vigencia[vig_anterior]
+            codigos_siguiente = codigos_por_vigencia[vig_siguiente]
+            
+            # Predios eliminados (estaban antes, no están ahora)
+            eliminados = codigos_anterior - codigos_siguiente
+            
+            # Verificar si ya están registrados como eliminados
+            for codigo in eliminados:
+                existe = await db.predios_eliminados.find_one({"codigo_predial_nacional": codigo, "municipio": municipio})
+                if not existe:
+                    # Obtener datos del predio
+                    predio = await db.predios.find_one(
+                        {"municipio": municipio, "vigencia": vig_anterior, "codigo_predial_nacional": codigo},
+                        {"_id": 0}
+                    )
+                    if predio:
+                        await db.predios_eliminados.insert_one({
+                            **predio,
+                            "id": str(uuid.uuid4()),
+                            "eliminado_en": datetime.now(timezone.utc).isoformat(),
+                            "vigencia_eliminacion": vig_siguiente,
+                            "vigencia_origen": vig_anterior,
+                            "motivo": f"No incluido en vigencia {vig_siguiente}",
+                            "detectado_por": "análisis histórico"
+                        })
+                        eliminados_mun += 1
+                        codigos_eliminados_historico.add(codigo)
+            
+            # Detectar reapariciones (predios eliminados que vuelven a aparecer)
+            for codigo in codigos_siguiente:
+                if codigo in codigos_eliminados_historico:
+                    reapariciones_mun.append({
+                        "codigo_predial_nacional": codigo,
+                        "municipio": municipio,
+                        "vigencia_reaparicion": vig_siguiente,
+                        "mensaje": f"ALERTA: Predio eliminado reaparece en vigencia {vig_siguiente}"
+                    })
+        
+        resultados["por_municipio"].append({
+            "municipio": municipio,
+            "eliminados_detectados": eliminados_mun,
+            "reapariciones": len(reapariciones_mun)
+        })
+        resultados["total_eliminados"] += eliminados_mun
+        resultados["reapariciones"].extend(reapariciones_mun)
+        resultados["total_reapariciones"] += len(reapariciones_mun)
+    
+    return resultados
+
+
+@api_router.get("/predios/verificar-codigo-eliminado/{codigo}")
+async def verificar_codigo_eliminado(
+    codigo: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Verifica si un código predial está en la lista de eliminados"""
+    eliminado = await db.predios_eliminados.find_one(
+        {"codigo_predial_nacional": codigo},
+        {"_id": 0}
+    )
+    
+    if eliminado:
+        return {
+            "eliminado": True,
+            "mensaje": "Este código predial fue eliminado y NO puede ser reutilizado",
+            "detalles": {
+                "municipio": eliminado.get("municipio"),
+                "vigencia_origen": eliminado.get("vigencia_origen"),
+                "vigencia_eliminacion": eliminado.get("vigencia_eliminacion"),
+                "fecha_eliminacion": eliminado.get("eliminado_en"),
+                "motivo": eliminado.get("motivo")
+            }
+        }
+    
+    return {
+        "eliminado": False,
+        "mensaje": "Este código predial NO está en la lista de eliminados"
+    }
+
+
+@api_router.get("/predios/reapariciones")
+async def get_reapariciones(
+    municipio: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obtiene la lista de predios que fueron eliminados y reaparecieron"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    # Obtener todos los códigos eliminados
+    query_elim = {}
+    if municipio:
+        query_elim["municipio"] = municipio
+    
+    eliminados = await db.predios_eliminados.find(query_elim, {"_id": 0, "codigo_predial_nacional": 1, "municipio": 1, "vigencia_eliminacion": 1}).to_list(50000)
+    
+    reapariciones = []
+    for elim in eliminados:
+        codigo = elim["codigo_predial_nacional"]
+        mun = elim["municipio"]
+        vig_elim = elim.get("vigencia_eliminacion", 0)
+        
+        # Buscar si este código existe en vigencias posteriores
+        existe = await db.predios.find_one({
+            "codigo_predial_nacional": codigo,
+            "municipio": mun,
+            "vigencia": {"$gt": vig_elim}
+        })
+        
+        if existe:
+            reapariciones.append({
+                "codigo_predial_nacional": codigo,
+                "municipio": mun,
+                "vigencia_eliminacion": vig_elim,
+                "vigencia_reaparicion": existe.get("vigencia"),
+                "alerta": "INCONSISTENCIA: Predio eliminado que reaparece"
+            })
+    
+    return {
+        "total_reapariciones": len(reapariciones),
+        "reapariciones": reapariciones,
+        "mensaje": f"Se encontraron {len(reapariciones)} predios eliminados que reaparecieron" if reapariciones else "No se encontraron reapariciones"
+    }
+
+
 @api_router.post("/predios/comparar-vigencias")
 async def comparar_vigencias_predios(
     municipio: str = Form(...),
