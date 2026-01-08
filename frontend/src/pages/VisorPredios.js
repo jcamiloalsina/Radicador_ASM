@@ -67,12 +67,14 @@ function MunicipalityLimits({ limitesMunicipios, filterMunicipio, setFilterMunic
               color: isSelected ? '#10B981' : '#FFFFFF',
               weight: isSelected ? 4 : 2,
               opacity: 1,
-              fillColor: sinGdb ? '#6366F1' : 'transparent',
-              fillOpacity: sinGdb ? 0.25 : 0
+              // Siempre tener un fill para poder hacer click (muy transparente si no es sinGdb)
+              fillColor: sinGdb ? '#6366F1' : (isSelected ? '#10B981' : '#FFFFFF'),
+              fillOpacity: sinGdb ? 0.25 : (isSelected ? 0.15 : 0.05)
             })}
             eventHandlers={{
               click: (e) => {
                 const props = feature.properties;
+                console.log('Clicked on municipality:', props?.municipio);
                 if (!props?.sin_gdb) {
                   setFilterMunicipio(props?.municipio);
                   // Hacer zoom al municipio
