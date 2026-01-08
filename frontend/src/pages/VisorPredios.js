@@ -381,26 +381,50 @@ export default function VisorPredios() {
                     <p className="font-medium text-amber-800">Actualizar Base Gráfica</p>
                     <p className="text-xs text-amber-600">Subir archivo .gdb.zip actualizado</p>
                   </div>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept=".zip"
-                      onChange={handleUploadGdb}
-                      className="hidden"
-                      disabled={uploadingGdb}
-                    />
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="border-amber-500 text-amber-700 hover:bg-amber-100"
-                      disabled={uploadingGdb}
-                      asChild
-                    >
-                      <span>
-                        {uploadingGdb ? 'Subiendo...' : 'Subir GDB'}
-                      </span>
-                    </Button>
-                  </label>
+                  <div className="flex gap-2">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept=".zip"
+                        onChange={handleUploadGdb}
+                        className="hidden"
+                        disabled={uploadingGdb}
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="border-amber-500 text-amber-700 hover:bg-amber-100"
+                        disabled={uploadingGdb}
+                        asChild
+                      >
+                        <span>
+                          {uploadingGdb ? 'Subiendo...' : 'Subir ZIP'}
+                        </span>
+                      </Button>
+                    </label>
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        webkitdirectory=""
+                        directory=""
+                        multiple
+                        onChange={handleUploadGdb}
+                        className="hidden"
+                        disabled={uploadingGdb}
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="border-emerald-500 text-emerald-700 hover:bg-emerald-100"
+                        disabled={uploadingGdb}
+                        asChild
+                      >
+                        <span>
+                          {uploadingGdb ? 'Subiendo...' : 'Subir Carpeta GDB'}
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
