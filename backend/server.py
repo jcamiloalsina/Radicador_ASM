@@ -2067,13 +2067,12 @@ async def get_stats_summary(current_user: dict = Depends(get_current_user)):
     # Total counts
     total_petitions = await db.petitions.count_documents({})
     total_users = await db.users.count_documents({})
-    total_gestores = await db.users.count_documents({"role": {"$in": [UserRole.GESTOR]}})
+    total_gestores = await db.users.count_documents({"role": UserRole.GESTOR})
     
     # Staff counts by role
     staff_counts = {
         "coordinadores": await db.users.count_documents({"role": UserRole.COORDINADOR}),
         "gestores": await db.users.count_documents({"role": UserRole.GESTOR}),
-        "gestores_auxiliares": await db.users.count_documents({"role": }),
         "atencion_usuario": await db.users.count_documents({"role": UserRole.ATENCION_USUARIO}),
         "administradores": await db.users.count_documents({"role": UserRole.ADMINISTRADOR}),
         "ciudadanos": await db.users.count_documents({"role": UserRole.CIUDADANO})
