@@ -736,7 +736,7 @@ export default function VisorPredios() {
                   
                   return (
                     <GeoJSON
-                      key={`limite-${feature.properties?.municipio}-${idx}`}
+                      key={`limite-${feature.properties?.municipio}-${idx}-${tipoLimites}`}
                       data={feature}
                       style={() => ({
                         color: isSelected ? '#10B981' : '#FFFFFF',
@@ -746,6 +746,19 @@ export default function VisorPredios() {
                         fillColor: sinGdb ? '#6366F1' : 'transparent',
                         fillOpacity: sinGdb ? 0.25 : 0
                       })}
+                      eventHandlers={{
+                        click: (e) => {
+                          const props = feature.properties;
+                          if (!props?.sin_gdb) {
+                            setFilterMunicipio(props?.municipio);
+                            // Hacer zoom al municipio
+                            const bounds = e.target.getBounds();
+                            if (bounds.isValid() && mapRef.current) {
+                              mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+                            }
+                          }
+                        }
+                      }}
                       onEachFeature={(feat, layer) => {
                         const props = feat.properties;
                         // Añadir tooltip permanente con el nombre del municipio
@@ -764,11 +777,6 @@ export default function VisorPredios() {
                             ${sinGdbMsg}
                           </div>
                         `);
-                        layer.on('click', () => {
-                          if (!props?.sin_gdb) {
-                            setFilterMunicipio(props?.municipio);
-                          }
-                        });
                       }}
                     />
                   );
