@@ -776,6 +776,30 @@ async def update_user_permissions(
         "timestamp": datetime.now(timezone.utc).isoformat()
     })
     
+    # Crear notificación para el usuario si se agregaron nuevos permisos
+    old_permissions = set(user.get('permissions', []))
+    new_permissions = set(update.permissions)
+    added_permissions = new_permissions - old_permissions
+    removed_permissions = old_permissions - new_permissions
+    
+    if added_permissions or removed_permissions:
+        # Construir mensaje de notificación
+        message_parts = []
+        if added_permissions:
+            added_desc = [Permission.get_description(p) for p in added_permissions]
+            message_parts.append(f"Permisos otorgados: {', '.join(added_desc)}")
+        if removed_permissions:
+            removed_desc = [Permission.get_description(p) for p in removed_permissions]
+            message_parts.append(f"Permisos revocados: {', '.join(removed_desc)}")
+        
+        await crear_notificacion(
+            usuario_id=update.user_id,
+            titulo="Actualización de Permisos",
+            mensaje=f"{current_user['full_name']} ha actualizado tus permisos. {' | '.join(message_parts)}",
+            tipo="permisos",
+            enviar_email=True  # Enviar notificación por email
+        )
+    
     return {
         "message": "Permisos actualizados exitosamente",
         "user_id": update.user_id,
