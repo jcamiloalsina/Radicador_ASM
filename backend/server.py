@@ -4102,13 +4102,33 @@ async def create_predio(predio_data: PredioCreate, current_user: dict = Depends(
     if existing:
         raise HTTPException(status_code=400, detail="Ya existe un predio con este código predial")
     
-    # Verificar que no sea un código eliminado (NO se puede reutilizar)
+    # Verificar que no sea un código eliminado
     eliminado = await db.predios_eliminados.find_one({"codigo_predial_nacional": codigo_predial})
     if eliminado:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Este código predial fue ELIMINADO en vigencia {eliminado.get('vigencia_eliminacion')} y NO puede ser reutilizado. Motivo: {eliminado.get('motivo', 'N/A')}"
-        )
+        # Verificar si tiene aprobación de reaparición
+        aprobacion = await db.predios_reapariciones_aprobadas.find_one({
+            "codigo_predial_nacional": codigo_predial,
+            "estado": "aprobado"
+        })
+        
+        if not aprobacion:
+            # Verificar si ya hay solicitud pendiente
+            solicitud_pendiente = await db.predios_reapariciones_solicitudes.find_one({
+                "codigo_predial_nacional": codigo_predial,
+                "estado": "pendiente"
+            })
+            
+            error_detail = {
+                "error": "PREDIO_ELIMINADO",
+                "mensaje": f"Este código predial fue ELIMINADO en vigencia {eliminado.get('vigencia_eliminacion')}",
+                "codigo_predial": codigo_predial,
+                "municipio": eliminado.get("municipio"),
+                "vigencia_eliminacion": eliminado.get("vigencia_eliminacion"),
+                "puede_solicitar_reaparicion": solicitud_pendiente is None,
+                "tiene_solicitud_pendiente": solicitud_pendiente is not None,
+                "instrucciones": "Use el endpoint /api/predios/reapariciones/solicitar para solicitar la reaparición con justificación técnica" if not solicitud_pendiente else "Ya existe una solicitud pendiente de aprobación"
+            }
+            raise HTTPException(status_code=400, detail=error_detail)
     
     # Generar código homologado
     codigo_homologado, numero_predio = await generate_codigo_homologado(r1.municipio)
