@@ -1168,47 +1168,45 @@ export default function Predios() {
   const necesitaAprobacion = user && ['gestor', 'gestor_auxiliar', 'atencion_usuario'].includes(user.role);
 
   const handleCreate = async () => {
+    // Validar que el código esté completo
+    const codigoCompleto = construirCodigoCompleto();
+    if (codigoCompleto.length !== 30) {
+      toast.error('El código predial debe tener exactamente 30 dígitos');
+      return;
+    }
+
+    // Verificar el código antes de crear
+    if (!verificacionCodigo) {
+      toast.error('Por favor verifique el código antes de continuar');
+      return;
+    }
+
+    if (verificacionCodigo.estado === 'existente') {
+      toast.error('Este código ya existe en la base de datos');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
+      
       const predioData = {
+        codigo_predial_nacional: codigoCompleto,
         municipio: formData.municipio,
-        zona: formData.zona,
-        sector: formData.sector,
-        manzana_vereda: formData.manzana_vereda,
-        condicion_predio: formData.condicion_predio,
-        predio_horizontal: formData.predio_horizontal,
+        es_reactivacion: verificacionCodigo.estado === 'eliminado',
+        justificacion: verificacionCodigo.estado === 'eliminado' 
+          ? 'Reactivación de predio eliminado' 
+          : 'Creación de nuevo predio',
         nombre_propietario: formData.nombre_propietario,
         tipo_documento: formData.tipo_documento,
         numero_documento: formData.numero_documento,
-        estado_civil: formData.estado_civil || null,
         direccion: formData.direccion,
-        comuna: formData.comuna,
         destino_economico: formData.destino_economico,
         area_terreno: parseFloat(formData.area_terreno) || 0,
         area_construida: parseFloat(formData.area_construida) || 0,
-        avaluo: parseFloat(formData.avaluo) || 0,
-        tipo_mutacion: formData.tipo_mutacion || null,
-        numero_resolucion: formData.numero_resolucion || null,
-        fecha_resolucion: formData.fecha_resolucion || null,
-        // R2
-        matricula_inmobiliaria: formData.matricula_inmobiliaria || null,
-        zona_fisica_1: parseFloat(formData.zona_fisica_1) || 0,
-        zona_economica_1: parseFloat(formData.zona_economica_1) || 0,
-        area_terreno_1: parseFloat(formData.area_terreno_1) || 0,
-        habitaciones_1: parseInt(formData.habitaciones_1) || 0,
-        banos_1: parseInt(formData.banos_1) || 0,
-        locales_1: parseInt(formData.locales_1) || 0,
-        pisos_1: parseInt(formData.pisos_1) || 1,
-        puntaje_1: parseFloat(formData.puntaje_1) || 0,
-        area_construida_1: parseFloat(formData.area_construida_1) || 0
+        avaluo: parseFloat(formData.avaluo) || 0
       };
 
-      // Usar sistema de aprobación
-      const res = await axios.post(`${API}/predios/cambios/proponer`, {
-        tipo_cambio: 'creacion',
-        datos_propuestos: predioData,
-        justificacion: 'Creación de nuevo predio'
-      }, {
+      const res = await axios.post(`${API}/predios/crear-con-workflow`, predioData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -1216,6 +1214,10 @@ export default function Predios() {
         toast.success('Predio propuesto. Pendiente de aprobación del coordinador.');
       } else {
         toast.success('Predio creado exitosamente');
+      }
+
+      if (!res.data.tiene_geometria) {
+        toast.info('⚠️ Este predio no tiene información gráfica (GDB). Se relacionará cuando se cargue el archivo GDB.', { duration: 5000 });
       }
       
       setShowCreateDialog(false);
