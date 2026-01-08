@@ -895,6 +895,8 @@ export default function Predios() {
       if (filterMunicipio) params.append('municipio', filterMunicipio);
       if (filterVigencia) params.append('vigencia', filterVigencia);
       if (search) params.append('search', search);
+      if (filterGeometria === 'con') params.append('tiene_geometria', 'true');
+      if (filterGeometria === 'sin') params.append('tiene_geometria', 'false');
       
       const res = await axios.get(`${API}/predios?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -905,6 +907,18 @@ export default function Predios() {
       toast.error('Error al cargar predios');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchGdbStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/gdb/geometrias-disponibles`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setGdbStats(res.data);
+    } catch (error) {
+      console.log('GDB stats no disponibles');
     }
   };
 
