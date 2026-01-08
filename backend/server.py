@@ -2199,13 +2199,24 @@ async def import_predios_excel(
         
         wb = openpyxl.load_workbook(temp_path, read_only=True, data_only=True)
         
-        # Buscar hoja R1 con nombres alternativos
+        # Buscar hoja R1 con nombres alternativos (normalizando espacios)
         r1_sheet_names = ['REGISTRO_R1', 'R1', 'Registro_R1', 'registro_r1', 'Hoja1', 'Sheet1']
         ws_r1 = None
+        # Primero intentar coincidencia exacta
         for name in r1_sheet_names:
             if name in wb.sheetnames:
                 ws_r1 = wb[name]
                 break
+        # Si no encontró, intentar con nombres que contengan espacios
+        if ws_r1 is None:
+            for sheet_name in wb.sheetnames:
+                sheet_name_clean = sheet_name.strip().upper()
+                for name in r1_sheet_names:
+                    if sheet_name_clean == name.upper():
+                        ws_r1 = wb[sheet_name]
+                        break
+                if ws_r1:
+                    break
         
         if ws_r1 is None:
             wb.close()
