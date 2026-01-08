@@ -75,6 +75,8 @@ export default function VisorPredios() {
   // Cargar geometrías cuando cambian los filtros
   useEffect(() => {
     if (filterMunicipio) {
+      // Limpiar geometrías anteriores antes de cargar nuevas
+      setAllGeometries(null);
       fetchAllGeometries();
     } else {
       setAllGeometries(null);
@@ -87,17 +89,18 @@ export default function VisorPredios() {
       const token = localStorage.getItem('token');
       const params = new URLSearchParams();
       params.append('municipio', filterMunicipio);
-      if (filterZona !== 'todos') params.append('zona', filterZona);
-      params.append('limit', '500');
+      if (filterZona && filterZona !== 'todos') params.append('zona', filterZona);
+      params.append('limit', '5000'); // Aumentar límite para ver más geometrías
       
       const response = await axios.get(`${API}/gdb/geometrias?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAllGeometries(response.data);
-      toast.success(`${response.data.total} geometrías cargadas`);
+      const zonaText = filterZona === 'todos' ? 'todas las zonas' : filterZona;
+      toast.success(`${response.data.total} geometrías (${zonaText}) cargadas`);
     } catch (error) {
       console.error('Error loading geometries:', error);
-      toast.error('Error al cargar geometrías');
+      toast.error(error.response?.data?.detail || 'Error al cargar geometrías');
       setAllGeometries(null);
     } finally {
       setLoadingGeometries(false);
