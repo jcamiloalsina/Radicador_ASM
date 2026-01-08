@@ -648,26 +648,6 @@ export default function VisorPredios() {
                   <SelectItem value="street">Mapa de Calles</SelectItem>
                 </SelectContent>
               </Select>
-              
-              {/* Selector de tipo de límites - Usando botones */}
-              <div className="flex gap-1">
-                <Button
-                  variant={tipoLimites === 'gdb' ? 'default' : 'outline'}
-                  size="sm"
-                  className="text-xs flex-1"
-                  onClick={() => setTipoLimites('gdb')}
-                >
-                  GDB-ASM
-                </Button>
-                <Button
-                  variant={tipoLimites === 'oficial' ? 'default' : 'outline'}
-                  size="sm"
-                  className="text-xs flex-1"
-                  onClick={() => setTipoLimites('oficial')}
-                >
-                  Oficiales
-                </Button>
-              </div>
             </CardContent>
           </Card>
 
