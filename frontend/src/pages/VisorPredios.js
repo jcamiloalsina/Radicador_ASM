@@ -318,6 +318,29 @@ export default function VisorPredios() {
     }
   };
 
+  // Verificar estado de cargas GDB del mes
+  const verificarCargasMensuales = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/gdb/verificar-carga-mes`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = response.data;
+      
+      // Si hay municipios pendientes, mostrar la pregunta
+      if (data.total_pendientes > 0) {
+        setGdbCargadaEsteMes(null); // Mostrar pregunta
+      } else {
+        setGdbCargadaEsteMes(true); // Todos cargados
+      }
+      
+      // Guardar info adicional para mostrar en UI
+      setResumenCargasMensuales(data);
+    } catch (error) {
+      console.error('Error verificando cargas mensuales:', error);
+    }
+  };
+
   const searchPredio = async () => {
     if (!searchCode.trim()) {
       toast.error('Ingrese un código predial para buscar');
