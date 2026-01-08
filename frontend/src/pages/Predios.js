@@ -587,6 +587,7 @@ export default function Predios() {
     fetchVigencias();
     fetchPrediosStats();
     fetchCambiosStats();
+    fetchReaparicionesConteo();
   }, []);
 
   useEffect(() => {
