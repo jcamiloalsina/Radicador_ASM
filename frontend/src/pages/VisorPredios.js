@@ -799,6 +799,7 @@ export default function VisorPredios() {
                 
                 {/* Mostrar límites de municipios usando componente con acceso al mapa */}
                 <MunicipalityLimits 
+                  key={`limits-${tipoLimites}-${limitesMunicipios?.total_municipios || 0}`}
                   limitesMunicipios={limitesMunicipios}
                   filterMunicipio={filterMunicipio}
                   setFilterMunicipio={setFilterMunicipio}
