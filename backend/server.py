@@ -5226,14 +5226,89 @@ async def upload_gdb_file(
         except Exception as e:
             logger.warning(f"Error leyendo capas GDB: {e}")
         
-        # Relacionar con predios existentes
+        # Guardar geometrías en colección para búsquedas posteriores
+        geometrias_guardadas = 0
         if codigos_gdb:
-            # Actualizar predios con referencia a GDB
+            # Limpiar geometrías anteriores de este municipio
+            await db.gdb_geometrias.delete_many({"gdb_source": gdb_name})
+            
+            # Guardar las geometrías con sus códigos
+            try:
+                for rural_layer in ['R_TERRENO_1', 'R_TERRENO', 'R_Terreno']:
+                    try:
+                        gdf_rural = gpd.read_file(str(gdb_found), layer=rural_layer)
+                        for idx, row in gdf_rural.iterrows():
+                            codigo = None
+                            for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED']:
+                                if col in gdf_rural.columns and pd.notna(row.get(col)):
+                                    codigo = str(row[col])
+                                    break
+                            if codigo and row.geometry:
+                                try:
+                                    geom_wgs84 = transform(project, row.geometry)
+                                    await db.gdb_geometrias.insert_one({
+                                        "codigo": codigo,
+                                        "tipo": "rural",
+                                        "gdb_source": gdb_name,
+                                        "municipio": municipio_nombre,
+                                        "geometry": geom_wgs84.__geo_interface__
+                                    })
+                                    geometrias_guardadas += 1
+                                except:
+                                    pass
+                        break
+                    except:
+                        continue
+                
+                for urban_layer in ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno']:
+                    try:
+                        gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
+                        for idx, row in gdf_urban.iterrows():
+                            codigo = None
+                            for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED']:
+                                if col in gdf_urban.columns and pd.notna(row.get(col)):
+                                    codigo = str(row[col])
+                                    break
+                            if codigo and row.geometry:
+                                try:
+                                    geom_wgs84 = transform(project, row.geometry)
+                                    await db.gdb_geometrias.insert_one({
+                                        "codigo": codigo,
+                                        "tipo": "urbano",
+                                        "gdb_source": gdb_name,
+                                        "municipio": municipio_nombre,
+                                        "geometry": geom_wgs84.__geo_interface__
+                                    })
+                                    geometrias_guardadas += 1
+                                except:
+                                    pass
+                        break
+                    except:
+                        continue
+            except Exception as e:
+                logger.warning(f"Error guardando geometrías: {e}")
+        
+        # Relacionar con predios existentes - buscar por múltiples campos
+        if codigos_gdb:
+            # Convertir códigos a lista y también crear versiones sin ceros a la izquierda
+            codigos_list = list(codigos_gdb)
+            codigos_sin_ceros = [c.lstrip('0') for c in codigos_list if c]
+            todos_codigos = list(set(codigos_list + codigos_sin_ceros))
+            
+            # Actualizar predios que coincidan por codigo_predial_nacional o que contengan el código
             result = await db.predios.update_many(
-                {"codigo_predial_nacional": {"$in": list(codigos_gdb)}},
+                {
+                    "$or": [
+                        {"codigo_predial_nacional": {"$in": todos_codigos}},
+                        {"codigo_predial_nacional": {"$regex": f"^({'|'.join(codigos_list[:100])})"}},  # Limitar regex
+                    ],
+                    "municipio": municipio_nombre
+                },
                 {"$set": {"tiene_geometria": True, "gdb_source": gdb_name, "gdb_updated": datetime.now(timezone.utc).isoformat()}}
             )
             stats["relacionados"] = result.modified_count
+        
+        stats["geometrias_guardadas"] = geometrias_guardadas
         
         # Registrar carga mensual
         mes_actual = datetime.now().strftime("%Y-%m")
