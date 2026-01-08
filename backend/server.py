@@ -5326,23 +5326,53 @@ async def upload_gdb_file(
             except Exception as e:
                 logger.warning(f"No se pudo listar capas: {e}")
             
-            # Intentar diferentes nombres de capas rurales - incluir más variantes
+            # Intentar leer LIMITEMUNICIPIO para crear el límite municipal
+            limite_municipal = None
+            for limite_layer in ['LIMITEMUNICIPIO', 'LimiteMunicipio', 'limite_municipio', 'LIMITE_MUNICIPIO']:
+                if limite_layer in available_layers:
+                    try:
+                        gdf_limite = gpd.read_file(str(gdb_found), layer=limite_layer)
+                        if len(gdf_limite) > 0:
+                            # Guardar límite municipal
+                            for idx, row in gdf_limite.iterrows():
+                                if row.geometry:
+                                    geom_wgs84 = transform(project, row.geometry) if project else row.geometry
+                                    limite_municipal = geom_wgs84.__geo_interface__
+                                    # Guardar en colección de límites
+                                    await db.limites_municipales.update_one(
+                                        {"municipio": municipio_nombre},
+                                        {"$set": {
+                                            "municipio": municipio_nombre,
+                                            "codigo": gdb_name,
+                                            "geometry": limite_municipal,
+                                            "fuente": "gdb",
+                                            "updated_at": datetime.now(timezone.utc).isoformat()
+                                        }},
+                                        upsert=True
+                                    )
+                                    logger.info(f"GDB {municipio_nombre}: Límite municipal guardado desde capa {limite_layer}")
+                                    break
+                            break
+                    except Exception as e:
+                        logger.warning(f"Error leyendo límite municipal: {e}")
+            
+            # Intentar diferentes nombres de capas rurales - PRIORIZAR capas con TERRENO
             update_progress("leyendo_rural", 30, "Leyendo capa rural...")
+            # Lista ordenada por prioridad - TERRENO primero, evitar ZONA_HOMOGENEA
             rural_layers = [
-                'R_TERRENO_1', 'R_TERRENO', 'R_Terreno', 'r_terreno', 'r_terreno_1',
-                'TERRENO', 'Terreno', 'terreno', 
-                'TERRENO_R', 'terreno_r', 'Terreno_R',
+                'R_TERRENO_1', 'R_TERRENO', 'TERRENO', 'R_Terreno', 'r_terreno', 'r_terreno_1',
+                'Terreno', 'terreno', 'TERRENO_R', 'terreno_r', 'Terreno_R',
                 'R_PREDIO', 'R_Predio', 'r_predio',
-                'RURAL', 'Rural', 'rural',
                 'TERRENO_RURAL', 'terreno_rural', 'Terreno_Rural'
             ]
             
-            # También buscar capas que contengan "R_" o "RURAL" en el nombre
+            # Buscar dinámicamente capas con TERRENO en el nombre (excluyendo ZONA_HOMOGENEA)
             for layer_name in available_layers:
-                if layer_name.upper().startswith('R_') and layer_name not in rural_layers:
-                    rural_layers.insert(0, layer_name)
-                elif 'RURAL' in layer_name.upper() and layer_name not in rural_layers:
-                    rural_layers.insert(0, layer_name)
+                layer_upper = layer_name.upper()
+                # Solo agregar si tiene TERRENO y NO es zona homogénea
+                if 'TERRENO' in layer_upper and 'ZONA' not in layer_upper and 'HOMOGENEA' not in layer_upper:
+                    if layer_name not in rural_layers:
+                        rural_layers.insert(0, layer_name)
             
             gdf_rural = None
             rural_layer_found = None
