@@ -5561,7 +5561,12 @@ async def upload_gdb_file(
                     rural_layers_save.insert(0, layer_name)
             
             rural_guardadas = 0
-            for rural_layer in rural_layers_save:
+            # Usar la misma capa que se usó para leer, si se encontró
+            rural_layers_to_save = ['R_TERRENO_1', 'R_TERRENO', 'TERRENO', 'R_Terreno', 'r_terreno', 'r_terreno_1', 'Terreno', 'terreno']
+            
+            # NO buscar dinámicamente capas que empiecen con R_ ya que pueden incluir ZONA_HOMOGENEA
+            
+            for rural_layer in rural_layers_to_save:
                 try:
                     gdf_rural = gpd.read_file(str(gdb_found), layer=rural_layer)
                     if len(gdf_rural) == 0:
