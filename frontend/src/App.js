@@ -18,6 +18,7 @@ import EstadisticasUnificadas from "./pages/EstadisticasUnificadas";
 import Predios from "./pages/Predios";
 import VisorPredios from "./pages/VisorPredios";
 import Pendientes from "./pages/Pendientes";
+import PermissionsManagement from "./pages/PermissionsManagement";
 
 function App() {
   return (
