@@ -90,7 +90,7 @@ export default function VisorPredios() {
       const params = new URLSearchParams();
       params.append('municipio', filterMunicipio);
       if (filterZona && filterZona !== 'todos') params.append('zona', filterZona);
-      params.append('limit', '5000'); // Aumentar límite para ver más geometrías
+      params.append('limit', '10000'); // Aumentar límite para ver todas las geometrías
       
       const response = await axios.get(`${API}/gdb/geometrias?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` }
