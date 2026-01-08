@@ -4911,30 +4911,46 @@ async def get_limites_municipios(current_user: dict = Depends(get_current_user))
                 logger.warning(f"Error procesando {municipio}: {e}")
         
         # 3. Agregar municipios asociados sin GDB (Ocaña, Tibú, La Esperanza, González)
-        # Coordenadas aproximadas del centro de cada municipio
+        # Polígonos aproximados basados en límites conocidos (formato: lista de [lon, lat])
         municipios_sin_gdb = {
-            "Ocaña": {"lat": 8.237, "lon": -73.358, "dept": "Norte de Santander"},
-            "Tibú": {"lat": 8.65, "lon": -72.983, "dept": "Norte de Santander"},
-            "La Esperanza": {"lat": 7.64, "lon": -73.336, "dept": "Norte de Santander"},
-            "González": {"lat": 8.383, "lon": -73.317, "dept": "Cesar"}
+            "Ocaña": {
+                "coords": [
+                    [-73.50, 8.35], [-73.40, 8.38], [-73.28, 8.35], [-73.22, 8.28],
+                    [-73.20, 8.18], [-73.25, 8.08], [-73.35, 8.05], [-73.45, 8.10],
+                    [-73.52, 8.20], [-73.50, 8.35]
+                ],
+                "dept": "Norte de Santander"
+            },
+            "Tibú": {
+                "coords": [
+                    [-72.85, 8.85], [-72.70, 8.80], [-72.60, 8.70], [-72.55, 8.55],
+                    [-72.65, 8.40], [-72.80, 8.35], [-72.95, 8.40], [-73.05, 8.55],
+                    [-73.00, 8.70], [-72.85, 8.85]
+                ],
+                "dept": "Norte de Santander"
+            },
+            "La Esperanza": {
+                "coords": [
+                    [-73.45, 7.75], [-73.35, 7.78], [-73.25, 7.72], [-73.20, 7.60],
+                    [-73.25, 7.50], [-73.35, 7.48], [-73.45, 7.55], [-73.50, 7.65],
+                    [-73.45, 7.75]
+                ],
+                "dept": "Norte de Santander"
+            },
+            "González": {
+                "coords": [
+                    [-73.42, 8.48], [-73.32, 8.50], [-73.22, 8.45], [-73.18, 8.35],
+                    [-73.22, 8.25], [-73.32, 8.22], [-73.42, 8.28], [-73.45, 8.38],
+                    [-73.42, 8.48]
+                ],
+                "dept": "Cesar"
+            }
         }
         
-        for mun_nombre, coords in municipios_sin_gdb.items():
+        for mun_nombre, mun_data in municipios_sin_gdb.items():
             if mun_nombre not in municipios_con_limite:
-                # Crear un polígono aproximado (círculo simplificado de ~15km de radio)
-                lat, lon = coords["lat"], coords["lon"]
-                # Aproximación: 0.15 grados ~ 15km
-                radius = 0.15
-                # Crear polígono circular aproximado
-                from math import cos, sin, pi
-                points = []
-                for i in range(12):  # 12 puntos para el círculo
-                    angle = 2 * pi * i / 12
-                    px = lon + radius * cos(angle)
-                    py = lat + radius * sin(angle) * 0.9  # Ajuste por latitud
-                    points.append((px, py))
-                
-                poly = Polygon(points)
+                coords = mun_data["coords"]
+                poly = Polygon(coords)
                 centroid = poly.centroid
                 
                 features.append({
