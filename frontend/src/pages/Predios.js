@@ -375,6 +375,8 @@ function ReaparicionesPendientes({ municipio = null, onUpdate }) {
       setJustificacion('');
       setSelectedReaparicion(null);
       fetchReapariciones();
+      fetchSolicitudes();
+      if (onUpdate) onUpdate();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al aprobar');
     } finally {
@@ -404,8 +406,80 @@ function ReaparicionesPendientes({ municipio = null, onUpdate }) {
       setJustificacion('');
       setSelectedReaparicion(null);
       fetchReapariciones();
+      fetchSolicitudes();
+      if (onUpdate) onUpdate();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al rechazar');
+    } finally {
+      setProcesando(null);
+    }
+  };
+
+  // Aprobar solicitud de gestor
+  const handleAprobarSolicitud = async (solicitud) => {
+    if (!justificacion.trim()) {
+      toast.error('Debe ingresar una justificación del coordinador');
+      return;
+    }
+    
+    setProcesando(solicitud.codigo_predial_nacional);
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('codigo_predial', solicitud.codigo_predial_nacional);
+      formData.append('municipio', solicitud.municipio);
+      formData.append('justificacion', justificacion);
+      
+      await axios.post(`${API}/predios/reapariciones/aprobar`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Actualizar estado de la solicitud
+      await axios.post(`${API}/predios/reapariciones/solicitud-responder`, {
+        solicitud_id: solicitud.id,
+        aprobado: true,
+        comentario: justificacion
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.success('Solicitud aprobada - Predio autorizado para creación');
+      setJustificacion('');
+      setSelectedReaparicion(null);
+      fetchSolicitudes();
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al aprobar solicitud');
+    } finally {
+      setProcesando(null);
+    }
+  };
+
+  const handleRechazarSolicitud = async (solicitud) => {
+    if (!justificacion.trim()) {
+      toast.error('Debe ingresar una justificación');
+      return;
+    }
+    
+    setProcesando(solicitud.codigo_predial_nacional);
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.post(`${API}/predios/reapariciones/solicitud-responder`, {
+        solicitud_id: solicitud.id,
+        aprobado: false,
+        comentario: justificacion
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.success('Solicitud rechazada');
+      setJustificacion('');
+      setSelectedReaparicion(null);
+      fetchSolicitudes();
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al rechazar solicitud');
     } finally {
       setProcesando(null);
     }
@@ -419,11 +493,13 @@ function ReaparicionesPendientes({ municipio = null, onUpdate }) {
     );
   }
 
-  if (reapariciones.length === 0) {
+  const totalPendientes = reapariciones.length + solicitudes.length;
+
+  if (totalPendientes === 0) {
     return (
       <div className="text-center py-8 text-slate-500">
         <CheckCircle className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
-        <p className="font-medium text-emerald-700">No hay reapariciones pendientes</p>
+        <p className="font-medium text-emerald-700">No hay reapariciones pendientes{municipio ? ` en ${municipio}` : ''}</p>
         <p className="text-sm">Todos los casos han sido revisados</p>
       </div>
     );
