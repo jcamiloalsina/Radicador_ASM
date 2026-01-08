@@ -409,6 +409,34 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado")
     return user
 
+async def check_permission(user: dict, permission: str) -> bool:
+    """
+    Verifica si un usuario tiene un permiso específico.
+    - Administradores tienen todos los permisos por defecto.
+    - Coordinadores tienen todos los permisos por defecto.
+    - Otros usuarios necesitan el permiso explícitamente asignado.
+    """
+    # Admin y Coordinador tienen todos los permisos por defecto
+    if user['role'] in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        return True
+    
+    # Verificar si el usuario tiene el permiso explícitamente
+    user_permissions = user.get('permissions', [])
+    return permission in user_permissions
+
+def require_permission(permission: str):
+    """Dependency factory para requerir un permiso específico"""
+    async def permission_checker(current_user: dict = Depends(get_current_user)):
+        has_permission = await check_permission(current_user, permission)
+        if not has_permission:
+            permission_desc = Permission.get_description(permission)
+            raise HTTPException(
+                status_code=403,
+                detail=f"No tiene el permiso requerido: {permission_desc}"
+            )
+        return current_user
+    return permission_checker
+
 async def generate_radicado() -> str:
     now = datetime.now()
     date_str = now.strftime("%d-%m-%Y")
