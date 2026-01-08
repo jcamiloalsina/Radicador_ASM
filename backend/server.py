@@ -4800,6 +4800,91 @@ async def get_geometrias_filtradas(
         raise HTTPException(status_code=500, detail=f"Error al obtener geometrías: {str(e)}")
 
 
+@api_router.get("/gdb/limites-municipios")
+async def get_limites_municipios(current_user: dict = Depends(get_current_user)):
+    """Obtiene los límites/contornos de todos los municipios basándose en las geometrías GDB"""
+    from shapely.geometry import shape, mapping
+    from shapely.ops import unary_union
+    
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    try:
+        # Obtener municipios únicos
+        municipios = await db.gdb_geometrias.distinct("municipio")
+        
+        features = []
+        
+        for municipio in municipios:
+            try:
+                # Obtener todas las geometrías del municipio
+                geometrias_cursor = db.gdb_geometrias.find(
+                    {"municipio": municipio},
+                    {"_id": 0, "geometry": 1, "tipo": 1}
+                )
+                
+                shapes = []
+                rural_count = 0
+                urbano_count = 0
+                
+                async for doc in geometrias_cursor:
+                    geom_dict = doc.get("geometry")
+                    if geom_dict:
+                        try:
+                            geom = shape(geom_dict)
+                            if geom.is_valid:
+                                shapes.append(geom)
+                                if doc.get("tipo") == "rural":
+                                    rural_count += 1
+                                else:
+                                    urbano_count += 1
+                        except:
+                            continue
+                
+                if shapes:
+                    # Crear el contorno del municipio (unión de todas las geometrías)
+                    try:
+                        union_geom = unary_union(shapes)
+                        # Obtener el convex hull para un límite más limpio
+                        limite = union_geom.convex_hull
+                        
+                        # Calcular el centroide para posicionar el label
+                        centroid = limite.centroid
+                        
+                        feature = {
+                            "type": "Feature",
+                            "geometry": mapping(limite),
+                            "properties": {
+                                "municipio": municipio,
+                                "total_predios": len(shapes),
+                                "rurales": rural_count,
+                                "urbanos": urbano_count,
+                                "centroid": [centroid.x, centroid.y]
+                            }
+                        }
+                        features.append(feature)
+                    except Exception as e:
+                        logger.warning(f"Error creating hull for {municipio}: {e}")
+                        continue
+                        
+            except Exception as e:
+                logger.warning(f"Error processing municipality {municipio}: {e}")
+                continue
+        
+        # Ordenar por nombre de municipio
+        features.sort(key=lambda x: x["properties"]["municipio"])
+        
+        return {
+            "type": "FeatureCollection",
+            "total_municipios": len(features),
+            "features": features
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting municipality limits: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al obtener límites: {str(e)}")
+
+
 @api_router.get("/gdb/stats")
 async def get_gdb_stats(current_user: dict = Depends(get_current_user)):
     """Get statistics about available geographic data from MongoDB collection"""
