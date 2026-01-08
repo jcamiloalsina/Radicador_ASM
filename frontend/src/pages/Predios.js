@@ -194,6 +194,7 @@ function ImportR1R2Form({ onSuccess }) {
 function PrediosEliminadosView({ municipio }) {
   const [prediosEliminados, setPrediosEliminados] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const fetchEliminados = async () => {
@@ -205,7 +206,7 @@ function PrediosEliminadosView({ municipio }) {
         const response = await axios.get(`${API}/predios/eliminados?${params.toString()}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setPrediosEliminados(response.data || []);
+        setPrediosEliminados(response.data.predios || response.data || []);
       } catch (error) {
         console.error('Error loading eliminated predios:', error);
       } finally {
@@ -214,6 +215,34 @@ function PrediosEliminadosView({ municipio }) {
     };
     fetchEliminados();
   }, [municipio]);
+
+  const handleDownloadExcel = async () => {
+    setDownloading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams();
+      if (municipio) params.append('municipio', municipio);
+      
+      const response = await axios.get(`${API}/predios/eliminados/exportar-excel?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `predios_eliminados_${municipio || 'todos'}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Excel descargado correctamente');
+    } catch (error) {
+      toast.error('Error al descargar Excel');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -234,10 +263,22 @@ function PrediosEliminadosView({ municipio }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-        <p className="text-sm text-red-800">
-          <strong>{prediosEliminados.length}</strong> predios fueron eliminados en la última importación de {municipio}
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex-1">
+          <p className="text-sm text-red-800">
+            <strong>{prediosEliminados.length}</strong> predios fueron eliminados en {municipio || 'todos los municipios'}
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="ml-3 border-emerald-500 text-emerald-700"
+          onClick={handleDownloadExcel}
+          disabled={downloading}
+        >
+          {downloading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+          Exportar Excel
+        </Button>
       </div>
       <div className="max-h-96 overflow-y-auto">
         <table className="w-full text-sm">
@@ -247,6 +288,8 @@ function PrediosEliminadosView({ municipio }) {
               <th className="text-left py-2 px-3">Propietario</th>
               <th className="text-left py-2 px-3">Dirección</th>
               <th className="text-right py-2 px-3">Avalúo</th>
+              <th className="text-left py-2 px-3">Radicado</th>
+              <th className="text-left py-2 px-3">Fecha</th>
             </tr>
           </thead>
           <tbody>
@@ -256,6 +299,8 @@ function PrediosEliminadosView({ municipio }) {
                 <td className="py-2 px-3">{predio.propietarios?.[0]?.nombre_propietario || 'N/A'}</td>
                 <td className="py-2 px-3">{predio.direccion}</td>
                 <td className="py-2 px-3 text-right">${(predio.avaluo || 0).toLocaleString()}</td>
+                <td className="py-2 px-3 text-emerald-700 font-medium">{predio.radicado_eliminacion || '-'}</td>
+                <td className="py-2 px-3 text-slate-500 text-xs">{predio.eliminado_en?.split('T')[0] || '-'}</td>
               </tr>
             ))}
           </tbody>
