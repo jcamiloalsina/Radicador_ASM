@@ -201,7 +201,7 @@ export default function AllPetitions() {
         </Button>
       </div>
 
-      {/* Petitions List */}
+      {/* Petitions List - Simplified View */}
       {filteredPetitions.length === 0 ? (
         <Card className="border-slate-200">
           <CardContent className="pt-6 text-center py-12">
@@ -211,64 +211,64 @@ export default function AllPetitions() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {filteredPetitions.map((petition) => (
-            <Card key={petition.id} className="border-slate-200 hover:shadow-md transition-shadow" data-testid={`petition-card-${petition.id}`}>
-              <CardHeader>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-                  <div>
-                    <CardTitle className="text-lg font-outfit text-slate-900" data-testid={`petition-radicado-${petition.id}`}>
-                      {petition.radicado || petition.radicado_id}
-                    </CardTitle>
-                    <p className="text-sm text-slate-600 mt-1">{petition.nombre_completo || petition.creator_name || 'Sin nombre'}</p>
-                    <p className="text-xs text-slate-500 mt-1" data-testid={`petition-date-${petition.id}`}>
-                      Creada el {formatDate(petition.created_at)}
-                    </p>
-                  </div>
-                  {getStatusBadge(petition.estado)}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-slate-500">Tipo de Trámite</p>
-                    <p className="font-medium text-slate-900" data-testid={`petition-tramite-${petition.id}`}>{petition.tipo_tramite}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500">Municipio</p>
-                    <p className="font-medium text-slate-900" data-testid={`petition-municipio-${petition.id}`}>{petition.municipio}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500">Teléfono</p>
-                    <p className="font-medium text-slate-900" data-testid={`petition-telefono-${petition.id}`}>{petition.telefono}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500">Correo</p>
-                    <p className="font-medium text-slate-900 truncate" data-testid={`petition-correo-${petition.id}`}>{petition.correo}</p>
-                  </div>
-                </div>
-                {petition.notas && (
-                  <div className="mt-4 p-3 bg-slate-50 rounded-md">
-                    <p className="text-xs text-slate-500 mb-1">Notas:</p>
-                    <p className="text-sm text-slate-700" data-testid={`petition-notas-${petition.id}`}>{petition.notas}</p>
-                  </div>
-                )}
-                <div className="mt-4 flex justify-end">
-                  <Button
+        <Card className="border-slate-200">
+          <CardContent className="p-0">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700">Radicado</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700">Estado</th>
+                  <th className="text-left py-4 px-6 font-semibold text-slate-700 hidden md:table-cell">Fecha</th>
+                  <th className="text-center py-4 px-6 font-semibold text-slate-700">Acción</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredPetitions.map((petition) => (
+                  <tr 
+                    key={petition.id} 
+                    className="hover:bg-slate-50 transition-colors cursor-pointer"
                     onClick={() => navigate(`/dashboard/peticiones/${petition.id}`)}
-                    variant="outline"
-                    size="sm"
-                    className="text-emerald-700 border-emerald-700 hover:bg-emerald-50"
-                    data-testid={`view-details-${petition.id}`}
+                    data-testid={`petition-row-${petition.id}`}
                   >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Ver/Editar
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    <td className="py-4 px-6">
+                      <div className="font-bold text-emerald-700 text-lg" data-testid={`petition-radicado-${petition.id}`}>
+                        {petition.radicado || petition.radicado_id}
+                      </div>
+                      <div className="text-sm text-slate-500 mt-1">
+                        {petition.tipo_tramite}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(petition.estado)}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 hidden md:table-cell">
+                      <div className="text-slate-600 text-sm">
+                        {formatDate(petition.created_at)}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/dashboard/peticiones/${petition.id}`);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="text-emerald-700 border-emerald-700 hover:bg-emerald-50"
+                        data-testid={`view-details-${petition.id}`}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Ver
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
