@@ -2045,24 +2045,39 @@ async def get_predios(
             query["zona"] = {"$ne": "00"}
     
     # Filtro de geometría - convertir string a booleano
+    geometria_filter = None
     if tiene_geometria is not None:
         if tiene_geometria.lower() == 'true':
             query["tiene_geometria"] = True
         elif tiene_geometria.lower() == 'false':
-            query["$or"] = [
-                {"tiene_geometria": False},
-                {"tiene_geometria": {"$exists": False}}
-            ]
+            geometria_filter = {
+                "$or": [
+                    {"tiene_geometria": False},
+                    {"tiene_geometria": {"$exists": False}}
+                ]
+            }
     
+    # Filtro de búsqueda
+    search_filter = None
     if search:
-        query["$or"] = [
-            {"codigo_predial_nacional": {"$regex": search, "$options": "i"}},
-            {"codigo_homologado": {"$regex": search, "$options": "i"}},
-            {"propietarios.nombre_propietario": {"$regex": search, "$options": "i"}},
-            {"propietarios.numero_documento": {"$regex": search, "$options": "i"}},
-            {"direccion": {"$regex": search, "$options": "i"}},
-            {"r2_registros.matricula_inmobiliaria": {"$regex": search, "$options": "i"}}  # Búsqueda por matrícula inmobiliaria
-        ]
+        search_filter = {
+            "$or": [
+                {"codigo_predial_nacional": {"$regex": search, "$options": "i"}},
+                {"codigo_homologado": {"$regex": search, "$options": "i"}},
+                {"propietarios.nombre_propietario": {"$regex": search, "$options": "i"}},
+                {"propietarios.numero_documento": {"$regex": search, "$options": "i"}},
+                {"direccion": {"$regex": search, "$options": "i"}},
+                {"r2_registros.matricula_inmobiliaria": {"$regex": search, "$options": "i"}}  # Búsqueda por matrícula inmobiliaria
+            ]
+        }
+    
+    # Combinar filtros usando $and si ambos existen
+    if geometria_filter and search_filter:
+        query["$and"] = [geometria_filter, search_filter]
+    elif geometria_filter:
+        query.update(geometria_filter)
+    elif search_filter:
+        query.update(search_filter)
     
     total = await db.predios.count_documents(query)
     predios = await db.predios.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
