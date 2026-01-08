@@ -1333,7 +1333,7 @@ export default function Predios() {
 
   const resetForm = () => {
     setFormData({
-      municipio: '',
+      municipio: filterMunicipio || '', // Mantener el municipio si está seleccionado
       zona: '00',
       sector: '01',
       manzana_vereda: '0000',
@@ -1363,6 +1363,20 @@ export default function Predios() {
       puntaje_1: '0',
       area_construida_1: '0'
     });
+    setCodigoManual({
+      zona: '00',
+      sector: '00',
+      comuna: '00',
+      barrio: '00',
+      manzana_vereda: '0000',
+      terreno: '0001',
+      edificio: '0',
+      piso: '0000',
+      unidad: '0000'
+    });
+    setEstructuraCodigo(null);
+    setVerificacionCodigo(null);
+    setTerrenoInfo(null);
   };
 
   const formatCurrency = (value) => {
