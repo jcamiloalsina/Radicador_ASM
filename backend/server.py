@@ -4908,70 +4908,36 @@ async def get_limites_municipios(current_user: dict = Depends(get_current_user))
             except Exception as e:
                 logger.warning(f"Error procesando {municipio}: {e}")
         
-        # 3. Agregar municipios asociados sin GDB (Ocaña, Tibú, La Esperanza, González)
-        # Polígonos basados en la imagen de referencia de los límites municipales reales
-        # Formato: lista de [lon, lat] - coordenadas aproximadas de los vértices del polígono
-        municipios_sin_gdb = {
-            "Ocaña": {
-                "coords": [
-                    # Forma irregular central, limita con muchos municipios
-                    [-73.42, 8.32], [-73.38, 8.35], [-73.32, 8.34], [-73.28, 8.30],
-                    [-73.24, 8.26], [-73.22, 8.20], [-73.24, 8.14], [-73.28, 8.08],
-                    [-73.32, 8.05], [-73.38, 8.04], [-73.44, 8.08], [-73.48, 8.14],
-                    [-73.50, 8.20], [-73.48, 8.26], [-73.42, 8.32]
-                ],
-                "dept": "Norte de Santander"
-            },
-            "Tibú": {
-                "coords": [
-                    # Municipio grande al noreste, borde recto al este (frontera)
-                    [-73.10, 8.95], [-72.90, 8.98], [-72.65, 8.92], [-72.52, 8.78],
-                    [-72.50, 8.55], [-72.52, 8.35], [-72.60, 8.22], [-72.75, 8.18],
-                    [-72.90, 8.22], [-73.05, 8.30], [-73.15, 8.45], [-73.18, 8.60],
-                    [-73.15, 8.78], [-73.10, 8.95]
-                ],
-                "dept": "Norte de Santander"
-            },
-            "La Esperanza": {
-                "coords": [
-                    # Al sur, con proyección alargada hacia el sur
-                    [-73.45, 7.72], [-73.38, 7.75], [-73.30, 7.72], [-73.24, 7.65],
-                    [-73.22, 7.55], [-73.24, 7.45], [-73.28, 7.38], [-73.35, 7.35],
-                    [-73.42, 7.40], [-73.48, 7.50], [-73.50, 7.60], [-73.48, 7.68],
-                    [-73.45, 7.72]
-                ],
-                "dept": "Norte de Santander"
-            },
-            "González": {
-                "coords": [
-                    # Al noroeste, entre El Carmen y Río de Oro
-                    [-73.48, 8.52], [-73.42, 8.55], [-73.35, 8.52], [-73.30, 8.46],
-                    [-73.28, 8.38], [-73.30, 8.32], [-73.36, 8.28], [-73.44, 8.30],
-                    [-73.50, 8.36], [-73.52, 8.44], [-73.48, 8.52]
-                ],
-                "dept": "Cesar"
-            }
-        }
-        
-        for mun_nombre, mun_data in municipios_sin_gdb.items():
-            if mun_nombre not in municipios_con_limite:
-                coords = mun_data["coords"]
-                poly = Polygon(coords)
-                centroid = poly.centroid
+        # 3. Agregar municipios SIN GDB desde la colección limites_municipales
+        # Estos fueron importados desde datos oficiales del DANE/IGAC
+        async for doc in db.limites_municipales.find({"sin_gdb": True}, {"_id": 0}):
+            mun_nombre = doc.get("municipio")
+            if mun_nombre and mun_nombre not in municipios_con_limite:
+                geometry = doc.get("geometry")
+                centroid_saved = doc.get("centroid", [0, 0])
                 
-                features.append({
-                    "type": "Feature",
-                    "geometry": mapping(poly),
-                    "properties": {
-                        "municipio": mun_nombre,
-                        "total_predios": 0,
-                        "rurales": 0,
-                        "urbanos": 0,
-                        "centroid": [centroid.x, centroid.y],
-                        "fuente": "aproximado",
-                        "sin_gdb": True
-                    }
-                })
+                if geometry:
+                    try:
+                        geom = shape(geometry)
+                        centroid = geom.centroid
+                        
+                        features.append({
+                            "type": "Feature",
+                            "geometry": geometry,
+                            "properties": {
+                                "municipio": mun_nombre,
+                                "total_predios": 0,
+                                "rurales": 0,
+                                "urbanos": 0,
+                                "centroid": [centroid.x, centroid.y],
+                                "fuente": doc.get("fuente", "dane_igac"),
+                                "sin_gdb": True
+                            }
+                        })
+                        municipios_con_limite.add(mun_nombre)
+                        logger.info(f"Límite de {mun_nombre} cargado desde colección limites_municipales")
+                    except Exception as e:
+                        logger.warning(f"Error procesando límite de {mun_nombre}: {e}")
         
         # Ordenar por nombre de municipio
         features.sort(key=lambda x: x["properties"]["municipio"])
