@@ -136,7 +136,7 @@ export default function DashboardLayout() {
       <div className="hidden md:flex w-64 flex-col bg-emerald-900 text-white border-r border-emerald-800 overflow-y-auto">
         <div className="p-6 border-b border-emerald-800 flex-shrink-0">
           <img 
-            src="/logo_asomunicipios.jpeg" 
+            src="/logo-asomunicipios.png" 
             alt="Asomunicipios Logo" 
             className="w-full mb-3 rounded"
             data-testid="sidebar-logo"
@@ -195,7 +195,7 @@ export default function DashboardLayout() {
             <div className="p-6 border-b border-emerald-800 flex justify-between items-start">
               <div className="flex-1">
                 <img 
-                  src="/logo_asomunicipios.jpeg" 
+                  src="/logo-asomunicipios.png" 
                   alt="Asomunicipios Logo" 
                   className="w-full mb-2 rounded"
                 />

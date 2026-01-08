@@ -44,7 +44,7 @@ export default function Register() {
         </div>
         <div className="relative z-10 text-center">
           <img 
-            src="/logo_asomunicipios.jpeg" 
+            src="/logo-asomunicipios.png" 
             alt="Asomunicipios Logo" 
             className="w-64 mx-auto mb-6 rounded-lg shadow-lg"
             data-testid="register-logo"
