@@ -5399,14 +5399,18 @@ async def upload_gdb_file(
             
             update_progress("leyendo_urbano", 40, "Leyendo capa urbana...")
             gdf_urban = None
-            urban_layers = ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno', 'u_terreno', 'u_terreno_1', 'URBANO', 'Urbano', 'urbano']
+            # Lista ordenada por prioridad - TERRENO primero
+            urban_layers = ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno', 'u_terreno', 'u_terreno_1']
             
-            # También buscar capas que contengan "U_" o "URBAN" en el nombre
+            # Buscar dinámicamente capas urbanas con TERRENO (excluyendo ZONA_HOMOGENEA)
             for layer_name in available_layers:
-                if layer_name.upper().startswith('U_') and layer_name not in urban_layers:
-                    urban_layers.insert(0, layer_name)
-                elif 'URBAN' in layer_name.upper() and layer_name not in urban_layers:
-                    urban_layers.insert(0, layer_name)
+                layer_upper = layer_name.upper()
+                if layer_upper.startswith('U_') and 'TERRENO' in layer_upper:
+                    if 'ZONA' not in layer_upper and 'HOMOGENEA' not in layer_upper:
+                        if layer_name not in urban_layers:
+                            urban_layers.insert(0, layer_name)
+            
+            urban_layer_found = None
             for urban_layer in urban_layers:
                 try:
                     gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
