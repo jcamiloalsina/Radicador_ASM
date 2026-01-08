@@ -2293,11 +2293,15 @@ async def import_predios_excel(
             # Buscar posiciones de columnas por nombre de header
             for i, h in enumerate(headers):
                 h_upper = h.upper().replace('_', ' ').replace('-', ' ')
-                if 'CODIGO' in h_upper and 'PREDIAL' in h_upper and 'NACIONAL' in h_upper:
+                # Detectar código predial nacional con múltiples variantes
+                if ('CODIGO' in h_upper and 'PREDIAL' in h_upper and 'NACIONAL' in h_upper) or \
+                   ('NUMERO' in h_upper and 'PREDIAL' in h_upper and 'NACIONAL' in h_upper) or \
+                   (h_upper == 'N PREDIAL') or \
+                   ('PREDIAL' in h_upper and 'NACIONAL' in h_upper):
                     col_map['codigo_predial'] = i
                 elif 'CODIGO' in h_upper and 'HOMOLOG' in h_upper:
                     col_map['codigo_homologado'] = i
-                elif 'NUMERO' in h_upper and 'PREDIO' in h_upper:
+                elif ('NUMERO' in h_upper and 'PREDIO' in h_upper and 'NACIONAL' not in h_upper) or h_upper == 'NUMERO DEL PREDIO':
                     col_map['numero_predio'] = i
                 elif h_upper in ['NOMBRE', 'PROPIETARIO', 'NOMBRE PROPIETARIO']:
                     col_map['nombre'] = i
