@@ -656,6 +656,7 @@ async def create_petition(
     telefono: str = Form(...),
     tipo_tramite: str = Form(...),
     municipio: str = Form(...),
+    descripcion: str = Form(default=""),
     files: List[UploadFile] = File(default=[]),
     current_user: dict = Depends(get_current_user)
 ):
@@ -697,6 +698,7 @@ async def create_petition(
         telefono=telefono,
         tipo_tramite=tipo_tramite,
         municipio=municipio,
+        descripcion=descripcion,
         archivos=saved_files,
         historial=historial
     )
