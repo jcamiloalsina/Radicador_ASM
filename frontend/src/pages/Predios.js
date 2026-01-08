@@ -1103,6 +1103,16 @@ export default function Predios() {
                       </DialogContent>
                     </Dialog>
                   )}
+                  {user && ['coordinador', 'administrador'].includes(user.role) && (
+                    <Button 
+                      variant="outline" 
+                      className="border-amber-500 text-amber-700 hover:bg-amber-50"
+                      onClick={() => setShowReaparicionesDialog(true)}
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Reapariciones Pendientes
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
