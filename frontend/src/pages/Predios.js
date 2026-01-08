@@ -1259,24 +1259,47 @@ export default function Predios() {
       return;
     }
 
+    // Validar que haya al menos un propietario con datos
+    if (!propietarios[0].nombre_propietario || !propietarios[0].numero_documento) {
+      toast.error('Debe ingresar al menos un propietario con nombre y número de documento');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       
       const predioData = {
         codigo_predial_nacional: codigoCompleto,
-        municipio: formData.municipio,
+        municipio: formData.municipio || filterMunicipio,
         es_reactivacion: verificacionCodigo.estado === 'eliminado',
         justificacion: verificacionCodigo.estado === 'eliminado' 
           ? 'Reactivación de predio eliminado' 
           : 'Creación de nuevo predio',
-        nombre_propietario: formData.nombre_propietario,
-        tipo_documento: formData.tipo_documento,
-        numero_documento: formData.numero_documento,
+        // Usar el primer propietario como principal (para compatibilidad)
+        nombre_propietario: propietarios[0].nombre_propietario,
+        tipo_documento: propietarios[0].tipo_documento,
+        numero_documento: propietarios[0].numero_documento,
+        // Lista completa de propietarios
+        propietarios: propietarios.filter(p => p.nombre_propietario && p.numero_documento),
+        // Información del predio
         direccion: formData.direccion,
         destino_economico: formData.destino_economico,
+        matricula_inmobiliaria: formData.matricula_inmobiliaria,
         area_terreno: parseFloat(formData.area_terreno) || 0,
         area_construida: parseFloat(formData.area_construida) || 0,
-        avaluo: parseFloat(formData.avaluo) || 0
+        avaluo: parseFloat(formData.avaluo) || 0,
+        // Zonas físicas múltiples
+        zonas_fisicas: zonasFisicas.map(z => ({
+          zona_fisica: parseFloat(z.zona_fisica) || 0,
+          zona_economica: parseFloat(z.zona_economica) || 0,
+          area_terreno: parseFloat(z.area_terreno) || 0,
+          habitaciones: parseInt(z.habitaciones) || 0,
+          banos: parseInt(z.banos) || 0,
+          locales: parseInt(z.locales) || 0,
+          pisos: parseInt(z.pisos) || 1,
+          puntaje: parseFloat(z.puntaje) || 0,
+          area_construida: parseFloat(z.area_construida) || 0
+        }))
       };
 
       const res = await axios.post(`${API}/predios/crear-con-workflow`, predioData, {
