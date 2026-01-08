@@ -82,3 +82,24 @@
 - **Backend Service**: Running and accessible
 - **Database**: MongoDB with 14,355 predios and 5,450 petitions
 - **SMTP**: Configured and working (catastroasm@gmail.com)
+
+## Test Session - January 8, 2026
+
+### Feature: Reapariciones por Municipio (In Progress)
+
+**Implemented Changes:**
+1. Added badge showing reappearance count on each municipality card
+2. Moved "Reapariciones Pendientes" button inside each municipality view
+3. Modified ReaparicionesPendientes component to accept `municipio` prop for filtering
+4. Added tabs in reapariciones dialog: "Reapariciones" and "Solicitudes de Gestores"
+5. Created backend endpoint `/api/predios/reapariciones/solicitud-responder` for coordinators to respond to gestor requests
+
+**Test Cases Needed:**
+1. Verify badge count matches API response for each municipality
+2. Click badge to open reapariciones dialog filtered by municipality
+3. Enter municipality view and click "Reapariciones" button
+4. Approve/Reject a reaparicion with justification
+5. Test gestor solicitation flow (when gestor tries to create eliminated property)
+
+**Credentials:**
+- Admin: catastro@asomunicipios.gov.co / Asm*123*
