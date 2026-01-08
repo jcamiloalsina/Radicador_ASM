@@ -91,6 +91,30 @@ class UserRoleUpdate(BaseModel):
     user_id: str
     new_role: str
 
+# Sistema de Permisos Granulares
+class Permission:
+    """Permisos disponibles en el sistema"""
+    UPLOAD_GDB = "upload_gdb"           # Subir archivos GDB
+    IMPORT_R1R2 = "import_r1r2"         # Importar archivos R1/R2
+    APPROVE_CHANGES = "approve_changes"  # Aprobar cambios de predios
+    
+    @classmethod
+    def all_permissions(cls):
+        return [cls.UPLOAD_GDB, cls.IMPORT_R1R2, cls.APPROVE_CHANGES]
+    
+    @classmethod
+    def get_description(cls, perm):
+        descriptions = {
+            cls.UPLOAD_GDB: "Subir archivos GDB (Base Gráfica)",
+            cls.IMPORT_R1R2: "Importar archivos R1/R2 (Excel)",
+            cls.APPROVE_CHANGES: "Aprobar/Rechazar cambios de predios"
+        }
+        return descriptions.get(perm, perm)
+
+class UserPermissionsUpdate(BaseModel):
+    user_id: str
+    permissions: List[str]
+
 class PetitionStatus:
     RADICADO = "radicado"
     ASIGNADO = "asignado"
