@@ -2375,7 +2375,7 @@ async def import_predios_excel(
         
         # Mapeo de códigos de municipio a nombres
         MUNICIPIO_CODIGOS = {
-            '003': 'Ábrego', '54003': 'Ábrego',
+            '003': 'Ábrego', '54003': 'Ábrego', '3': 'Ábrego',
             '109': 'Bucarasica', '54109': 'Bucarasica',
             '128': 'Cáchira', '54128': 'Cáchira',
             '206': 'Convención', '54206': 'Convención',
@@ -2389,15 +2389,45 @@ async def import_predios_excel(
             '614': 'Río de Oro', '20614': 'Río de Oro',
         }
         
+        # Función para extraer municipio del código predial nacional
+        def get_municipio_from_codigo(codigo_predial):
+            """Extrae el código de municipio del código predial nacional.
+            Formato: DDMMMXXXX... donde DD=depto, MMM=municipio
+            """
+            if not codigo_predial or len(codigo_predial) < 5:
+                return None
+            # Los primeros 2 dígitos son departamento, los siguientes 3 son municipio
+            codigo_mun = codigo_predial[2:5]
+            # Intentar con el código completo depto+mun
+            codigo_completo = codigo_predial[:5]
+            if codigo_completo in MUNICIPIO_CODIGOS:
+                return MUNICIPIO_CODIGOS[codigo_completo]
+            if codigo_mun in MUNICIPIO_CODIGOS:
+                return MUNICIPIO_CODIGOS[codigo_mun]
+            # Intentar sin ceros a la izquierda
+            codigo_mun_int = codigo_mun.lstrip('0')
+            if codigo_mun_int in MUNICIPIO_CODIGOS:
+                return MUNICIPIO_CODIGOS[codigo_mun_int]
+            return None
+        
         # Guardar en historial antes de actualizar
         municipio_raw = list(r1_data.values())[0]['municipio'] if r1_data else 'Desconocido'
-        # Normalizar nombre del municipio
-        municipio = MUNICIPIO_CODIGOS.get(municipio_raw, municipio_raw)
         
-        # Actualizar el municipio en todos los predios si era un código
-        if municipio_raw in MUNICIPIO_CODIGOS:
-            for predio in r1_data.values():
-                predio['municipio'] = municipio
+        # Intentar obtener el municipio del código predial si el raw no es reconocido
+        municipio = MUNICIPIO_CODIGOS.get(municipio_raw, None)
+        
+        if not municipio:
+            # Intentar extraer del código predial nacional
+            primer_codigo = list(r1_data.keys())[0] if r1_data else ''
+            municipio = get_municipio_from_codigo(primer_codigo)
+        
+        if not municipio:
+            # Usar el valor raw como último recurso
+            municipio = municipio_raw
+        
+        # Actualizar el municipio en todos los predios
+        for predio in r1_data.values():
+            predio['municipio'] = municipio
         
         # Obtener los códigos prediales de los nuevos predios
         new_codigos = set(r1_data.keys())
