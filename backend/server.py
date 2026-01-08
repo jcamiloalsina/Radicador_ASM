@@ -4780,7 +4780,11 @@ async def get_predio_geometry(predio_id: str, current_user: dict = Depends(get_c
     if not codigo:
         raise HTTPException(status_code=404, detail="Predio sin código catastral")
     
-    geometry = get_gdb_geometry(codigo)
+    # Primero intentar con la función async que busca en MongoDB
+    geometry = await get_gdb_geometry_async(codigo)
+    if not geometry:
+        # Fallback a la función que lee archivos GDB directamente
+        geometry = get_gdb_geometry(codigo)
     if not geometry:
         raise HTTPException(status_code=404, detail="Geometría no disponible para este predio")
     
@@ -4794,7 +4798,11 @@ async def get_geometry_by_code(codigo_predial: str, current_user: dict = Depends
     if current_user['role'] == UserRole.CIUDADANO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
-    geometry = get_gdb_geometry(codigo_predial)
+    # Primero intentar con la función async que busca en MongoDB
+    geometry = await get_gdb_geometry_async(codigo_predial)
+    if not geometry:
+        # Fallback a la función que lee archivos GDB directamente
+        geometry = get_gdb_geometry(codigo_predial)
     if not geometry:
         raise HTTPException(status_code=404, detail="Geometría no disponible para este código")
     
