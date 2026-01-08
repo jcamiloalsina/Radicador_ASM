@@ -2052,13 +2052,7 @@ export default function Predios() {
       )}
 
       {/* Create Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={(open) => {
-        setShowCreateDialog(open);
-        if (open && filterMunicipio) {
-          // Auto-seleccionar el municipio actual
-          setFormData(prev => ({ ...prev, municipio: filterMunicipio }));
-        }
-      }}>
+      <Dialog open={showCreateDialog} onOpenChange={handleCloseDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-outfit">
