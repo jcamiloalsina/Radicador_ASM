@@ -1226,8 +1226,8 @@ export default function VisorPredios() {
                           <p className="text-xs">Lng: {marcadorCoordenadas[1].toFixed(6)}°</p>
                           <p className="text-xs text-slate-500 mt-1">
                             {(() => {
-                              const latDMS = decimalToDMS(marcadorCoordenadas[0], true);
-                              const lngDMS = decimalToDMS(Math.abs(marcadorCoordenadas[1]), false);
+                              const latDMS = decimalToDMSHelper(marcadorCoordenadas[0], true);
+                              const lngDMS = decimalToDMSHelper(Math.abs(marcadorCoordenadas[1]), false);
                               return `${latDMS.grados}°${latDMS.minutos}'${latDMS.segundos}"${latDMS.direccion}, ${lngDMS.grados}°${lngDMS.minutos}'${lngDMS.segundos}"W`;
                             })()}
                           </p>
