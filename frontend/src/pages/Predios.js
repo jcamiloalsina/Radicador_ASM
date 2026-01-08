@@ -2439,10 +2439,48 @@ export default function Predios() {
             </TabsContent>
           </Tabs>
           
+          {/* Opción para asignar a otro gestor */}
+          <div className="border-t border-slate-200 pt-4 mt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <input 
+                type="checkbox" 
+                id="asignar-gestor" 
+                checked={!!gestorAsignado}
+                onChange={(e) => !e.target.checked && setGestorAsignado('')}
+                className="rounded border-slate-300"
+              />
+              <Label htmlFor="asignar-gestor" className="text-sm text-slate-700 cursor-pointer">
+                Asignar a otro gestor para que continúe/termine el diligenciamiento
+              </Label>
+            </div>
+            
+            {gestoresDisponibles.length > 0 && (
+              <Select value={gestorAsignado} onValueChange={setGestorAsignado}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccione un gestor para asignar..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin asignar (yo lo completo)</SelectItem>
+                  {gestoresDisponibles.map(g => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.full_name} ({g.role === 'gestor' ? 'Gestor' : g.role === 'gestor_auxiliar' ? 'Gestor Auxiliar' : g.role === 'coordinador' ? 'Coordinador' : 'Atención al Usuario'})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
+            {gestorAsignado && (
+              <p className="text-xs text-amber-600 mt-2">
+                ⚠️ El gestor asignado recibirá una notificación y podrá continuar con el diligenciamiento.
+              </p>
+            )}
+          </div>
+          
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancelar</Button>
             <Button onClick={handleCreate} className="bg-emerald-700 hover:bg-emerald-800">
-              Crear Predio
+              {gestorAsignado ? 'Guardar y Asignar' : 'Crear Predio'}
             </Button>
           </div>
         </DialogContent>
