@@ -1682,6 +1682,7 @@ export default function Predios() {
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="text-left py-3 px-4 font-semibold text-slate-700">Código Nacional</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Matrícula</th>
                   <th className="text-left py-3 px-4 font-semibold text-slate-700">Propietario(s)</th>
                   <th className="text-left py-3 px-4 font-semibold text-slate-700">Dirección</th>
                   <th className="text-center py-3 px-4 font-semibold text-slate-700">Destino</th>
@@ -1692,7 +1693,7 @@ export default function Predios() {
               <tbody>
                 {predios.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="py-8 text-center text-slate-500">
+                    <td colSpan="7" className="py-8 text-center text-slate-500">
                       No hay predios registrados para este municipio y vigencia
                     </td>
                   </tr>
@@ -1704,6 +1705,13 @@ export default function Predios() {
                           <p className="font-mono text-xs font-medium text-emerald-800">{predio.codigo_predial_nacional}</p>
                           <p className="text-xs text-slate-500">Homologado: {predio.codigo_homologado}</p>
                         </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        {predio.r2_registros?.[0]?.matricula_inmobiliaria ? (
+                          <span className="font-medium text-slate-800">{predio.r2_registros[0].matricula_inmobiliaria}</span>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Sin información de matrícula</span>
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         <div>
