@@ -2412,18 +2412,23 @@ async def import_predios_excel(
         
         # Guardar en historial antes de actualizar
         municipio_raw = list(r1_data.values())[0]['municipio'] if r1_data else 'Desconocido'
+        primer_codigo = list(r1_data.keys())[0] if r1_data else ''
         
-        # Intentar obtener el municipio del código predial si el raw no es reconocido
-        municipio = MUNICIPIO_CODIGOS.get(municipio_raw, None)
+        # Primero intentar extraer del código predial nacional (más confiable)
+        municipio = get_municipio_from_codigo(primer_codigo)
         
+        # Si no funciona, intentar con el valor raw
         if not municipio:
-            # Intentar extraer del código predial nacional
-            primer_codigo = list(r1_data.keys())[0] if r1_data else ''
-            municipio = get_municipio_from_codigo(primer_codigo)
+            municipio = MUNICIPIO_CODIGOS.get(municipio_raw, None)
+        
+        # Si el municipio_raw es un código predial largo, intentar extraerlo también
+        if not municipio and len(str(municipio_raw)) >= 5:
+            municipio = get_municipio_from_codigo(municipio_raw)
         
         if not municipio:
             # Usar el valor raw como último recurso
             municipio = municipio_raw
+            logger.warning(f"No se pudo determinar el municipio. raw={municipio_raw}, codigo={primer_codigo[:30]}")
         
         # Actualizar el municipio en todos los predios
         for predio in r1_data.values():
