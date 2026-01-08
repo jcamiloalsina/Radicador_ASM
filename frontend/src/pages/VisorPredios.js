@@ -523,23 +523,19 @@ export default function VisorPredios() {
               </Select>
               
               {/* Selector de tipo de límites */}
-              <Select value={tipoLimites} onValueChange={setTipoLimites}>
+              <Select 
+                value={tipoLimites} 
+                onValueChange={(value) => {
+                  console.log('Cambiando tipo de límites a:', value);
+                  setTipoLimites(value);
+                }}
+              >
                 <SelectTrigger className="text-xs">
                   <SelectValue placeholder="Tipo de límites" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="gdb">
-                    <div className="flex flex-col">
-                      <span>Límites GDB-ASM</span>
-                      <span className="text-xs text-slate-500">Con líneas internas (revisar errores)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="oficial">
-                    <div className="flex flex-col">
-                      <span>Límites Oficiales</span>
-                      <span className="text-xs text-slate-500">DANE/IGAC (limpios)</span>
-                    </div>
-                  </SelectItem>
+                  <SelectItem value="gdb">Límites GDB-ASM (con líneas internas)</SelectItem>
+                  <SelectItem value="oficial">Límites Oficiales DANE/IGAC</SelectItem>
                 </SelectContent>
               </Select>
             </CardContent>
