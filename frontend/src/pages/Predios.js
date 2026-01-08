@@ -1847,55 +1847,30 @@ export default function Predios() {
       )}
 
       {/* Create Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+      <Dialog open={showCreateDialog} onOpenChange={(open) => {
+        setShowCreateDialog(open);
+        if (open && filterMunicipio) {
+          // Auto-seleccionar el municipio actual
+          setFormData(prev => ({ ...prev, municipio: filterMunicipio }));
+        }
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-outfit">Nuevo Predio</DialogTitle>
+            <DialogTitle className="text-xl font-outfit">
+              Nuevo Predio {filterMunicipio && `- ${filterMunicipio}`}
+            </DialogTitle>
           </DialogHeader>
           
           <Tabs defaultValue="ubicacion" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="ubicacion">Código Nacional Catastral</TabsTrigger>
+              <TabsTrigger value="ubicacion">Código Nacional (30 dígitos)</TabsTrigger>
               <TabsTrigger value="propietario">Propietario (R1)</TabsTrigger>
               <TabsTrigger value="fisico">Físico (R2)</TabsTrigger>
             </TabsList>
             
             <TabsContent value="ubicacion" className="space-y-4 mt-4">
-              {/* Info del terreno disponible */}
-              {terrenoInfo && (
-                <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
-                  <h4 className="font-semibold text-emerald-800 mb-2 flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Información de Terreno para esta Manzana
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                    <div>
-                      <span className="text-slate-500">Predios activos:</span>
-                      <p className="font-bold text-emerald-700">{terrenoInfo.total_activos}</p>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Último terreno usado:</span>
-                      <p className="font-bold text-slate-800">{terrenoInfo.ultimo_terreno}</p>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Próximo terreno:</span>
-                      <p className="font-bold text-emerald-700 text-lg">{terrenoInfo.siguiente_terreno}</p>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Eliminados (no reutilizables):</span>
-                      <p className="font-bold text-red-600">{terrenoInfo.terrenos_no_reutilizables}</p>
-                    </div>
-                  </div>
-                  {terrenoInfo.terrenos_eliminados?.length > 0 && (
-                    <div className="mt-2 text-xs text-red-600">
-                      <span className="font-medium">Terrenos eliminados: </span>
-                      {terrenoInfo.terrenos_eliminados.map(t => t.numero).join(', ')}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-4">
+              {/* Municipio - Solo mostrar si no está pre-seleccionado */}
+              {!filterMunicipio && (
                 <div>
                   <Label>Municipio *</Label>
                   <Select value={formData.municipio} onValueChange={(v) => setFormData({...formData, municipio: v})}>
@@ -1909,32 +1884,207 @@ export default function Predios() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Zona (00=Rural, 01+=Urbano) *</Label>
-                  <Input value={formData.zona} onChange={(e) => setFormData({...formData, zona: e.target.value})} maxLength={2} />
+              )}
+
+              {/* Estructura del Código Predial Nacional - 30 dígitos */}
+              {estructuraCodigo && (
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Código Predial Nacional (30 dígitos)
+                  </h4>
+                  
+                  {/* Visualización del código completo */}
+                  <div className="bg-white p-3 rounded border mb-4 font-mono text-lg tracking-wider text-center">
+                    <span className="text-blue-600 font-bold">{estructuraCodigo.prefijo_fijo}</span>
+                    <span className="text-emerald-600">{codigoManual.zona}</span>
+                    <span className="text-amber-600">{codigoManual.sector}</span>
+                    <span className="text-purple-600">{codigoManual.comuna}</span>
+                    <span className="text-pink-600">{codigoManual.barrio}</span>
+                    <span className="text-cyan-600">{codigoManual.manzana_vereda}</span>
+                    <span className="text-red-600 font-bold">{codigoManual.terreno}</span>
+                    <span className="text-slate-400">{codigoManual.edificio}{codigoManual.piso}{codigoManual.unidad}</span>
+                    <span className="text-xs text-slate-500 ml-2">({construirCodigoCompleto().length}/30)</span>
+                  </div>
+
+                  {/* Campos editables */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-blue-100 p-2 rounded">
+                      <Label className="text-xs text-blue-700">Depto + Mpio (fijo)</Label>
+                      <Input value={estructuraCodigo.prefijo_fijo} disabled className="font-mono bg-blue-50 text-blue-800 font-bold" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-emerald-700">Zona (6-7)</Label>
+                      <Input 
+                        value={codigoManual.zona} 
+                        onChange={(e) => setCodigoManual({...codigoManual, zona: e.target.value.padStart(2, '0').slice(-2)})}
+                        maxLength={2}
+                        className="font-mono"
+                        placeholder="00=Rural"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-amber-700">Sector (8-9)</Label>
+                      <Input 
+                        value={codigoManual.sector} 
+                        onChange={(e) => setCodigoManual({...codigoManual, sector: e.target.value.padStart(2, '0').slice(-2)})}
+                        maxLength={2}
+                        className="font-mono"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-purple-700">Comuna (10-11)</Label>
+                      <Input 
+                        value={codigoManual.comuna} 
+                        onChange={(e) => setCodigoManual({...codigoManual, comuna: e.target.value.padStart(2, '0').slice(-2)})}
+                        maxLength={2}
+                        className="font-mono"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-pink-700">Barrio (12-13)</Label>
+                      <Input 
+                        value={codigoManual.barrio} 
+                        onChange={(e) => setCodigoManual({...codigoManual, barrio: e.target.value.padStart(2, '0').slice(-2)})}
+                        maxLength={2}
+                        className="font-mono"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-cyan-700">Vereda/Manzana (14-17)</Label>
+                      <Input 
+                        value={codigoManual.manzana_vereda} 
+                        onChange={(e) => setCodigoManual({...codigoManual, manzana_vereda: e.target.value.padStart(4, '0').slice(-4)})}
+                        maxLength={4}
+                        className="font-mono"
+                      />
+                    </div>
+                    <div className="bg-red-50 p-2 rounded border border-red-200">
+                      <Label className="text-xs text-red-700 font-semibold">Terreno (18-21) *</Label>
+                      <Input 
+                        value={codigoManual.terreno} 
+                        onChange={(e) => setCodigoManual({...codigoManual, terreno: e.target.value.padStart(4, '0').slice(-4)})}
+                        maxLength={4}
+                        className="font-mono font-bold text-red-700"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">PH: Edif-Piso-Unidad</Label>
+                      <div className="flex gap-1">
+                        <Input 
+                          value={codigoManual.edificio} 
+                          onChange={(e) => setCodigoManual({...codigoManual, edificio: e.target.value.slice(-1) || '0'})}
+                          maxLength={1}
+                          className="font-mono w-10 text-center"
+                          placeholder="0"
+                        />
+                        <Input 
+                          value={codigoManual.piso} 
+                          onChange={(e) => setCodigoManual({...codigoManual, piso: e.target.value.padStart(4, '0').slice(-4)})}
+                          maxLength={4}
+                          className="font-mono w-16"
+                          placeholder="0000"
+                        />
+                        <Input 
+                          value={codigoManual.unidad} 
+                          onChange={(e) => setCodigoManual({...codigoManual, unidad: e.target.value.padStart(4, '0').slice(-4)})}
+                          maxLength={4}
+                          className="font-mono w-16"
+                          placeholder="0000"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Botón de verificar */}
+                  <div className="mt-4 flex gap-3">
+                    <Button onClick={verificarCodigoCompleto} variant="outline" className="flex-1">
+                      <Search className="w-4 h-4 mr-2" />
+                      Verificar Código
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <Label>Sector *</Label>
-                  <Input value={formData.sector} onChange={(e) => setFormData({...formData, sector: e.target.value})} maxLength={2} />
+              )}
+
+              {/* Info del terreno disponible */}
+              {terrenoInfo && (
+                <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
+                  <h4 className="font-semibold text-emerald-800 mb-2 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Sugerencia para esta Manzana/Vereda
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div>
+                      <span className="text-slate-500">Predios activos:</span>
+                      <p className="font-bold text-emerald-700">{terrenoInfo.total_activos}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Siguiente terreno:</span>
+                      <p className="font-bold text-emerald-700 text-lg">{terrenoInfo.siguiente_terreno}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Código sugerido:</span>
+                      <p className="font-bold text-slate-800 text-xs font-mono">{terrenoInfo.codigo_sugerido}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Info. Gráfica (GDB):</span>
+                      <p className={`font-bold ${terrenoInfo.tiene_geometria_gdb ? 'text-emerald-700' : 'text-amber-600'}`}>
+                        {terrenoInfo.tiene_geometria_gdb ? '✅ Disponible' : '⚠️ No disponible'}
+                      </p>
+                    </div>
+                  </div>
+                  {terrenoInfo.terrenos_eliminados?.length > 0 && (
+                    <div className="mt-2 p-2 bg-red-50 rounded text-xs text-red-700">
+                      <span className="font-medium">⚠️ Terrenos eliminados (no reutilizables sin aprobación): </span>
+                      {terrenoInfo.terrenos_eliminados.map(t => t.numero).join(', ')}
+                    </div>
+                  )}
+                  {!terrenoInfo.tiene_geometria_gdb && (
+                    <p className="mt-2 text-xs text-amber-700">{terrenoInfo.mensaje_geometria}</p>
+                  )}
                 </div>
-                <div>
-                  <Label>Manzana/Vereda *</Label>
-                  <Input value={formData.manzana_vereda} onChange={(e) => setFormData({...formData, manzana_vereda: e.target.value})} maxLength={4} />
+              )}
+
+              {/* Resultado de verificación */}
+              {verificacionCodigo && (
+                <div className={`p-4 rounded-lg border ${
+                  verificacionCodigo.estado === 'disponible' ? 'bg-emerald-50 border-emerald-300' :
+                  verificacionCodigo.estado === 'eliminado' ? 'bg-amber-50 border-amber-300' :
+                  'bg-red-50 border-red-300'
+                }`}>
+                  <p className={`font-semibold ${
+                    verificacionCodigo.estado === 'disponible' ? 'text-emerald-800' :
+                    verificacionCodigo.estado === 'eliminado' ? 'text-amber-800' :
+                    'text-red-800'
+                  }`}>
+                    {verificacionCodigo.mensaje}
+                  </p>
+                  
+                  {verificacionCodigo.estado === 'eliminado' && (
+                    <div className="mt-2 text-sm text-amber-700">
+                      <p>Vigencia eliminación: {verificacionCodigo.detalles_eliminacion?.vigencia_eliminacion}</p>
+                      <p>Motivo: {verificacionCodigo.detalles_eliminacion?.motivo}</p>
+                      <p className="mt-2 font-medium">Si continúa, se creará una solicitud de reactivación para aprobación del coordinador.</p>
+                    </div>
+                  )}
+                  
+                  {verificacionCodigo.estado === 'existente' && (
+                    <div className="mt-2 text-sm text-red-700">
+                      <p>Propietario actual: {verificacionCodigo.predio?.nombre_propietario}</p>
+                      <p>No puede crear un predio con este código.</p>
+                    </div>
+                  )}
+                  
+                  {verificacionCodigo.tiene_geometria !== undefined && (
+                    <p className={`mt-2 text-sm ${verificacionCodigo.tiene_geometria ? 'text-emerald-700' : 'text-amber-700'}`}>
+                      {verificacionCodigo.tiene_geometria 
+                        ? `✅ Tiene información gráfica (GDB) - Área: ${(verificacionCodigo.area_gdb || 0).toLocaleString()} m²`
+                        : verificacionCodigo.mensaje_geometria || '⚠️ Sin información gráfica'
+                      }
+                    </p>
+                  )}
                 </div>
-                <div>
-                  <Label>Condición Predio</Label>
-                  <Input value={formData.condicion_predio} onChange={(e) => setFormData({...formData, condicion_predio: e.target.value})} maxLength={4} />
-                </div>
-                <div>
-                  <Label>Predio Horizontal (PH)</Label>
-                  <Input value={formData.predio_horizontal} onChange={(e) => setFormData({...formData, predio_horizontal: e.target.value})} maxLength={4} />
-                </div>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-lg">
-                <p className="text-sm text-slate-600">
-                  <strong>Nota:</strong> El código predial nacional (30 dígitos) y el número de terreno se generarán automáticamente.
-                </p>
-              </div>
+              )}
             </TabsContent>
             
             <TabsContent value="propietario" className="space-y-4 mt-4">
