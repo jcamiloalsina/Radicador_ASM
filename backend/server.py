@@ -2044,7 +2044,7 @@ async def get_predios(
 
 @api_router.get("/predios/stats/summary")
 async def get_predios_stats(current_user: dict = Depends(get_current_user)):
-    """Obtiene estadísticas de predios - SOLO la vigencia más reciente por municipio"""
+    """Obtiene estadísticas de predios - SOLO la vigencia más alta GLOBAL del sistema"""
     if current_user['role'] == UserRole.CIUDADANO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
@@ -2055,84 +2055,68 @@ async def get_predios_stats(current_user: dict = Depends(get_current_user)):
             return int(vig_str[-4:])
         return int(vig_str)
     
-    # Primero, obtener la vigencia más reciente por municipio
-    pipeline_vigencias = [
-        {"$match": {"deleted": {"$ne": True}}},
-        {"$group": {"_id": {"municipio": "$municipio", "vigencia": "$vigencia"}, "count": {"$sum": 1}}},
+    # Obtener TODAS las vigencias disponibles en el sistema
+    all_vigencias = await db.predios.distinct("vigencia", {"deleted": {"$ne": True}})
+    
+    if not all_vigencias:
+        return {
+            "total_predios": 0,
+            "total_avaluo": 0,
+            "total_area_terreno": 0,
+            "by_municipio": [],
+            "by_destino": [],
+            "vigencia_actual": None
+        }
+    
+    # Encontrar la vigencia más alta (año más reciente) GLOBALMENTE
+    vigencia_mas_alta = max(all_vigencias, key=lambda x: get_year(x))
+    vigencia_year = get_year(vigencia_mas_alta)
+    
+    # Filtrar solo predios de la vigencia más alta
+    pipeline_municipios = [
+        {"$match": {"vigencia": vigencia_mas_alta, "deleted": {"$ne": True}}},
+        {"$group": {"_id": "$municipio", "count": {"$sum": 1}, "avaluo": {"$sum": "$avaluo"}, "area": {"$sum": "$area_terreno"}}},
+        {"$sort": {"count": -1}}
     ]
-    vigencias_result = await db.predios.aggregate(pipeline_vigencias).to_list(1000)
     
-    # Organizar por municipio y encontrar la vigencia más reciente
-    municipio_vigencias = {}
-    for r in vigencias_result:
-        mun = r['_id']['municipio']
-        vig = r['_id']['vigencia']
-        if mun not in municipio_vigencias:
-            municipio_vigencias[mun] = []
-        municipio_vigencias[mun].append({'vigencia': vig, 'count': r['count']})
+    municipios_result = await db.predios.aggregate(pipeline_municipios).to_list(100)
     
-    # Para cada municipio, encontrar la vigencia más reciente (por año)
-    vigencia_actual_por_municipio = {}
-    for mun, vigs in municipio_vigencias.items():
-        # Ordenar por año descendente
-        vigs.sort(key=lambda x: get_year(x['vigencia']), reverse=True)
-        vigencia_actual_por_municipio[mun] = vigs[0] if vigs else None
-    
-    # Construir respuesta con solo la vigencia actual
     by_municipio = []
     total_predios = 0
     total_avaluo = 0
     total_area = 0
     
-    for mun, vig_data in vigencia_actual_por_municipio.items():
-        if vig_data:
-            vigencia = vig_data['vigencia']
-            count = vig_data['count']
-            by_municipio.append({
-                "municipio": mun, 
-                "count": count,
-                "vigencia": vigencia,
-                "vigencia_display": str(vigencia)[-4:] if len(str(vigencia)) >= 4 else str(vigencia)
-            })
-            total_predios += count
-            
-            # Obtener totales económicos para esta vigencia específica
-            pipeline_totals = [
-                {"$match": {"municipio": mun, "vigencia": vigencia, "deleted": {"$ne": True}}},
-                {"$group": {"_id": None, "avaluo": {"$sum": "$avaluo"}, "area": {"$sum": "$area_terreno"}}}
-            ]
-            totals_mun = await db.predios.aggregate(pipeline_totals).to_list(1)
-            if totals_mun:
-                total_avaluo += totals_mun[0].get("avaluo", 0) or 0
-                total_area += totals_mun[0].get("area", 0) or 0
+    for r in municipios_result:
+        by_municipio.append({
+            "municipio": r['_id'], 
+            "count": r['count'],
+            "vigencia": vigencia_mas_alta,
+            "vigencia_display": str(vigencia_year)
+        })
+        total_predios += r['count']
+        total_avaluo += r.get('avaluo', 0) or 0
+        total_area += r.get('area', 0) or 0
     
-    # Ordenar por cantidad descendente
-    by_municipio.sort(key=lambda x: x['count'], reverse=True)
+    # Por destino económico (solo vigencia más alta)
+    pipeline_destino = [
+        {"$match": {"vigencia": vigencia_mas_alta, "deleted": {"$ne": True}}},
+        {"$group": {"_id": "$destino_economico", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    destinos_result = await db.predios.aggregate(pipeline_destino).to_list(20)
     
-    # Por destino económico (solo vigencias actuales)
-    by_destino = []
-    for mun, vig_data in vigencia_actual_por_municipio.items():
-        if vig_data:
-            pipeline_destino = [
-                {"$match": {"municipio": mun, "vigencia": vig_data['vigencia'], "deleted": {"$ne": True}}},
-                {"$group": {"_id": "$destino_economico", "count": {"$sum": 1}}}
-            ]
-            destinos = await db.predios.aggregate(pipeline_destino).to_list(20)
-            for d in destinos:
-                existing = next((x for x in by_destino if x['destino'] == d['_id']), None)
-                if existing:
-                    existing['count'] += d['count']
-                else:
-                    by_destino.append({"destino": d["_id"], "nombre": DESTINO_ECONOMICO.get(d["_id"], "Desconocido"), "count": d["count"]})
-    
-    by_destino.sort(key=lambda x: x['count'], reverse=True)
+    by_destino = [
+        {"destino": d["_id"], "nombre": DESTINO_ECONOMICO.get(d["_id"], "Desconocido"), "count": d["count"]}
+        for d in destinos_result
+    ]
     
     return {
         "total_predios": total_predios,
         "total_avaluo": total_avaluo,
         "total_area_terreno": total_area,
         "by_municipio": by_municipio,
-        "by_destino": by_destino[:20]
+        "by_destino": by_destino[:20],
+        "vigencia_actual": vigencia_year
     }
 
 @api_router.get("/predios/eliminados")
