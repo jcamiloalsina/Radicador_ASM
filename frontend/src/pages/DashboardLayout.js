@@ -134,11 +134,11 @@ export default function DashboardLayout() {
     <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Sidebar - Desktop */}
       <div className="hidden md:flex w-64 flex-col bg-emerald-900 text-white border-r border-emerald-800 overflow-y-auto">
-        <div className="p-6 border-b border-emerald-800 flex-shrink-0">
+        <div className="p-4 border-b border-emerald-800 flex-shrink-0">
           <img 
             src="/logo-asomunicipios.png" 
             alt="Asomunicipios Logo" 
-            className="w-full mb-3 rounded"
+            className="w-24 mx-auto mb-2 rounded"
             data-testid="sidebar-logo"
           />
           <h2 className="text-xs font-bold font-outfit leading-tight text-center" data-testid="sidebar-title">
