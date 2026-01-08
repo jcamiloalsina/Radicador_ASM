@@ -448,8 +448,9 @@ export default function VisorPredios() {
                   <SelectValue placeholder="Tipo de mapa" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="street">Mapa de Calles</SelectItem>
+                  <SelectItem value="topographic">Topográfico</SelectItem>
                   <SelectItem value="satellite">Satélite</SelectItem>
+                  <SelectItem value="street">Mapa de Calles</SelectItem>
                 </SelectContent>
               </Select>
             </CardContent>
