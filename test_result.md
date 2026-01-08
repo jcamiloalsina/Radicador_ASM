@@ -85,21 +85,40 @@
 
 ## Test Session - January 8, 2026
 
-### Feature: Reapariciones por Municipio (In Progress)
+### Feature: Reapariciones por Municipio (Testing Complete)
 
-**Implemented Changes:**
-1. Added badge showing reappearance count on each municipality card
-2. Moved "Reapariciones Pendientes" button inside each municipality view
-3. Modified ReaparicionesPendientes component to accept `municipio` prop for filtering
-4. Added tabs in reapariciones dialog: "Reapariciones" and "Solicitudes de Gestores"
-5. Created backend endpoint `/api/predios/reapariciones/solicitud-responder` for coordinators to respond to gestor requests
+**Backend Testing Results:**
 
-**Test Cases Needed:**
-1. Verify badge count matches API response for each municipality
-2. Click badge to open reapariciones dialog filtered by municipality
-3. Enter municipality view and click "Reapariciones" button
-4. Approve/Reject a reaparicion with justification
-5. Test gestor solicitation flow (when gestor tries to create eliminated property)
+✅ **Working Endpoints:**
+1. **GET /api/predios/reapariciones/conteo-por-municipio** - ✅ WORKING
+   - Returns correct structure: {"conteo": {"San Calixto": 3}, "total": 3}
+   - San Calixto has expected 3 pending reappearances
+
+2. **GET /api/predios/reapariciones/pendientes** - ✅ WORKING
+   - Without params: Returns all 3 pending reappearances
+   - With municipio filter: Correctly filters by San Calixto
+   - Response includes all required fields: codigo_predial_nacional, municipio, vigencia_eliminacion, vigencia_reaparicion, propietario_anterior, propietario_actual
+
+3. **GET /api/predios/reapariciones/solicitudes-pendientes** - ✅ WORKING
+   - Returns expected structure: {"total": 0, "solicitudes": []}
+   - Currently empty as expected
+
+4. **POST /api/predios/reapariciones/rechazar** - ✅ WORKING (Structure)
+   - Endpoint validates input correctly (returns 422 for invalid data)
+
+5. **POST /api/predios/reapariciones/solicitud-responder** - ✅ WORKING (Structure)
+   - Endpoint handles invalid IDs correctly (returns 404)
+
+❌ **Critical Issue Found:**
+1. **POST /api/predios/reapariciones/aprobar** - ❌ FAILING
+   - Returns 520 Internal Server Error
+   - Backend logs show ObjectId serialization error: "ObjectId object is not iterable"
+   - This is a MongoDB ObjectId JSON serialization issue in the response
+
+**Test Data Verified:**
+- San Calixto has exactly 3 pending reappearances as expected
+- Sample reappearance: 546700001000000010773000000000
+- All filtering and data structure validation passed
 
 **Credentials:**
-- Admin: catastro@asomunicipios.gov.co / Asm*123*
+- Admin: catastro@asomunicipios.gov.co / Asm*123* ✅ WORKING
