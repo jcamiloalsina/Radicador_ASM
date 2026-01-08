@@ -5136,6 +5136,8 @@ async def upload_gdb_file(
                 detail="No tiene permiso para actualizar la base gráfica. Contacte al coordinador."
             )
     
+    update_progress("preparando", 5, "Preparando transformación de coordenadas...")
+    
     # Setup coordinate transformation (MAGNA-SIRGAS to WGS84)
     try:
         crs_magna = CRS.from_epsg(3116)  # MAGNA-SIRGAS Colombia Bogota zone
@@ -5153,6 +5155,8 @@ async def upload_gdb_file(
         gdb_found = None
         is_zip = len(files) == 1 and files[0].filename.endswith('.zip')
         
+        update_progress("cargando", 10, "Cargando archivos GDB...")
+        
         if is_zip:
             # Proceso ZIP tradicional
             file = files[0]
@@ -5160,6 +5164,8 @@ async def upload_gdb_file(
             with open(temp_zip, 'wb') as f:
                 content = await file.read()
                 f.write(content)
+            
+            update_progress("extrayendo", 15, "Extrayendo archivo ZIP...")
             
             with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
                 zip_ref.extractall(gdb_data_dir)
