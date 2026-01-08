@@ -13,9 +13,10 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 1. `ciudadano` - Usuario básico, puede crear peticiones
 2. `atencion_usuario` - Atiende peticiones iniciales
 3. `gestor` - Gestiona peticiones y predios
-4. `gestor_auxiliar` - Asiste a gestores
-5. `coordinador` - Aprueba cambios, gestiona permisos
-6. `administrador` - Control total del sistema
+4. `coordinador` - Aprueba cambios, gestiona permisos
+5. `administrador` - Control total del sistema
+
+**Nota:** "Gestor Auxiliar" NO es un rol, sino una condición temporal cuando un gestor necesita ayuda de otro gestor para completar un trámite.
 
 ## Funcionalidades Implementadas
 
@@ -34,12 +35,13 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 - Creación de nuevos predios con código de 30 dígitos
 - Historial de cambios
 
-### Sistema de Permisos Granulares (NUEVO)
+### Sistema de Permisos Granulares
 - **upload_gdb**: Subir archivos GDB (Base Gráfica)
 - **import_r1r2**: Importar archivos R1/R2 (Excel)
 - **approve_changes**: Aprobar/Rechazar cambios de predios
 - UI de gestión en `/dashboard/permisos`
 - Coordinadores y administradores tienen todos los permisos por defecto
+- **Notificaciones automáticas** cuando se asignan/revocan permisos
 
 ### Visor de Predios (Mapa)
 - Visualización de geometrías GDB
@@ -57,10 +59,10 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 1. **Filtro "sin geometría" corregido**: El query `$or` de geometría era sobrescrito por el `$or` de búsqueda. Se implementó lógica de combinación con `$and`.
 
 ### Nuevas Funcionalidades
-1. **Sistema de Permisos Granulares**:
-   - Endpoints: `/api/permissions/available`, `/api/permissions/users`, `/api/permissions/user`
-   - UI: Nueva página `PermissionsManagement.js`
-   - Menú: Icono "Shield" en sidebar para coordinadores/admin
+1. **Sistema de Permisos Granulares** con notificaciones automáticas
+2. **Eliminado rol "Gestor Auxiliar"** - era innecesario como rol separado
+3. **Eliminado badge "Made with Emergent"**
+4. **Simplificada página de Gestión de Usuarios** - permisos ahora en sección separada
 
 ## Próximas Tareas (Backlog)
 
@@ -84,6 +86,7 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 - `/app/backend/server.py` - API principal (monolítico)
 - `/app/frontend/src/pages/Predios.js` - Gestión de predios
 - `/app/frontend/src/pages/PermissionsManagement.js` - Gestión de permisos
+- `/app/frontend/src/pages/UserManagement.js` - Gestión de usuarios (solo roles)
 - `/app/frontend/src/pages/DashboardLayout.js` - Layout con navegación
 
 ## Estadísticas de Datos
