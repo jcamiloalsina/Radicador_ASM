@@ -2538,10 +2538,62 @@ export default function Predios() {
           </div>
           
           <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => handleCloseDialog(false)}>Cancelar</Button>
             <Button onClick={handleCreate} className="bg-emerald-700 hover:bg-emerald-800">
               {gestorAsignado ? 'Guardar y Asignar' : 'Crear Predio'}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de confirmación al cerrar sin completar */}
+      <Dialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-700 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              Predio sin completar
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-slate-700 mb-4">
+              Has iniciado el registro de un nuevo predio pero no lo has completado ni enviado para revisión.
+            </p>
+            <p className="text-slate-600 text-sm mb-4">
+              <strong>¿Deseas asignar a otro gestor</strong> para que continúe con el diligenciamiento?
+            </p>
+            
+            {gestoresDisponibles.length > 0 && (
+              <Select value={gestorAsignado || "sin_asignar"} onValueChange={(v) => setGestorAsignado(v === "sin_asignar" ? "" : v)}>
+                <SelectTrigger className="w-full mb-4">
+                  <SelectValue placeholder="Seleccione un gestor..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sin_asignar">No asignar a nadie</SelectItem>
+                  {gestoresDisponibles.map(g => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.full_name} ({g.role === 'gestor' ? 'Gestor' : g.role === 'gestor_auxiliar' ? 'Auxiliar' : 'Coordinador'})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={confirmarCierreSinGuardar} className="text-red-600 hover:text-red-700">
+              Descartar cambios
+            </Button>
+            {gestorAsignado ? (
+              <Button onClick={handleCreate} className="bg-emerald-700 hover:bg-emerald-800">
+                Guardar y Asignar
+              </Button>
+            ) : (
+              <Button onClick={() => setShowConfirmClose(false)} className="bg-blue-600 hover:bg-blue-700">
+                Continuar editando
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
