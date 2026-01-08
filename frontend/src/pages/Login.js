@@ -43,12 +43,12 @@ export default function Login() {
           <img 
             src="/logo-asomunicipios.png" 
             alt="Asomunicipios Logo" 
-            className="w-64 mx-auto mb-6 rounded-lg shadow-lg"
+            className="w-40 mx-auto mb-4 rounded-lg shadow-lg"
             data-testid="login-logo"
           />
-          <h2 className="text-xl font-bold font-outfit leading-tight">Asociación de Municipios del Catatumbo,</h2>
-          <p className="text-emerald-100 mt-1 text-lg leading-relaxed">Provincia de Ocaña y Sur del Cesar</p>
-          <p className="text-emerald-200 mt-2 text-base font-bold tracking-wide">– Asomunicipios –</p>
+          <h2 className="text-2xl font-bold font-outfit leading-tight">Asociación de Municipios del Catatumbo,</h2>
+          <p className="text-emerald-100 mt-1 text-xl leading-relaxed">Provincia de Ocaña y Sur del Cesar</p>
+          <p className="text-emerald-200 mt-3 text-lg font-bold tracking-wide">– Asomunicipios –</p>
         </div>
         <div className="relative z-10 text-center">
           <p className="text-emerald-100 text-lg font-semibold">
