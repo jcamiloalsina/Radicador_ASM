@@ -343,7 +343,7 @@ export default function VisorPredios() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Sin filtro</SelectItem>
-                    {gdbStats?.municipios && Object.keys(gdbStats.municipios).map(m => (
+                    {gdbStats?.municipios && Object.keys(gdbStats.municipios).sort((a, b) => a.localeCompare(b, 'es')).map(m => (
                       <SelectItem key={m} value={m}>{m}</SelectItem>
                     ))}
                   </SelectContent>
