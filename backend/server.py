@@ -6133,13 +6133,13 @@ async def upload_gdb_file(
     if not user_db:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
-    # Only gestors with puede_actualizar_gdb permission or coordinador/admin can upload
-    if current_user['role'] not in [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
-        if current_user['role'] != UserRole.GESTOR or not user_db.get('puede_actualizar_gdb', False):
-            raise HTTPException(
-                status_code=403, 
-                detail="No tiene permiso para actualizar la base gráfica. Contacte al coordinador."
-            )
+    # Check permission using the new permissions system
+    has_permission = await check_permission(user_db, Permission.UPLOAD_GDB)
+    if not has_permission:
+        raise HTTPException(
+            status_code=403, 
+            detail="No tiene permiso para actualizar la base gráfica. Contacte al coordinador."
+        )
     
     update_progress("preparando", 5, "Preparando transformación de coordenadas...")
     
