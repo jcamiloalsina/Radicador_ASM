@@ -468,7 +468,7 @@ export default function VisorPredios() {
                 <SelectContent>
                   <SelectItem value="gdb">
                     <div className="flex flex-col">
-                      <span>Límites GDB</span>
+                      <span>Límites GDB-ASM</span>
                       <span className="text-xs text-slate-500">Con líneas internas (revisar errores)</span>
                     </div>
                   </SelectItem>
