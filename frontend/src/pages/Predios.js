@@ -2462,12 +2462,12 @@ export default function Predios() {
             </div>
             
             {gestoresDisponibles.length > 0 && (
-              <Select value={gestorAsignado} onValueChange={setGestorAsignado}>
+              <Select value={gestorAsignado || "sin_asignar"} onValueChange={(v) => setGestorAsignado(v === "sin_asignar" ? "" : v)}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Seleccione un gestor para asignar..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin asignar (yo lo completo)</SelectItem>
+                  <SelectItem value="sin_asignar">Sin asignar (yo lo completo)</SelectItem>
                   {gestoresDisponibles.map(g => (
                     <SelectItem key={g.id} value={g.id}>
                       {g.full_name} ({g.role === 'gestor' ? 'Gestor' : g.role === 'gestor_auxiliar' ? 'Gestor Auxiliar' : g.role === 'coordinador' ? 'Coordinador' : 'Atención al Usuario'})
