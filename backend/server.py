@@ -2271,13 +2271,24 @@ async def import_predios_excel(
                     'numero_documento': str(row[11] or '').strip()
                 })
         
-        # Buscar hoja R2 con nombres alternativos
+        # Buscar hoja R2 con nombres alternativos (normalizando espacios)
         r2_sheet_names = ['REGISTRO_R2', 'R2', 'Registro_R2', 'registro_r2', 'Hoja2', 'Sheet2']
         ws_r2 = None
+        # Primero intentar coincidencia exacta
         for name in r2_sheet_names:
             if name in wb.sheetnames:
                 ws_r2 = wb[name]
                 break
+        # Si no encontró, intentar con nombres que contengan espacios
+        if ws_r2 is None:
+            for sheet_name in wb.sheetnames:
+                sheet_name_clean = sheet_name.strip().upper()
+                for name in r2_sheet_names:
+                    if sheet_name_clean == name.upper():
+                        ws_r2 = wb[sheet_name]
+                        break
+                if ws_r2:
+                    break
         
         if ws_r2 is None:
             wb.close()
