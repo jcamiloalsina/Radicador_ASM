@@ -5828,6 +5828,53 @@ async def get_cargas_mensuales_gdb(
     }
 
 
+
+@api_router.get("/gdb/verificar-carga-mes")
+async def verificar_carga_gdb_mes(
+    municipio: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Verifica si ya se cargó GDB este mes para un municipio o en general"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    mes_actual = datetime.now().strftime("%Y-%m")
+    
+    if municipio:
+        # Verificar para un municipio específico
+        carga = await db.gdb_cargas.find_one(
+            {"mes": mes_actual, "municipio": municipio},
+            {"_id": 0}
+        )
+        return {
+            "mes": mes_actual,
+            "municipio": municipio,
+            "cargado": carga is not None,
+            "detalle": carga
+        }
+    else:
+        # Obtener resumen de todos los municipios
+        cargas = await db.gdb_cargas.find(
+            {"mes": mes_actual},
+            {"_id": 0, "municipio": 1, "fecha": 1, "uploaded_by_name": 1}
+        ).to_list(50)
+        
+        municipios_cargados = [c["municipio"] for c in cargas]
+        
+        # Obtener lista de todos los municipios activos
+        todos_municipios = await db.predios.distinct("municipio")
+        municipios_pendientes = [m for m in todos_municipios if m and m not in municipios_cargados]
+        
+        return {
+            "mes": mes_actual,
+            "total_cargados": len(municipios_cargados),
+            "total_pendientes": len(municipios_pendientes),
+            "municipios_cargados": cargas,
+            "municipios_pendientes": municipios_pendientes
+        }
+
+
+
 @api_router.get("/gdb/predios-con-geometria")
 async def get_predios_con_geometria(
     municipio: Optional[str] = None,
