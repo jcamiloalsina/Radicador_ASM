@@ -5495,8 +5495,10 @@ async def upload_gdb_file(
                                     "geometry": geom_wgs84.__geo_interface__
                                 })
                                 geometrias_guardadas += 1
+                                urban_guardadas += 1
                             except:
                                 pass
+                    logger.info(f"GDB {municipio_nombre}: Guardadas {urban_guardadas} geometrías urbanas desde capa {urban_layer}")
                     break
                 except:
                     continue
