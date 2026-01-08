@@ -412,4 +412,26 @@
 - ✅ Admin: catastro@asomunicipios.gov.co / Asm*123* - WORKING
 - ✅ API Base URL: https://land-admin.preview.emergentagent.com - WORKING
 
+- **Pending**: Verificación visual por usuario
+
+### Feature: Mejoras UI/UX - Vista de Peticiones y Formulario (January 8, 2026)
+- **Status**: ✅ COMPLETADO
+- **Changes Implemented**:
+  - ✅ "CatastroYa" cambiado a "Asomunicipios en línea" en Login, Register, ForgotPassword
+  - ✅ Vista "Todas las Peticiones" simplificada - ahora muestra tabla con:
+    - Radicado destacado en verde
+    - Estado con badge de colores
+    - Fecha
+    - Botón "Ver" para acceder a detalles
+  - ✅ Formulario de creación de petición - agregado campo "Descripción de la Petición" (textarea)
+  - ✅ Backend actualizado para aceptar campo `descripcion`
+
+### Feature: Certificado Catastral - Encabezado Mejorado (January 8, 2026)
+- **Status**: ✅ COMPLETADO
+- **Changes**:
+  - ✅ "ASOMUNICIPIOS" como título principal destacado
+  - ✅ "Asociación de Municipios..." en texto más pequeño debajo
+  - ✅ "Gestor Catastral" en verde
+  - ✅ Logo a la izquierda, texto a la derecha con barra separadora
+
 
