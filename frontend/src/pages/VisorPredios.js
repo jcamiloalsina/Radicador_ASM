@@ -685,6 +685,136 @@ export default function VisorPredios() {
             </CardContent>
           </Card>
 
+          {/* Detalle del Predio Seleccionado - Aparece justo después de la búsqueda */}
+          {selectedPredio && (
+            <Card className="border-emerald-300 shadow-md">
+              <CardHeader className="py-3 bg-emerald-100">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-emerald-700" />
+                    <span className="text-emerald-800 font-semibold">Predio Seleccionado</span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 text-xs text-slate-500"
+                    onClick={() => { setSelectedPredio(null); setGeometry(null); }}
+                  >
+                    ✕ Cerrar
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-3 text-sm">
+                {/* Código Predial */}
+                <div className="bg-slate-50 p-2 rounded">
+                  <p className="text-xs text-slate-500">Código Predial Nacional</p>
+                  <p className="font-mono text-xs font-medium text-slate-800">{selectedPredio.codigo_predial_nacional}</p>
+                </div>
+
+                {/* Municipio y Zona */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-xs text-slate-500">Municipio</p>
+                    <p className="font-medium">{selectedPredio.municipio}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Zona</p>
+                    <p className="font-medium">{selectedPredio.zona === '00' ? 'Rural' : 'Urbano'}</p>
+                  </div>
+                </div>
+
+                {/* Propietario */}
+                <div className="border-t pt-2">
+                  <p className="text-xs text-slate-500 flex items-center gap-1"><User className="w-3 h-3" /> Propietario</p>
+                  {selectedPredio.propietarios?.length > 0 ? (
+                    selectedPredio.propietarios.map((p, idx) => (
+                      <p key={idx} className="font-medium">{p.nombre_propietario}</p>
+                    ))
+                  ) : (
+                    <p className="font-medium">{selectedPredio.nombre_propietario || 'No registrado'}</p>
+                  )}
+                </div>
+
+                {/* ÁREAS: R1/R2 vs GDB */}
+                <div className="border-t pt-2">
+                  <p className="text-xs text-slate-500 flex items-center gap-1 mb-2"><Building className="w-3 h-3" /> Áreas del Predio</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Columna R1/R2 */}
+                    <div className="bg-blue-50 p-2 rounded border border-blue-200">
+                      <p className="text-xs font-semibold text-blue-700 mb-1">📋 R1/R2</p>
+                      <div className="space-y-1">
+                        <div>
+                          <p className="text-[10px] text-blue-600">Área Terreno</p>
+                          <p className="font-bold text-blue-800">{formatArea(selectedPredio.area_terreno)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-blue-600">Área Construida</p>
+                          <p className="font-medium text-blue-700">{formatArea(selectedPredio.area_construida)}</p>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Columna GDB */}
+                    <div className={`p-2 rounded border ${geometry ? 'bg-amber-50 border-amber-200' : 'bg-slate-100 border-slate-200'}`}>
+                      <p className={`text-xs font-semibold mb-1 ${geometry ? 'text-amber-700' : 'text-slate-500'}`}>🗺️ GDB</p>
+                      {geometry ? (
+                        <div className="space-y-1">
+                          <div>
+                            <p className="text-[10px] text-amber-600">Área GDB</p>
+                            <p className="font-bold text-amber-800">{formatArea(geometry.properties?.area_m2 || selectedPredio.area_gdb)}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-emerald-600">Estado</p>
+                            <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700">✓ Con geometría</Badge>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-[10px] text-slate-500">Área GDB</p>
+                          <p className="text-xs text-slate-400">Sin geometría</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Avalúo */}
+                <div className="border-t pt-2">
+                  <p className="text-xs text-slate-500 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Avalúo Catastral</p>
+                  <p className="text-lg font-bold text-emerald-700">{formatCurrency(selectedPredio.avaluo)}</p>
+                </div>
+
+                {/* Botón Certificado */}
+                {['coordinador', 'administrador', 'atencion_usuario'].includes(user?.role) && (
+                  <Button
+                    className="w-full bg-emerald-700 hover:bg-emerald-800"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const token = localStorage.getItem('token');
+                        const response = await fetch(`${API}/predios/${selectedPredio.id}/certificado`, {
+                          headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (!response.ok) throw new Error('Error');
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `Certificado_${selectedPredio.codigo_predial_nacional}.pdf`;
+                        a.click();
+                        toast.success('Certificado generado');
+                      } catch (e) {
+                        toast.error('Error al generar certificado');
+                      }
+                    }}
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Generar Certificado
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Búsqueda por Coordenadas */}
           <Card className="border-blue-200 bg-blue-50">
             <CardHeader className="py-2 px-3">
