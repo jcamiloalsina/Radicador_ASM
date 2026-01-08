@@ -5308,27 +5308,85 @@ async def upload_gdb_file(
             except Exception as e:
                 logger.warning(f"Error guardando geometrías: {e}")
         
-        # Relacionar con predios existentes - buscar por múltiples campos
+        # Relacionar con predios existentes - matching mejorado
         if codigos_gdb:
-            # Convertir códigos a lista y también crear versiones sin ceros a la izquierda
-            codigos_list = list(codigos_gdb)
-            codigos_sin_ceros = [c.lstrip('0') for c in codigos_list if c]
-            todos_codigos = list(set(codigos_list + codigos_sin_ceros))
+            logger.info(f"GDB tiene {len(codigos_gdb)} códigos únicos. Intentando relacionar...")
             
-            # Actualizar predios que coincidan por codigo_predial_nacional o que contengan el código
-            result = await db.predios.update_many(
-                {
-                    "$or": [
-                        {"codigo_predial_nacional": {"$in": todos_codigos}},
-                        {"codigo_predial_nacional": {"$regex": f"^({'|'.join(codigos_list[:100])})"}},  # Limitar regex
-                    ],
-                    "municipio": municipio_nombre
-                },
-                {"$set": {"tiene_geometria": True, "gdb_source": gdb_name, "gdb_updated": datetime.now(timezone.utc).isoformat()}}
-            )
-            stats["relacionados"] = result.modified_count
+            # Los códigos en GDB pueden ser de diferentes longitudes (20, 22, 30 dígitos)
+            # Necesitamos hacer matching flexible
+            relacionados_total = 0
+            
+            for codigo_gdb in codigos_gdb:
+                if not codigo_gdb:
+                    continue
+                    
+                codigo_gdb_limpio = codigo_gdb.strip()
+                
+                # Crear diferentes patrones de búsqueda
+                # 1. Match exacto
+                # 2. El código GDB es un prefijo del código en BD
+                # 3. El código GDB está contenido en el código de BD
+                result = await db.predios.update_many(
+                    {
+                        "$or": [
+                            {"codigo_predial_nacional": codigo_gdb_limpio},
+                            {"codigo_predial_nacional": {"$regex": f"^{codigo_gdb_limpio}"}},
+                            {"codigo_homologado": codigo_gdb_limpio},
+                        ],
+                        "municipio": municipio_nombre
+                    },
+                    {"$set": {
+                        "tiene_geometria": True, 
+                        "gdb_source": gdb_name, 
+                        "codigo_gdb": codigo_gdb_limpio,
+                        "gdb_updated": datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+                relacionados_total += result.modified_count
+            
+            stats["relacionados"] = relacionados_total
+            
+            # Si no hubo matches, intentar con los primeros N dígitos
+            if relacionados_total == 0:
+                logger.warning("No se encontraron matches directos. Intentando match por prefijo...")
+                # Obtener todos los predios del municipio y hacer match manual
+                predios_municipio = await db.predios.find(
+                    {"municipio": municipio_nombre},
+                    {"_id": 0, "codigo_predial_nacional": 1, "id": 1}
+                ).to_list(50000)
+                
+                matches_por_prefijo = 0
+                for predio in predios_municipio:
+                    codigo_bd = predio.get("codigo_predial_nacional", "")
+                    if not codigo_bd:
+                        continue
+                    
+                    # Extraer diferentes prefijos del código de BD para comparar
+                    prefijos_bd = [
+                        codigo_bd[:20],  # Primeros 20 dígitos
+                        codigo_bd[:22],  # Primeros 22 dígitos
+                        codigo_bd[:5] + codigo_bd[5:].lstrip('0')[:15],  # Quitar ceros intermedios
+                    ]
+                    
+                    for codigo_gdb in codigos_gdb:
+                        if codigo_gdb in prefijos_bd or any(p.startswith(codigo_gdb) for p in prefijos_bd):
+                            await db.predios.update_one(
+                                {"id": predio["id"]},
+                                {"$set": {
+                                    "tiene_geometria": True,
+                                    "gdb_source": gdb_name,
+                                    "codigo_gdb": codigo_gdb,
+                                    "gdb_updated": datetime.now(timezone.utc).isoformat()
+                                }}
+                            )
+                            matches_por_prefijo += 1
+                            break
+                
+                stats["relacionados"] = matches_por_prefijo
+                stats["metodo_match"] = "prefijo"
         
         stats["geometrias_guardadas"] = geometrias_guardadas
+        stats["codigos_gdb_unicos"] = len(codigos_gdb)
         
         # Registrar carga mensual
         mes_actual = datetime.now().strftime("%Y-%m")
