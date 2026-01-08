@@ -2155,55 +2155,6 @@ export default function Predios() {
                   </div>
                 </div>
               )}
-                        className="font-mono"
-                      />
-                    </div>
-                    <div className="bg-red-50 p-2 rounded border border-red-200">
-                      <Label className="text-xs text-red-700 font-semibold">Terreno (18-21) *</Label>
-                      <Input 
-                        value={codigoManual.terreno} 
-                        onChange={(e) => setCodigoManual({...codigoManual, terreno: e.target.value.padStart(4, '0').slice(-4)})}
-                        maxLength={4}
-                        className="font-mono font-bold text-red-700"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-slate-500">PH: Edif-Piso-Unidad</Label>
-                      <div className="flex gap-1">
-                        <Input 
-                          value={codigoManual.edificio} 
-                          onChange={(e) => setCodigoManual({...codigoManual, edificio: e.target.value.slice(-1) || '0'})}
-                          maxLength={1}
-                          className="font-mono w-10 text-center"
-                          placeholder="0"
-                        />
-                        <Input 
-                          value={codigoManual.piso} 
-                          onChange={(e) => setCodigoManual({...codigoManual, piso: e.target.value.padStart(4, '0').slice(-4)})}
-                          maxLength={4}
-                          className="font-mono w-16"
-                          placeholder="0000"
-                        />
-                        <Input 
-                          value={codigoManual.unidad} 
-                          onChange={(e) => setCodigoManual({...codigoManual, unidad: e.target.value.padStart(4, '0').slice(-4)})}
-                          maxLength={4}
-                          className="font-mono w-16"
-                          placeholder="0000"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Botón de verificar */}
-                  <div className="mt-4 flex gap-3">
-                    <Button onClick={verificarCodigoCompleto} variant="outline" className="flex-1">
-                      <Search className="w-4 h-4 mr-2" />
-                      Verificar Código
-                    </Button>
-                  </div>
-                </div>
-              )}
 
               {/* Info del terreno disponible */}
               {terrenoInfo && (
