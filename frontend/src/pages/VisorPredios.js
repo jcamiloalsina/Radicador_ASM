@@ -459,6 +459,27 @@ export default function VisorPredios() {
                   <SelectItem value="street">Mapa de Calles</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {/* Selector de tipo de límites */}
+              <Select value={tipoLimites} onValueChange={setTipoLimites}>
+                <SelectTrigger className="text-xs">
+                  <SelectValue placeholder="Tipo de límites" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gdb">
+                    <div className="flex flex-col">
+                      <span>Límites GDB</span>
+                      <span className="text-xs text-slate-500">Con líneas internas (revisar errores)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="oficial">
+                    <div className="flex flex-col">
+                      <span>Límites Oficiales</span>
+                      <span className="text-xs text-slate-500">DANE/IGAC (limpios)</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </CardContent>
           </Card>
 
