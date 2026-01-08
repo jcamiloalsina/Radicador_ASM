@@ -5430,6 +5430,81 @@ async def get_predios_con_geometria(
     }
 
 
+@api_router.get("/gdb/geometrias-disponibles")
+async def get_geometrias_disponibles(
+    municipio: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obtiene las geometrías GDB guardadas por municipio"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    pipeline = [
+        {"$group": {
+            "_id": {"municipio": "$municipio", "tipo": "$tipo"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id.municipio": 1}}
+    ]
+    
+    if municipio:
+        pipeline.insert(0, {"$match": {"municipio": municipio}})
+    
+    resultados = await db.gdb_geometrias.aggregate(pipeline).to_list(100)
+    
+    # Organizar por municipio
+    por_municipio = {}
+    for r in resultados:
+        mun = r["_id"]["municipio"]
+        tipo = r["_id"]["tipo"]
+        if mun not in por_municipio:
+            por_municipio[mun] = {"rural": 0, "urbano": 0, "total": 0}
+        por_municipio[mun][tipo] = r["count"]
+        por_municipio[mun]["total"] += r["count"]
+    
+    total_geometrias = await db.gdb_geometrias.count_documents({} if not municipio else {"municipio": municipio})
+    
+    return {
+        "total_geometrias": total_geometrias,
+        "por_municipio": por_municipio,
+        "municipios_con_gdb": list(por_municipio.keys())
+    }
+
+
+@api_router.get("/gdb/buscar-geometria/{codigo}")
+async def buscar_geometria_por_codigo(
+    codigo: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Busca geometría por código predial en la colección de geometrías guardadas"""
+    if current_user['role'] == UserRole.CIUDADANO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    # Buscar exacto primero
+    geometria = await db.gdb_geometrias.find_one(
+        {"codigo": codigo},
+        {"_id": 0}
+    )
+    
+    if not geometria:
+        # Buscar por coincidencia parcial (código contenido)
+        geometria = await db.gdb_geometrias.find_one(
+            {"codigo": {"$regex": f".*{codigo}.*"}},
+            {"_id": 0}
+        )
+    
+    if not geometria:
+        return {"encontrado": False, "mensaje": "No se encontró geometría para este código"}
+    
+    return {
+        "encontrado": True,
+        "codigo": geometria.get("codigo"),
+        "tipo": geometria.get("tipo"),
+        "municipio": geometria.get("municipio"),
+        "geometry": geometria.get("geometry")
+    }
+
+
 @api_router.patch("/users/{user_id}/gdb-permission")
 async def update_user_gdb_permission(
     user_id: str,
