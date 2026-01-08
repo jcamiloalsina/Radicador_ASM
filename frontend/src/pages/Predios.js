@@ -543,6 +543,7 @@ export default function Predios() {
   const [showDeletedDialog, setShowDeletedDialog] = useState(false);
   const [showPendientesDialog, setShowPendientesDialog] = useState(false);
   const [showReaparicionesDialog, setShowReaparicionesDialog] = useState(false);
+  const [reaparicionesConteo, setReaparicionesConteo] = useState({});
   const [selectedPredio, setSelectedPredio] = useState(null);
   const [prediosEliminados, setPrediosEliminados] = useState([]);
   const [cambiosPendientes, setCambiosPendientes] = useState([]);
