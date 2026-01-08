@@ -301,3 +301,30 @@
 
 **Recommendation**: All review request features are working correctly. Main issues are with data filtering logic and user role credentials, but core functionality is solid.
 
+
+### Feature: GDB-Predios Revinculación (IMPLEMENTED)
+- **Status**: ✅ WORKING
+- **Backend Endpoint**: POST `/api/gdb/revincular-predios`
+- **Algorithm**: Matching mejorado por segmentos de código catastral
+- **Results**:
+  - Before: 133,499 predios con geometría (76.54%)
+  - After: 143,354 predios con geometría (82.19%)
+  - **Total nuevos vinculados: 9,855 predios (+5.65%)**
+  
+**Breakdown por municipio:**
+| Municipio | Nuevos Vinculados |
+|-----------|-------------------|
+| San Calixto | 6,554 |
+| Ábrego | 1,704 |
+| Cáchira | 349 |
+| Hacarí | 317 |
+| Convención | 312 |
+| La Playa | 169 |
+| Teorama | 120 |
+| Río de Oro | 115 |
+| El Carmen | 114 |
+| Bucarasica | 69 |
+| El Tarra | 32 |
+
+- **Frontend**: Botón "Revincular GDB" agregado en Gestión de Predios
+
