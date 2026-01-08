@@ -427,7 +427,17 @@ export default function VisorPredios() {
             <CardContent className="space-y-3">
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Municipio</label>
-                <Select value={filterMunicipio || "none"} onValueChange={(v) => setFilterMunicipio(v === "none" ? "" : v)}>
+                <Select 
+                  value={filterMunicipio || "none"} 
+                  onValueChange={(v) => {
+                    const newValue = v === "none" ? "" : v;
+                    setFilterMunicipio(newValue);
+                    // Si se limpia el filtro, también ocultar predios
+                    if (!newValue) {
+                      setMostrarPredios(false);
+                    }
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione municipio" />
                   </SelectTrigger>
