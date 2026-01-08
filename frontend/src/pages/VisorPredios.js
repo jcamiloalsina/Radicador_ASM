@@ -659,9 +659,9 @@ export default function VisorPredios() {
                 />
                 
                 {/* Mostrar todas las geometrías filtradas */}
-                {allGeometries && allGeometries.features && (
+                {allGeometries && allGeometries.features && allGeometries.features.length > 0 && (
                   <GeoJSON
-                    key={`all-${filterMunicipio}-${filterZona}-${allGeometries.total}`}
+                    key={`geojson-${filterMunicipio}-${filterZona}-${allGeometries.total}-${Date.now()}`}
                     data={allGeometries}
                     style={(feature) => ({
                       color: feature.properties?.tipo === 'Urbano' ? '#FF6B35' : '#00FFFF',
@@ -675,7 +675,6 @@ export default function VisorPredios() {
                         <div class="text-sm">
                           <p class="font-bold text-xs">${feature.properties?.codigo || 'Sin código'}</p>
                           <p class="text-xs">${feature.properties?.tipo || ''}</p>
-                          <p class="text-xs">Área: ${(feature.properties?.area_m2 || 0).toLocaleString()} m²</p>
                         </div>
                       `);
                     }}
