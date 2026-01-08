@@ -798,15 +798,16 @@ export default function Predios() {
   const [estructuraCodigo, setEstructuraCodigo] = useState(null);
   const [verificacionCodigo, setVerificacionCodigo] = useState(null);
   const [codigoManual, setCodigoManual] = useState({
-    zona: '00',
-    sector: '00',
-    comuna: '00',
-    barrio: '00',
-    manzana_vereda: '0000',
-    terreno: '0001',
-    edificio: '0',
-    piso: '0000',
-    unidad: '0000'
+    zona: '0',           // Posición 6 (1 dígito)
+    sector: '00',        // Posición 7-8 (2 dígitos)
+    comuna: '000',       // Posición 9-11 (3 dígitos)
+    barrio: '00',        // Posición 12-13 (2 dígitos)
+    manzana_vereda: '0000', // Posición 14-17 (4 dígitos)
+    terreno: '0001',     // Posición 18-21 (4 dígitos)
+    condicion: '0',      // Posición 22 (1 dígito)
+    edificio: '00',      // Posición 23-24 (2 dígitos)
+    piso: '00',          // Posición 25-26 (2 dígitos)
+    unidad: '0000'       // Posición 27-30 (4 dígitos)
   });
   
   // Estado para múltiples propietarios
