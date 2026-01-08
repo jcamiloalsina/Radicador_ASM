@@ -5400,36 +5400,38 @@ async def upload_gdb_file(
             update_progress("guardando_urbano", 65, "Procesando geometrías urbanas...")
             urban_layers = ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno']
             for urban_layer in urban_layers:
-                    try:
-                        gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
-                        total_urban = len(gdf_urban)
-                        for idx, row in gdf_urban.iterrows():
-                            if idx % 500 == 0:
-                                pct = 65 + int((idx / total_urban) * 10)
-                                update_progress("guardando_urbano", pct, f"Procesando geometrías urbanas: {idx}/{total_urban}")
-                            codigo = None
-                            for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED']:
-                                if col in gdf_urban.columns and pd.notna(row.get(col)):
-                                    codigo = str(row[col])
-                                    break
-                            if codigo and row.geometry:
-                                try:
-                                    geom_wgs84 = transform(project, row.geometry)
-                                    await db.gdb_geometrias.insert_one({
-                                        "codigo": codigo,
-                                        "tipo": "urbano",
-                                        "gdb_source": gdb_name,
-                                        "municipio": municipio_nombre,
-                                        "geometry": geom_wgs84.__geo_interface__
-                                    })
-                                    geometrias_guardadas += 1
-                                except:
-                                    pass
-                        break
-                    except:
+                try:
+                    gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
+                    if len(gdf_urban) == 0:
                         continue
-            except Exception as e:
-                logger.warning(f"Error guardando geometrías: {e}")
+                    total_urban = len(gdf_urban)
+                    for idx, row in gdf_urban.iterrows():
+                        if idx % 500 == 0:
+                            pct = 65 + int((idx / total_urban) * 10)
+                            update_progress("guardando_urbano", pct, f"Procesando geometrías urbanas: {idx}/{total_urban}")
+                        codigo = None
+                        for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED']:
+                            if col in gdf_urban.columns and pd.notna(row.get(col)):
+                                codigo = str(row[col])
+                                break
+                        if codigo and row.geometry:
+                            try:
+                                geom_wgs84 = transform(project, row.geometry) if project else row.geometry
+                                await db.gdb_geometrias.insert_one({
+                                    "codigo": codigo,
+                                    "tipo": "urbano",
+                                    "gdb_source": gdb_name,
+                                    "municipio": municipio_nombre,
+                                    "geometry": geom_wgs84.__geo_interface__
+                                })
+                                geometrias_guardadas += 1
+                            except:
+                                pass
+                    break
+                except:
+                    continue
+        except Exception as e:
+            logger.warning(f"Error guardando geometrías: {e}")
         
         update_progress("relacionando", 75, f"Relacionando {len(codigos_gdb)} códigos GDB con predios...")
         
