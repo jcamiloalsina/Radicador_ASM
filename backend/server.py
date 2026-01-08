@@ -2484,6 +2484,7 @@ async def import_predios_excel(
         predios_nuevos_count = len(new_codigos - existing_codigos)
         
         # Registrar importación
+        logger.info(f"Import stats: rows_read={rows_read}, unique_predios={len(r1_data)}, municipio={municipio}")
         await db.importaciones.insert_one({
             "id": str(uuid.uuid4()),
             "municipio": municipio,
