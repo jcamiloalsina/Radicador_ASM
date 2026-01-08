@@ -500,7 +500,10 @@ export default function VisorPredios() {
             } else if (progressRes.data.status === 'completado') {
               toast.success(`¡Completado! ${response.data.predios_relacionados} predios relacionados de ${response.data.total_geometrias_gdb} geometrías GDB`);
               fetchGdbStats();
+              verificarCargasMensuales(); // Actualizar estado de cargas mensuales
               setShowUploadGdb(false);
+              setMostrarPreguntaGdb(false);
+              setGdbCargadaEsteMes(true);
               setTimeout(() => setUploadProgress(null), 3000);
             }
           } catch (err) {
