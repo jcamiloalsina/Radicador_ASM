@@ -196,30 +196,54 @@ export default function VisorPredios() {
     }
   };
 
-  // Función para subir nueva base GDB
+  // Función para subir nueva base GDB (ZIP o carpeta)
   const handleUploadGdb = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     
-    if (!file.name.endsWith('.zip') && !file.name.endsWith('.gdb')) {
-      toast.error('El archivo debe ser un .zip que contenga el .gdb');
+    // Si es un solo archivo ZIP
+    if (files.length === 1 && files[0].name.endsWith('.zip')) {
+      setUploadingGdb(true);
+      const formData = new FormData();
+      formData.append('files', files[0]);
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${API}/gdb/upload`, formData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        toast.success(`Base gráfica de ${response.data.municipio || 'municipio'} actualizada. ${response.data.total_geometrias} geometrías, ${response.data.predios_relacionados} predios relacionados.`);
+        fetchGdbStats();
+        setShowUploadGdb(false);
+      } catch (error) {
+        toast.error(error.response?.data?.detail || 'Error al subir la base gráfica');
+      } finally {
+        setUploadingGdb(false);
+      }
       return;
     }
     
+    // Si son múltiples archivos (carpeta .gdb)
     setUploadingGdb(true);
     const formData = new FormData();
-    formData.append('file', file);
+    
+    for (let i = 0; i < files.length; i++) {
+      formData.append('files', files[i]);
+    }
     
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${API}/gdb/upload`, formData, {
+      const response = await axios.post(`${API}/gdb/upload`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
-      toast.success('Base gráfica actualizada exitosamente');
-      fetchGdbStats(); // Recargar estadísticas
+      toast.success(`Base gráfica de ${response.data.municipio || 'municipio'} actualizada. ${response.data.total_geometrias} geometrías, ${response.data.predios_relacionados} predios relacionados.`);
+      fetchGdbStats();
       setShowUploadGdb(false);
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al subir la base gráfica');
