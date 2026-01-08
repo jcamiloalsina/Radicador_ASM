@@ -2113,10 +2113,34 @@ async def get_predios_stats(current_user: dict = Depends(get_current_user)):
         for d in destinos_result
     ]
     
+    # Conteo de registros R2 y área de GDB
+    pipeline_r2_gdb = [
+        {"$match": {"vigencia": vigencia_mas_alta, "deleted": {"$ne": True}}},
+        {"$project": {
+            "has_r2": {"$cond": [{"$gt": [{"$size": {"$ifNull": ["$r2_registros", []]}}, 0]}, 1, 0]},
+            "r2_count": {"$size": {"$ifNull": ["$r2_registros", []]}},
+            "area_gdb": {"$ifNull": ["$area_gdb", 0]},
+            "tiene_geometria": 1
+        }},
+        {"$group": {
+            "_id": None,
+            "total_con_r2": {"$sum": "$has_r2"},
+            "total_registros_r2": {"$sum": "$r2_count"},
+            "total_area_gdb": {"$sum": "$area_gdb"},
+            "total_con_geometria": {"$sum": {"$cond": ["$tiene_geometria", 1, 0]}}
+        }}
+    ]
+    r2_gdb_result = await db.predios.aggregate(pipeline_r2_gdb).to_list(1)
+    r2_gdb_stats = r2_gdb_result[0] if r2_gdb_result else {}
+    
     return {
         "total_predios": total_predios,
         "total_avaluo": total_avaluo,
         "total_area_terreno": total_area,
+        "total_registros_r2": r2_gdb_stats.get("total_registros_r2", 0),
+        "total_con_r2": r2_gdb_stats.get("total_con_r2", 0),
+        "total_area_gdb": r2_gdb_stats.get("total_area_gdb", 0),
+        "total_con_geometria": r2_gdb_stats.get("total_con_geometria", 0),
         "by_municipio": by_municipio,
         "by_destino": by_destino[:20],
         "vigencia_actual": vigencia_year
