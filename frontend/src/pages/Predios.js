@@ -808,6 +808,29 @@ export default function Predios() {
     piso: '0000',
     unidad: '0000'
   });
+  
+  // Estado para múltiples propietarios
+  const [propietarios, setPropietarios] = useState([{
+    nombre_propietario: '',
+    tipo_documento: 'C',
+    numero_documento: '',
+    estado_civil: '',
+    porcentaje: 100
+  }]);
+  
+  // Estado para múltiples zonas físicas (R2)
+  const [zonasFisicas, setZonasFisicas] = useState([{
+    zona_fisica: '0',
+    zona_economica: '0',
+    area_terreno: '0',
+    habitaciones: '0',
+    banos: '0',
+    locales: '0',
+    pisos: '1',
+    puntaje: '0',
+    area_construida: '0'
+  }]);
+  
   const [formData, setFormData] = useState({
     municipio: '',
     zona: '00',
@@ -840,6 +863,56 @@ export default function Predios() {
     puntaje_1: '0',
     area_construida_1: '0'
   });
+  
+  // Funciones para manejar múltiples propietarios
+  const agregarPropietario = () => {
+    setPropietarios([...propietarios, {
+      nombre_propietario: '',
+      tipo_documento: 'C',
+      numero_documento: '',
+      estado_civil: '',
+      porcentaje: 0
+    }]);
+  };
+  
+  const eliminarPropietario = (index) => {
+    if (propietarios.length > 1) {
+      setPropietarios(propietarios.filter((_, i) => i !== index));
+    }
+  };
+  
+  const actualizarPropietario = (index, campo, valor) => {
+    const nuevos = [...propietarios];
+    nuevos[index][campo] = valor;
+    setPropietarios(nuevos);
+  };
+  
+  // Funciones para manejar múltiples zonas físicas
+  const agregarZonaFisica = () => {
+    setZonasFisicas([...zonasFisicas, {
+      zona_fisica: '0',
+      zona_economica: '0',
+      area_terreno: '0',
+      habitaciones: '0',
+      banos: '0',
+      locales: '0',
+      pisos: '1',
+      puntaje: '0',
+      area_construida: '0'
+    }]);
+  };
+  
+  const eliminarZonaFisica = (index) => {
+    if (zonasFisicas.length > 1) {
+      setZonasFisicas(zonasFisicas.filter((_, i) => i !== index));
+    }
+  };
+  
+  const actualizarZonaFisica = (index, campo, valor) => {
+    const nuevas = [...zonasFisicas];
+    nuevas[index][campo] = valor;
+    setZonasFisicas(nuevas);
+  };
 
   useEffect(() => {
     fetchCatalogos();
