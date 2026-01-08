@@ -1192,6 +1192,38 @@ export default function VisorPredios() {
                     <FitBounds geometry={geometry} />
                   </>
                 )}
+                
+                {/* Marcador de coordenadas buscadas */}
+                {marcadorCoordenadas && (
+                  <>
+                    <FlyToCoordinates coordinates={marcadorCoordenadas} />
+                    <CircleMarker
+                      center={marcadorCoordenadas}
+                      radius={12}
+                      pathOptions={{
+                        color: '#DC2626',
+                        fillColor: '#FCA5A5',
+                        fillOpacity: 0.8,
+                        weight: 3
+                      }}
+                    >
+                      <Popup>
+                        <div className="text-sm">
+                          <p className="font-bold text-red-700">📍 Ubicación buscada</p>
+                          <p className="text-xs mt-1">Lat: {marcadorCoordenadas[0].toFixed(6)}°</p>
+                          <p className="text-xs">Lng: {marcadorCoordenadas[1].toFixed(6)}°</p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {(() => {
+                              const latDMS = decimalToDMS(marcadorCoordenadas[0], true);
+                              const lngDMS = decimalToDMS(Math.abs(marcadorCoordenadas[1]), false);
+                              return `${latDMS.grados}°${latDMS.minutos}'${latDMS.segundos}"${latDMS.direccion}, ${lngDMS.grados}°${lngDMS.minutos}'${lngDMS.segundos}"W`;
+                            })()}
+                          </p>
+                        </div>
+                      </Popup>
+                    </CircleMarker>
+                  </>
+                )}
               </MapContainer>
             </div>
           </Card>
