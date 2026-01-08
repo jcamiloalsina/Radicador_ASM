@@ -169,19 +169,28 @@ export default function DashboardLayout() {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
+            // Mostrar badge para Pendientes si hay cambios
+            const showBadge = item.path === '/dashboard/pendientes' && cambiosPendientesCount > 0;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center px-4 py-3 rounded-md transition-colors ${
+                className={`flex items-center justify-between px-4 py-3 rounded-md transition-colors ${
                   isActive
                     ? 'bg-emerald-800 text-white'
                     : 'text-emerald-100 hover:bg-emerald-800/50 hover:text-white'
                 }`}
                 data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
               >
-                <Icon className="w-5 h-5 mr-3" />
-                {item.label}
+                <div className="flex items-center">
+                  <Icon className="w-5 h-5 mr-3" />
+                  {item.label}
+                </div>
+                {showBadge && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                    {cambiosPendientesCount}
+                  </span>
+                )}
               </Link>
             );
           })}
