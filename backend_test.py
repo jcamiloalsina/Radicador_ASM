@@ -1623,6 +1623,97 @@ class CatastralAPITester:
         
         return False
 
+    def test_cadastral_certificate_generation(self):
+        """Test cadastral certificate generation endpoint as requested in review"""
+        print("\n📋 Testing Cadastral Certificate Generation (Review Request)...")
+        
+        # Step 1: Login with admin credentials
+        admin_success = self.test_login_with_credentials(
+            "catastro@asomunicipios.gov.co",
+            "Asm*123*",
+            "admin"
+        )
+        
+        if not admin_success:
+            print("   ❌ Failed to login with admin credentials")
+            return False
+        
+        # Step 2: Get a valid predio ID from Río de Oro municipality
+        success, response = self.run_test(
+            "Get predios from Río de Oro municipality",
+            "GET",
+            "predios?municipio=Río de Oro&limit=1",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        predio_id = None
+        if success and 'predios' in response and len(response['predios']) > 0:
+            predio = response['predios'][0]
+            predio_id = predio.get('id')
+            codigo_predial = predio.get('codigo_predial_nacional', 'Unknown')
+            print(f"   ✅ Found predio from Río de Oro: {codigo_predial}")
+        else:
+            print("   ❌ No predios found in Río de Oro municipality")
+            return False
+        
+        # Step 3: Generate cadastral certificate PDF
+        if predio_id:
+            url = f"{self.api_url}/predios/{predio_id}/certificado"
+            headers = {'Authorization': f'Bearer {self.tokens["admin"]}'}
+            
+            self.tests_run += 1
+            print(f"\n🔍 Testing Cadastral Certificate Generation...")
+            
+            try:
+                response = requests.get(url, headers=headers, timeout=60)  # Longer timeout for PDF generation
+                
+                success = response.status_code == 200
+                if success:
+                    self.tests_passed += 1
+                    print(f"✅ Passed - Status: {response.status_code}")
+                    
+                    # Check if response is a PDF file
+                    content_type = response.headers.get('content-type', '')
+                    content_length = len(response.content)
+                    
+                    if 'pdf' in content_type or 'application/pdf' in content_type:
+                        print(f"   ✅ PDF certificate generated successfully")
+                        print(f"   - Content-Type: {content_type}")
+                        print(f"   - Content-Length: {content_length} bytes")
+                        
+                        # Verify PDF size is substantial (should be > 50KB as per requirements)
+                        if content_length > 50000:  # 50KB
+                            print(f"   ✅ PDF size is substantial ({content_length/1024:.1f} KB) - contains images and content")
+                            
+                            # Check if it's around expected size (200+ KB)
+                            if content_length > 200000:  # 200KB
+                                print(f"   ✅ PDF size meets expected range (200+ KB)")
+                            else:
+                                print(f"   ⚠️ PDF size ({content_length/1024:.1f} KB) is less than expected 200+ KB")
+                            
+                            return True
+                        else:
+                            print(f"   ❌ PDF size ({content_length/1024:.1f} KB) is too small - may not contain proper content")
+                            return False
+                    else:
+                        print(f"   ❌ Content-Type is {content_type}, expected PDF")
+                        return False
+                else:
+                    print(f"❌ Failed - Expected 200, got {response.status_code}")
+                    try:
+                        error_detail = response.json()
+                        print(f"   Error details: {error_detail}")
+                    except:
+                        print(f"   Response text: {response.text}")
+                    return False
+                    
+            except Exception as e:
+                print(f"❌ Failed - Error: {str(e)}")
+                return False
+        
+        return False
+
     def test_reapariciones_management_system(self):
         """Test the reapariciones (reappearances) management system for predios"""
         print("\n🔄 Testing Reapariciones Management System...")
