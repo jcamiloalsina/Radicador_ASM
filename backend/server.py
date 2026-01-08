@@ -5074,6 +5074,22 @@ async def verificar_alerta_mensual(current_user: dict = Depends(get_current_user
         "mes_actual": mes_actual
     }
 
+
+# Diccionario global para almacenar el progreso de carga de GDB
+gdb_upload_progress = {}
+
+
+@api_router.get("/gdb/upload-progress/{upload_id}")
+async def get_gdb_upload_progress(
+    upload_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Obtiene el progreso de una carga de GDB"""
+    if upload_id not in gdb_upload_progress:
+        return {"status": "not_found", "progress": 0}
+    return gdb_upload_progress[upload_id]
+
+
 @api_router.post("/gdb/upload")
 async def upload_gdb_file(
     files: List[UploadFile] = File(...),
@@ -5087,6 +5103,24 @@ async def upload_gdb_file(
     import pandas as pd
     from pyproj import CRS, Transformer
     from shapely.ops import transform
+    
+    # Crear ID único para esta carga
+    upload_id = str(uuid.uuid4())
+    gdb_upload_progress[upload_id] = {
+        "status": "iniciando",
+        "progress": 0,
+        "message": "Iniciando carga de archivos...",
+        "upload_id": upload_id
+    }
+    
+    def update_progress(status: str, progress: int, message: str, **extra):
+        gdb_upload_progress[upload_id] = {
+            "status": status,
+            "progress": progress,
+            "message": message,
+            "upload_id": upload_id,
+            **extra
+        }
     
     # Check if user is an authorized gestor
     user_db = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
