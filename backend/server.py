@@ -5615,8 +5615,10 @@ async def upload_gdb_file(
         # Guardar geometrías en colección para búsquedas posteriores
         geometrias_guardadas = 0
         
-        # Limpiar geometrías anteriores de este municipio
-        await db.gdb_geometrias.delete_many({"gdb_source": gdb_name})
+        # REEMPLAZAR COMPLETAMENTE: Limpiar TODAS las geometrías anteriores de este municipio
+        deleted = await db.gdb_geometrias.delete_many({"municipio": municipio_nombre})
+        logger.info(f"GDB {municipio_nombre}: Eliminadas {deleted.deleted_count} geometrías anteriores")
+        update_progress("limpiando", 52, f"Reemplazando geometrías anteriores ({deleted.deleted_count} eliminadas)")
         
         # Guardar las geometrías con sus códigos
         try:
