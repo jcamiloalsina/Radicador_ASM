@@ -5409,6 +5409,7 @@ async def upload_gdb_file(
             
             # Si no hubo matches, intentar con los primeros N dígitos
             if relacionados_total == 0:
+                update_progress("matching_avanzado", 80, "Match directo falló. Intentando match por prefijo...")
                 logger.warning("No se encontraron matches directos. Intentando match por prefijo...")
                 # Obtener todos los predios del municipio y hacer match manual
                 predios_municipio = await db.predios.find(
@@ -5416,8 +5417,13 @@ async def upload_gdb_file(
                     {"_id": 0, "codigo_predial_nacional": 1, "id": 1}
                 ).to_list(50000)
                 
+                total_predios = len(predios_municipio)
                 matches_por_prefijo = 0
-                for predio in predios_municipio:
+                for i, predio in enumerate(predios_municipio):
+                    if i % 1000 == 0:
+                        pct = 80 + int((i / total_predios) * 15)
+                        update_progress("matching_avanzado", pct, f"Buscando coincidencias: {i}/{total_predios} predios ({matches_por_prefijo} encontrados)")
+                    
                     codigo_bd = predio.get("codigo_predial_nacional", "")
                     if not codigo_bd:
                         continue
@@ -5445,6 +5451,8 @@ async def upload_gdb_file(
                 
                 stats["relacionados"] = matches_por_prefijo
                 stats["metodo_match"] = "prefijo"
+        
+        update_progress("finalizando", 95, f"Registrando carga... {stats['relacionados']} predios relacionados")
         
         stats["geometrias_guardadas"] = geometrias_guardadas
         stats["codigos_gdb_unicos"] = len(codigos_gdb)
