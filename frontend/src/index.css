@@ -86,3 +86,28 @@ code {
         border-bottom-color: inherit;
     }
 }
+
+/* Estilos para etiquetas de municipios en el mapa */
+.municipio-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  color: #1a1a1a !important;
+  text-shadow: 
+    1px 1px 0 #fff,
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    0 1px 0 #fff,
+    0 -1px 0 #fff,
+    1px 0 0 #fff,
+    -1px 0 0 #fff !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+}
+
+.municipio-label::before {
+  display: none !important;
+}
