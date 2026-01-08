@@ -61,6 +61,8 @@ export default function VisorPredios() {
   const [filterMunicipio, setFilterMunicipio] = useState('');
   const [filterZona, setFilterZona] = useState('todos');
   const [allGeometries, setAllGeometries] = useState(null);
+  const [limitesMunicipios, setLimitesMunicipios] = useState(null); // Límites de municipios
+  const [mostrarPredios, setMostrarPredios] = useState(false); // Controlar si mostrar predios individuales
   const [loadingGeometries, setLoadingGeometries] = useState(false);
   const mapRef = useRef(null);
 
@@ -70,18 +72,30 @@ export default function VisorPredios() {
 
   useEffect(() => {
     fetchGdbStats();
+    fetchLimitesMunicipios();
   }, []);
 
-  // Cargar geometrías cuando cambian los filtros
+  // Cargar geometrías cuando cambian los filtros Y el usuario quiere ver predios
   useEffect(() => {
-    if (filterMunicipio) {
-      // Limpiar geometrías anteriores antes de cargar nuevas
+    if (filterMunicipio && mostrarPredios) {
       setAllGeometries(null);
       fetchAllGeometries();
-    } else {
+    } else if (!mostrarPredios) {
       setAllGeometries(null);
     }
-  }, [filterMunicipio, filterZona]);
+  }, [filterMunicipio, filterZona, mostrarPredios]);
+
+  const fetchLimitesMunicipios = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/gdb/limites-municipios`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setLimitesMunicipios(response.data);
+    } catch (error) {
+      console.error('Error loading municipality limits:', error);
+    }
+  };
 
   const fetchAllGeometries = async () => {
     setLoadingGeometries(true);
