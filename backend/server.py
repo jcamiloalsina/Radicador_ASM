@@ -5315,15 +5315,44 @@ async def upload_gdb_file(
         codigos_gdb = set()
         
         try:
-            # Intentar diferentes nombres de capas rurales
+            # Primero listar todas las capas disponibles para diagnóstico
+            available_layers = []
+            try:
+                import pyogrio
+                layers_info = pyogrio.list_layers(str(gdb_found))
+                available_layers = [layer[0] for layer in layers_info]
+                logger.info(f"GDB {municipio_nombre}: Capas disponibles: {available_layers}")
+                update_progress("analizando", 28, f"Capas encontradas: {', '.join(available_layers[:5])}...")
+            except Exception as e:
+                logger.warning(f"No se pudo listar capas: {e}")
+            
+            # Intentar diferentes nombres de capas rurales - incluir más variantes
             update_progress("leyendo_rural", 30, "Leyendo capa rural...")
-            rural_layers = ['R_TERRENO_1', 'R_TERRENO', 'R_Terreno', 'TERRENO', 'Terreno', 'terreno']
+            rural_layers = [
+                'R_TERRENO_1', 'R_TERRENO', 'R_Terreno', 'r_terreno', 'r_terreno_1',
+                'TERRENO', 'Terreno', 'terreno', 
+                'TERRENO_R', 'terreno_r', 'Terreno_R',
+                'R_PREDIO', 'R_Predio', 'r_predio',
+                'RURAL', 'Rural', 'rural',
+                'TERRENO_RURAL', 'terreno_rural', 'Terreno_Rural'
+            ]
+            
+            # También buscar capas que contengan "R_" o "RURAL" en el nombre
+            for layer_name in available_layers:
+                if layer_name.upper().startswith('R_') and layer_name not in rural_layers:
+                    rural_layers.insert(0, layer_name)
+                elif 'RURAL' in layer_name.upper() and layer_name not in rural_layers:
+                    rural_layers.insert(0, layer_name)
+            
             gdf_rural = None
+            rural_layer_found = None
             for rural_layer in rural_layers:
                 try:
                     gdf_rural = gpd.read_file(str(gdb_found), layer=rural_layer)
                     if len(gdf_rural) > 0:
                         stats["rurales"] = len(gdf_rural)
+                        rural_layer_found = rural_layer
+                        logger.info(f"GDB {municipio_nombre}: Capa rural encontrada '{rural_layer}' con {len(gdf_rural)} registros")
                         update_progress("leyendo_rural", 35, f"Capa rural ({rural_layer}): {len(gdf_rural)} geometrías encontradas")
                         # Extraer códigos prediales
                         for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
@@ -5331,12 +5360,23 @@ async def upload_gdb_file(
                                 codigos_gdb.update(gdf_rural[col].dropna().astype(str).tolist())
                                 break
                         break
-                except:
+                except Exception as layer_err:
                     continue
+            
+            if not rural_layer_found:
+                logger.warning(f"GDB {municipio_nombre}: No se encontró capa rural. Capas disponibles: {available_layers}")
+                update_progress("leyendo_rural", 35, "No se encontró capa rural en el GDB")
             
             update_progress("leyendo_urbano", 40, "Leyendo capa urbana...")
             gdf_urban = None
-            urban_layers = ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno']
+            urban_layers = ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno', 'u_terreno', 'u_terreno_1', 'URBANO', 'Urbano', 'urbano']
+            
+            # También buscar capas que contengan "U_" o "URBAN" en el nombre
+            for layer_name in available_layers:
+                if layer_name.upper().startswith('U_') and layer_name not in urban_layers:
+                    urban_layers.insert(0, layer_name)
+                elif 'URBAN' in layer_name.upper() and layer_name not in urban_layers:
+                    urban_layers.insert(0, layer_name)
             for urban_layer in urban_layers:
                 try:
                     gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
