@@ -1524,6 +1524,23 @@ export default function Predios() {
                     </Button>
                   </div>
                 </div>
+                {/* Filtro de geometría GDB */}
+                <Select value={filterGeometria} onValueChange={setFilterGeometria}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Geometría GDB" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="con">Con geometría</SelectItem>
+                    <SelectItem value="sin">Sin geometría</SelectItem>
+                  </SelectContent>
+                </Select>
+                {gdbStats?.por_municipio?.[filterMunicipio] && (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
+                    <Map className="w-3 h-3 mr-1" />
+                    {gdbStats.por_municipio[filterMunicipio]?.total || 0} geometrías GDB
+                  </Badge>
+                )}
                 <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
                   <Plus className="w-4 h-4 mr-2" />
                   Nuevo Predio
