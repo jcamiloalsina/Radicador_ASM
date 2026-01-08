@@ -777,6 +777,7 @@ export default function Predios() {
   const [search, setSearch] = useState('');
   const [filterMunicipio, setFilterMunicipio] = useState('');
   const [filterVigencia, setFilterVigencia] = useState('');
+  const [filterGeometria, setFilterGeometria] = useState(''); // '', 'con', 'sin'
   const [vigenciasData, setVigenciasData] = useState({});
   const [showDashboard, setShowDashboard] = useState(true);
   const [prediosStats, setPrediosStats] = useState(null);
@@ -787,6 +788,7 @@ export default function Predios() {
   const [showPendientesDialog, setShowPendientesDialog] = useState(false);
   const [showReaparicionesDialog, setShowReaparicionesDialog] = useState(false);
   const [reaparicionesConteo, setReaparicionesConteo] = useState({});
+  const [gdbStats, setGdbStats] = useState(null); // Estadísticas de geometrías GDB
   const [selectedPredio, setSelectedPredio] = useState(null);
   const [prediosEliminados, setPrediosEliminados] = useState([]);
   const [cambiosPendientes, setCambiosPendientes] = useState([]);
