@@ -47,6 +47,67 @@ function FitBounds({ geometry }) {
   return null;
 }
 
+// Component to render municipality limits with zoom on click
+function MunicipalityLimits({ limitesMunicipios, filterMunicipio, setFilterMunicipio, tipoLimites }) {
+  const map = useMap();
+  
+  if (!limitesMunicipios || !limitesMunicipios.features) return null;
+  
+  return (
+    <>
+      {limitesMunicipios.features.map((feature, idx) => {
+        const isSelected = filterMunicipio === feature.properties?.municipio;
+        const sinGdb = feature.properties?.sin_gdb;
+        
+        return (
+          <GeoJSON
+            key={`limite-${feature.properties?.municipio}-${idx}-${tipoLimites}`}
+            data={feature}
+            style={() => ({
+              color: isSelected ? '#10B981' : '#FFFFFF',
+              weight: isSelected ? 4 : 2,
+              opacity: 1,
+              fillColor: sinGdb ? '#6366F1' : 'transparent',
+              fillOpacity: sinGdb ? 0.25 : 0
+            })}
+            eventHandlers={{
+              click: (e) => {
+                const props = feature.properties;
+                if (!props?.sin_gdb) {
+                  setFilterMunicipio(props?.municipio);
+                  // Hacer zoom al municipio
+                  const bounds = e.target.getBounds();
+                  if (bounds.isValid()) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                  }
+                }
+              }
+            }}
+            onEachFeature={(feat, layer) => {
+              const props = feat.properties;
+              layer.bindTooltip(props?.municipio || '', {
+                permanent: true,
+                direction: 'center',
+                className: 'municipio-label'
+              });
+              const sinGdbMsg = props?.sin_gdb ? '<p class="text-xs text-amber-600 mt-1">⚠️ Sin base gráfica GDB</p>' : '';
+              layer.bindPopup(`
+                <div class="text-sm p-1">
+                  <p class="font-bold text-base text-emerald-700 mb-1">${props?.municipio || 'Sin nombre'}</p>
+                  <p class="text-xs text-slate-600">Total predios: <strong>${props?.total_predios?.toLocaleString() || 0}</strong></p>
+                  <p class="text-xs text-slate-600">Rurales: <strong>${props?.rurales?.toLocaleString() || 0}</strong></p>
+                  <p class="text-xs text-slate-600">Urbanos: <strong>${props?.urbanos?.toLocaleString() || 0}</strong></p>
+                  ${sinGdbMsg}
+                </div>
+              `);
+            }}
+          />
+        );
+      })}
+    </>
+  );
+}
+
 export default function VisorPredios() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
