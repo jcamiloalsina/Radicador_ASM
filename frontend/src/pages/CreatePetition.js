@@ -204,6 +204,22 @@ export default function CreatePetition() {
               </div>
             )}
 
+            {/* Campo de descripción de la petición */}
+            <div className="space-y-2">
+              <Label htmlFor="descripcion" className="text-slate-700">Descripción de la Petición *</Label>
+              <textarea
+                id="descripcion"
+                value={formData.descripcion}
+                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                required
+                rows={4}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent resize-none"
+                placeholder="Describa detalladamente su petición o trámite catastral. Incluya información relevante como el predio, la ubicación, o cualquier detalle que facilite el procesamiento de su solicitud..."
+                data-testid="input-descripcion"
+              />
+              <p className="text-xs text-slate-500">Especifique claramente qué solicita y cualquier información adicional relevante.</p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="files" className="text-slate-700">Documentos Adjuntos</Label>
               <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
