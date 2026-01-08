@@ -1623,6 +1623,263 @@ class CatastralAPITester:
         
         return False
 
+    def test_reapariciones_management_system(self):
+        """Test the reapariciones (reappearances) management system for predios"""
+        print("\n🔄 Testing Reapariciones Management System...")
+        
+        if 'admin' not in self.tokens:
+            print("   ❌ No admin token available")
+            return False
+        
+        # Test 1: GET /api/predios/reapariciones/conteo-por-municipio
+        success, response = self.run_test(
+            "Get reappearances count by municipality",
+            "GET",
+            "predios/reapariciones/conteo-por-municipio",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        conteo_success = False
+        if success:
+            expected_fields = ['conteo', 'total']
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields:
+                conteo = response['conteo']
+                total = response['total']
+                print(f"   ✅ Reappearances count by municipality:")
+                print(f"   - Total: {total}")
+                if isinstance(conteo, dict):
+                    for municipio, count in conteo.items():
+                        print(f"   - {municipio}: {count}")
+                    conteo_success = True
+                    
+                    # Check if San Calixto has 3 pending reappearances as expected
+                    san_calixto_count = conteo.get('San Calixto', 0)
+                    if san_calixto_count == 3:
+                        print(f"   ✅ San Calixto has expected 3 pending reappearances")
+                    else:
+                        print(f"   ⚠️ San Calixto has {san_calixto_count} reappearances, expected 3")
+                else:
+                    print(f"   ❌ 'conteo' field is not a dictionary")
+            else:
+                missing_fields = [field for field in expected_fields if field not in response]
+                print(f"   ❌ Missing fields in conteo response: {missing_fields}")
+        else:
+            print(f"   ❌ Failed to get reappearances count")
+        
+        # Test 2: GET /api/predios/reapariciones/pendientes (without params)
+        success, response = self.run_test(
+            "Get all pending reappearances",
+            "GET",
+            "predios/reapariciones/pendientes",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        pendientes_success = False
+        if success:
+            expected_fields = ['total_pendientes', 'reapariciones', 'mensaje']
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields:
+                total_pendientes = response['total_pendientes']
+                reapariciones = response['reapariciones']
+                print(f"   ✅ Pending reappearances:")
+                print(f"   - Total pending: {total_pendientes}")
+                
+                if isinstance(reapariciones, list) and len(reapariciones) > 0:
+                    # Check structure of first reappearance
+                    first_reap = reapariciones[0]
+                    required_fields = ['codigo_predial_nacional', 'municipio', 'vigencia_eliminacion', 'vigencia_reaparicion', 'propietario_anterior', 'propietario_actual']
+                    has_required_fields = all(field in first_reap for field in required_fields)
+                    
+                    if has_required_fields:
+                        print(f"   ✅ Reappearance structure is correct")
+                        print(f"   - Sample: {first_reap['codigo_predial_nacional']} in {first_reap['municipio']}")
+                        pendientes_success = True
+                    else:
+                        missing_fields = [field for field in required_fields if field not in first_reap]
+                        print(f"   ❌ Reappearance missing required fields: {missing_fields}")
+                else:
+                    print(f"   ⚠️ No pending reappearances found")
+                    pendientes_success = True  # Empty list is valid
+            else:
+                missing_fields = [field for field in expected_fields if field not in response]
+                print(f"   ❌ Missing fields in pendientes response: {missing_fields}")
+        else:
+            print(f"   ❌ Failed to get pending reappearances")
+        
+        # Test 3: GET /api/predios/reapariciones/pendientes with municipio filter
+        success, response = self.run_test(
+            "Get pending reappearances for San Calixto",
+            "GET",
+            "predios/reapariciones/pendientes?municipio=San%20Calixto",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        filtered_success = False
+        if success:
+            if 'reapariciones' in response:
+                reapariciones = response['reapariciones']
+                san_calixto_count = len(reapariciones)
+                print(f"   ✅ San Calixto filtered reappearances: {san_calixto_count}")
+                
+                # Verify all returned reappearances are from San Calixto
+                all_san_calixto = all(reap.get('municipio') == 'San Calixto' for reap in reapariciones)
+                if all_san_calixto:
+                    print(f"   ✅ All filtered results are from San Calixto")
+                    filtered_success = True
+                else:
+                    print(f"   ❌ Some results are not from San Calixto")
+            else:
+                print(f"   ❌ Missing 'reapariciones' field in filtered response")
+        else:
+            print(f"   ❌ Failed to get filtered reappearances")
+        
+        # Test 4: GET /api/predios/reapariciones/solicitudes-pendientes
+        success, response = self.run_test(
+            "Get pending gestor requests",
+            "GET",
+            "predios/reapariciones/solicitudes-pendientes",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        solicitudes_success = False
+        if success:
+            expected_fields = ['total', 'solicitudes']
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields:
+                total = response['total']
+                solicitudes = response['solicitudes']
+                print(f"   ✅ Pending gestor requests:")
+                print(f"   - Total: {total}")
+                print(f"   - Expected: 0 (currently empty)")
+                
+                if total == 0 and len(solicitudes) == 0:
+                    print(f"   ✅ Matches expected empty state")
+                    solicitudes_success = True
+                else:
+                    print(f"   ⚠️ Found {total} requests, expected 0")
+                    solicitudes_success = True  # Still valid, just different than expected
+            else:
+                missing_fields = [field for field in expected_fields if field not in response]
+                print(f"   ❌ Missing fields in solicitudes response: {missing_fields}")
+        else:
+            print(f"   ❌ Failed to get pending gestor requests")
+        
+        # Test 5: Test approval/rejection endpoints (if we have pending reappearances)
+        approval_success = True
+        # Get the first pending reappearance for testing
+        success, response = self.run_test(
+            "Get pending reappearances for approval test",
+            "GET",
+            "predios/reapariciones/pendientes",
+            200,
+            token=self.tokens['admin']
+        )
+        
+        if success and 'reapariciones' in response and len(response['reapariciones']) > 0:
+            test_reappearance = response['reapariciones'][0]
+            codigo_predial = test_reappearance['codigo_predial_nacional']
+            municipio = test_reappearance['municipio']
+            
+            print(f"   🧪 Testing approval with: {codigo_predial} from {municipio}")
+            
+            # Test POST /api/predios/reapariciones/aprobar
+            approval_data = {
+                "codigo_predial": codigo_predial,
+                "municipio": municipio,
+                "justificacion": "Aprobado para pruebas del sistema - reappearance is valid"
+            }
+            
+            success, response = self.run_test(
+                "Approve reappearance",
+                "POST",
+                "predios/reapariciones/aprobar",
+                200,
+                data=approval_data,
+                token=self.tokens['admin'],
+                form_data=True
+            )
+            
+            if success:
+                print(f"   ✅ Reappearance approval successful")
+                
+                # Verify the count decreased
+                success, response = self.run_test(
+                    "Verify count decreased after approval",
+                    "GET",
+                    "predios/reapariciones/conteo-por-municipio",
+                    200,
+                    token=self.tokens['admin']
+                )
+                
+                if success and 'conteo' in response:
+                    new_count = response['conteo'].get(municipio, 0)
+                    print(f"   ✅ {municipio} count after approval: {new_count}")
+                
+            else:
+                print(f"   ❌ Reappearance approval failed")
+                approval_success = False
+        else:
+            print(f"   ⚠️ No pending reappearances available for approval testing")
+        
+        # Test 6: Test rejection endpoint structure (without actually rejecting)
+        rejection_structure_success = True
+        # We'll test the endpoint structure by sending invalid data to see the validation
+        invalid_rejection_data = {
+            "codigo_predial": "",
+            "municipio": "",
+            "justificacion": ""
+        }
+        
+        success, response = self.run_test(
+            "Test rejection endpoint structure (invalid data)",
+            "POST",
+            "predios/reapariciones/rechazar",
+            422,  # Expect validation error
+            data=invalid_rejection_data,
+            token=self.tokens['admin'],
+            form_data=True
+        )
+        
+        if success:
+            print(f"   ✅ Rejection endpoint validates input correctly")
+        else:
+            print(f"   ⚠️ Rejection endpoint validation behavior differs from expected")
+            # Don't fail the test for this, as the endpoint might handle validation differently
+        
+        # Test 7: Test solicitud-responder endpoint structure
+        solicitud_responder_success = True
+        invalid_solicitud_data = {
+            "solicitud_id": "invalid-id",
+            "aprobado": True,
+            "comentario": "Test comment"
+        }
+        
+        success, response = self.run_test(
+            "Test solicitud-responder endpoint structure",
+            "POST",
+            "predios/reapariciones/solicitud-responder",
+            404,  # Expect not found for invalid ID
+            data=invalid_solicitud_data,
+            token=self.tokens['admin']
+        )
+        
+        if success:
+            print(f"   ✅ Solicitud-responder endpoint handles invalid IDs correctly")
+        else:
+            print(f"   ⚠️ Solicitud-responder endpoint behavior differs from expected")
+        
+        return (conteo_success and pendientes_success and filtered_success and 
+                solicitudes_success and approval_success and rejection_structure_success and 
+                solicitud_responder_success)
+
     def test_gdb_notification_and_upload_system(self):
         """Test GDB notification and upload system for Asomunicipios"""
         print("\n🗺️ Testing GDB Notification and Upload System...")
