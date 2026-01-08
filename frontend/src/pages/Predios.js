@@ -1468,14 +1468,15 @@ export default function Predios() {
       area_construida_1: '0'
     });
     setCodigoManual({
-      zona: '00',
+      zona: '0',
       sector: '00',
-      comuna: '00',
+      comuna: '000',
       barrio: '00',
       manzana_vereda: '0000',
       terreno: '0001',
-      edificio: '0',
-      piso: '0000',
+      condicion: '0',
+      edificio: '00',
+      piso: '00',
       unidad: '0000'
     });
     setPropietarios([{
