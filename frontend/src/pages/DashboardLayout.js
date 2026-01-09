@@ -121,7 +121,8 @@ export default function DashboardLayout() {
       atencion_usuario: 'Atención al Usuario',
       gestor: 'Gestor',
       coordinador: 'Coordinador',
-      administrador: 'Administrador'
+      administrador: 'Administrador',
+      comunicaciones: 'Comunicaciones'
     };
     return roles[role] || role;
   };
@@ -131,6 +132,7 @@ export default function DashboardLayout() {
     { path: '/dashboard/peticiones', label: 'Mis Peticiones', icon: FileText },
   ];
 
+  // Comunicaciones y otros roles de staff pueden ver predios y visor
   if (user.role !== 'ciudadano') {
     menuItems.push({ path: '/dashboard/todas-peticiones', label: 'Todas las Peticiones', icon: Users });
     menuItems.push({ path: '/dashboard/predios', label: 'Gestión de Predios', icon: MapPin });
