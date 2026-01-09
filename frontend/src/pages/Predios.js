@@ -1945,6 +1945,7 @@ export default function Predios() {
                     <PrediosEliminadosView municipio={filterMunicipio} />
                   </DialogContent>
                 </Dialog>
+                )}
                 {/* Botón de Reapariciones - Solo para coordinadores */}
                 {user && ['coordinador', 'administrador'].includes(user.role) && (
                   <Button 
