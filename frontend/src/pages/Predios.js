@@ -3041,13 +3041,47 @@ export default function Predios() {
                   <div><span className="text-slate-500">Destino:</span> <strong>{selectedPredio.destino_economico} - {catalogos?.destino_economico?.[selectedPredio.destino_economico]}</strong></div>
                   <div>
                     <span className="text-slate-500">Área Terreno (R1):</span> <strong>{formatAreaHectareas(selectedPredio.area_terreno)}</strong>
-                    {selectedPredio.area_gdb > 0 && (
-                      <span className="ml-2 text-xs text-amber-600">(GDB: {formatAreaHectareas(selectedPredio.area_gdb)})</span>
-                    )}
                   </div>
                   <div><span className="text-slate-500">Área Construida:</span> <strong>{formatAreaHectareas(selectedPredio.area_construida)}</strong></div>
+                  
+                  {/* Área GDB en fila separada con comparación */}
+                  {selectedPredio.area_gdb > 0 && (
+                    <div className="col-span-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <div>
+                            <span className="text-blue-600 text-xs font-medium">Área GDB (Base Gráfica)</span>
+                            <p className="font-bold text-blue-800">{formatAreaHectareas(selectedPredio.area_gdb)}</p>
+                          </div>
+                          <div className="text-slate-400">vs</div>
+                          <div>
+                            <span className="text-slate-500 text-xs font-medium">Área R1 (Catastral)</span>
+                            <p className="font-bold text-slate-700">{formatAreaHectareas(selectedPredio.area_terreno)}</p>
+                          </div>
+                        </div>
+                        {selectedPredio.area_terreno > 0 && (
+                          <div className="text-right">
+                            <span className="text-xs text-slate-500">Diferencia</span>
+                            {(() => {
+                              const diff = selectedPredio.area_gdb - selectedPredio.area_terreno;
+                              const pct = (diff / selectedPredio.area_terreno) * 100;
+                              const isPositive = diff > 0;
+                              const color = Math.abs(pct) < 5 ? 'text-green-600' : Math.abs(pct) < 15 ? 'text-amber-600' : 'text-red-600';
+                              return (
+                                <p className={`font-bold ${color}`}>
+                                  {isPositive ? '+' : ''}{pct.toFixed(1)}%
+                                  <span className="text-xs font-normal ml-1">({isPositive ? '+' : ''}{diff.toFixed(0)} m²)</span>
+                                </p>
+                              );
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="col-span-2"><span className="text-slate-500">Avalúo:</span> <strong className="text-emerald-700">{formatCurrency(selectedPredio.avaluo)}</strong></div>
-                  {selectedPredio.tiene_geometria && (
+                  {selectedPredio.tiene_geometria && !selectedPredio.area_gdb && (
                     <div><span className="text-slate-500">GDB:</span> <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700">✓ Con geometría</Badge></div>
                   )}
                 </CardContent>
