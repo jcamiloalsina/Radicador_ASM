@@ -2046,12 +2046,16 @@ export default function Predios() {
                           <Button variant="ghost" size="sm" onClick={() => openDetailDialog(predio)}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => openEditDialog(predio)}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(predio)} className="text-red-600 hover:text-red-700">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {canModifyPredios && (
+                            <>
+                              <Button variant="ghost" size="sm" onClick={() => openEditDialog(predio)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(predio)} className="text-red-600 hover:text-red-700">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
