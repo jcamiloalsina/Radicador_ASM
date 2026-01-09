@@ -69,6 +69,7 @@ export default function UserManagement() {
       gestor: { label: 'Gestor', className: 'bg-green-100 text-green-800' },
       coordinador: { label: 'Coordinador', className: 'bg-orange-100 text-orange-800' },
       administrador: { label: 'Administrador', className: 'bg-red-100 text-red-800' },
+      comunicaciones: { label: 'Comunicaciones', className: 'bg-cyan-100 text-cyan-800' },
     };
     const config = roleConfig[role] || roleConfig.ciudadano;
     return <Badge className={config.className}>{config.label}</Badge>;
