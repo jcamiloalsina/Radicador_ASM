@@ -1924,10 +1924,13 @@ export default function Predios() {
                     {gdbStats.por_municipio[filterMunicipio]?.total || 0} geometrías GDB
                   </Badge>
                 )}
-                <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuevo Predio
-                </Button>
+                {canModifyPredios && (
+                  <Button onClick={() => { resetForm(); setTerrenoInfo(null); setShowCreateDialog(true); }} className="bg-emerald-700 hover:bg-emerald-800">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nuevo Predio
+                  </Button>
+                )}
+                {canModifyPredios && (
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="border-red-300 text-red-700 hover:bg-red-50">
