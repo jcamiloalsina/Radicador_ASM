@@ -770,6 +770,10 @@ function ReaparicionesPendientes({ municipio = null, onUpdate }) {
 
 export default function Predios() {
   const { user } = useAuth();
+  
+  // Comunicaciones solo puede ver, no puede crear/editar/eliminar predios
+  const canModifyPredios = user && !['ciudadano', 'comunicaciones'].includes(user.role);
+  
   const [predios, setPredios] = useState([]);
   const [catalogos, setCatalogos] = useState(null);
   const [loading, setLoading] = useState(true);
