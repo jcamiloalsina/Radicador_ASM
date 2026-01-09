@@ -68,6 +68,7 @@ class UserRole:
     GESTOR = "gestor"
     COORDINADOR = "coordinador"
     ADMINISTRADOR = "administrador"
+    COMUNICACIONES = "comunicaciones"  # Puede consultar predios, ver visor, ver trámites, descargar/subir archivos
 
 class UserRegister(BaseModel):
     email: EmailStr
