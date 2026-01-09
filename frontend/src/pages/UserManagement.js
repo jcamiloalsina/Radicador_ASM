@@ -151,6 +151,7 @@ export default function UserManagement() {
                       <SelectContent>
                         <SelectItem value="ciudadano">Ciudadano</SelectItem>
                         <SelectItem value="atencion_usuario">Atención al Usuario</SelectItem>
+                        <SelectItem value="comunicaciones">Comunicaciones</SelectItem>
                         <SelectItem value="gestor">Gestor</SelectItem>
                         <SelectItem value="coordinador">Coordinador</SelectItem>
                         <SelectItem value="administrador">Administrador</SelectItem>
