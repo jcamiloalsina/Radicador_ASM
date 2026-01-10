@@ -67,6 +67,13 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 
 ## Próximas Tareas (Backlog)
 
+### P0 - Crítico (Fecha límite: Marzo 2026)
+- [ ] **Generación de archivos XTF** según Resolución IGAC 0301/2025
+  - Ver documento detallado: `/app/memory/XTF_LADM_COL_SINIC.md`
+  - Agregar campos faltantes al modelo (condicion_predio, tipo, zona, etc.)
+  - Implementar transformación de coordenadas WGS84 → EPSG:9377
+  - Crear generador de archivos XTF
+
 ### P1 - Alta Prioridad
 - [ ] Rediseñar certificado catastral PDF
 - [ ] Mejorar vinculación GDB (~82% actualmente)
