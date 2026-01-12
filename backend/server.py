@@ -63,7 +63,7 @@ api_router = APIRouter(prefix="/api")
 # ===== MODELS =====
 
 class UserRole:
-    CIUDADANO = "ciudadano"
+    USUARIO = "usuario"  # Usuario externo (antes "usuario")
     ATENCION_USUARIO = "atencion_usuario"
     GESTOR = "gestor"
     COORDINADOR = "coordinador"
@@ -490,7 +490,7 @@ async def register(user_data: UserRegister):
     user = User(
         email=user_data.email,
         full_name=user_data.full_name,
-        role=UserRole.CIUDADANO
+        role=UserRole.USUARIO
     )
     
     doc = user.model_dump()
@@ -684,7 +684,7 @@ async def update_user_role(role_update: UserRoleUpdate, current_user: dict = Dep
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para cambiar roles")
     
     # Validate new role
-    valid_roles = [UserRole.CIUDADANO, UserRole.ATENCION_USUARIO, UserRole.GESTOR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR, UserRole.COMUNICACIONES]
+    valid_roles = [UserRole.USUARIO, UserRole.ATENCION_USUARIO, UserRole.GESTOR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR, UserRole.COMUNICACIONES]
     if role_update.new_role not in valid_roles:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rol inválido")
     
@@ -893,7 +893,7 @@ async def create_petition(
     await db.petitions.insert_one(doc)
     
     # Send email notification to atencion usuarios only if created by citizen
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         atencion_users = await db.users.find({"role": UserRole.ATENCION_USUARIO}, {"_id": 0}).to_list(100)
         for user in atencion_users:
             await send_email(
@@ -907,7 +907,7 @@ async def create_petition(
 @api_router.get("/petitions")
 async def get_petitions(current_user: dict = Depends(get_current_user)):
     # Citizens only see their own petitions
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         query = {"user_id": current_user['id']}
     # Gestores see assigned petitions
     elif current_user['role'] in [UserRole.GESTOR]:
@@ -949,7 +949,7 @@ async def get_petition(petition_id: str, current_user: dict = Depends(get_curren
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Petición no encontrada")
     
     # Citizens can only see their own petitions
-    if current_user['role'] == UserRole.CIUDADANO and petition['user_id'] != current_user['id']:
+    if current_user['role'] == UserRole.USUARIO and petition['user_id'] != current_user['id']:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para ver esta petición")
     
     # Gestores can only see assigned petitions
@@ -977,7 +977,7 @@ async def upload_petition_files(
     # Citizens and staff can upload files
     # Citizens: only to their own petitions
     # Staff: to any petition they have access to
-    if current_user['role'] == UserRole.CIUDADANO and petition['user_id'] != current_user['id']:
+    if current_user['role'] == UserRole.USUARIO and petition['user_id'] != current_user['id']:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
     
     saved_files = []
@@ -1004,7 +1004,7 @@ async def upload_petition_files(
     updated_files = current_files + saved_files
     
     # Add to historial
-    uploader_role = "Ciudadano" if current_user['role'] == UserRole.CIUDADANO else current_user['role'].replace('_', ' ').title()
+    uploader_role = "Usuario" if current_user['role'] == UserRole.USUARIO else current_user['role'].replace('_', ' ').title()
     historial_entry = {
         "accion": f"Archivos cargados por {uploader_role} ({len(saved_files)} archivo(s))",
         "usuario": current_user['full_name'],
@@ -1028,7 +1028,7 @@ async def upload_petition_files(
     )
     
     # Notify based on who uploaded
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         # Notify assigned gestores or atencion usuario
         if petition.get('gestores_asignados'):
             for gestor_id in petition['gestores_asignados']:
@@ -1037,7 +1037,7 @@ async def upload_petition_files(
                     await send_email(
                         gestor['email'],
                         f"Nuevos archivos - {petition['radicado']}",
-                        f"<h3>El ciudadano ha cargado nuevos archivos</h3><p>Radicado: {petition['radicado']}</p>"
+                        f"<h3>El usuario ha cargado nuevos archivos</h3><p>Radicado: {petition['radicado']}</p>"
                     )
         else:
             atencion_users = await db.users.find({"role": UserRole.ATENCION_USUARIO}, {"_id": 0}).to_list(100)
@@ -1045,7 +1045,7 @@ async def upload_petition_files(
                 await send_email(
                     user['email'],
                     f"Nuevos archivos - {petition['radicado']}",
-                    f"<h3>El ciudadano ha cargado nuevos archivos</h3><p>Radicado: {petition['radicado']}</p>"
+                    f"<h3>El usuario ha cargado nuevos archivos</h3><p>Radicado: {petition['radicado']}</p>"
                 )
     else:
         # Notify citizen if staff uploaded
@@ -1064,7 +1064,7 @@ async def upload_petition_files(
 async def download_citizen_files_as_zip(petition_id: str, current_user: dict = Depends(get_current_user)):
     """Download all files uploaded by citizen as a ZIP file"""
     # Only staff can download citizen files
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
     
     petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
@@ -1074,13 +1074,13 @@ async def download_citizen_files_as_zip(petition_id: str, current_user: dict = D
     # Filter files uploaded by citizen
     citizen_files = []
     for archivo in petition.get('archivos', []):
-        uploaded_by_role = archivo.get('uploaded_by_role', 'ciudadano')
-        if uploaded_by_role == UserRole.CIUDADANO or not archivo.get('uploaded_by_role'):
+        uploaded_by_role = archivo.get('uploaded_by_role', 'usuario')
+        if uploaded_by_role == UserRole.USUARIO or not archivo.get('uploaded_by_role'):
             # If no uploaded_by_role, assume it's from citizen (backward compatibility)
             citizen_files.append(archivo)
     
     if not citizen_files:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No hay archivos del ciudadano para descargar")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No hay archivos del usuario para descargar")
     
     import zipfile
     
@@ -1165,7 +1165,7 @@ async def assign_gestor(
 @api_router.patch("/petitions/{petition_id}")
 async def update_petition(petition_id: str, update_data: PetitionUpdate, current_user: dict = Depends(get_current_user)):
     # Citizens cannot update petitions
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para actualizar peticiones")
     
     petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
@@ -1255,7 +1255,7 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
 
 @api_router.get("/petitions/stats/dashboard")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         query = {"user_id": current_user['id']}
     elif current_user['role'] in [UserRole.GESTOR]:
         query = {"gestores_asignados": current_user['id']}
@@ -1439,7 +1439,7 @@ async def export_petition_pdf(petition_id: str, current_user: dict = Depends(get
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Petición no encontrada")
     
     # Check permissions
-    if current_user['role'] == UserRole.CIUDADANO and petition['user_id'] != current_user['id']:
+    if current_user['role'] == UserRole.USUARIO and petition['user_id'] != current_user['id']:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
     
     # Get user data
@@ -1471,7 +1471,7 @@ async def export_multiple_petitions(
 ):
     """Export multiple petitions as PDF"""
     # Only staff can export multiple
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
     
     from reportlab.platypus import PageBreak
@@ -2076,7 +2076,7 @@ async def get_stats_summary(current_user: dict = Depends(get_current_user)):
         "gestores": await db.users.count_documents({"role": UserRole.GESTOR}),
         "atencion_usuario": await db.users.count_documents({"role": UserRole.ATENCION_USUARIO}),
         "administradores": await db.users.count_documents({"role": UserRole.ADMINISTRADOR}),
-        "ciudadanos": await db.users.count_documents({"role": UserRole.CIUDADANO})
+        "ciudadanos": await db.users.count_documents({"role": UserRole.USUARIO})
     }
     
     # Status counts
@@ -2184,7 +2184,7 @@ async def get_next_terreno_number(municipio: str, zona: str, sector: str, manzan
 @api_router.get("/predios/catalogos")
 async def get_predios_catalogos(current_user: dict = Depends(get_current_user)):
     """Obtiene los catálogos para el formulario de predios"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     return {
@@ -2208,7 +2208,7 @@ async def get_predios(
     current_user: dict = Depends(get_current_user)
 ):
     """Lista todos los predios (solo staff)"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     query = {"deleted": {"$ne": True}}
@@ -2271,7 +2271,7 @@ async def get_predios(
 @api_router.get("/predios/stats/summary")
 async def get_predios_stats(current_user: dict = Depends(get_current_user)):
     """Obtiene estadísticas de predios - SOLO la vigencia más alta GLOBAL del sistema"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     # Función para extraer el año de una vigencia
@@ -2378,7 +2378,7 @@ async def get_predios_eliminados(
     current_user: dict = Depends(get_current_user)
 ):
     """Lista predios eliminados - filtrable por municipio y vigencia"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     query = {}
@@ -2398,7 +2398,7 @@ async def get_predios_eliminados(
 @api_router.get("/predios/eliminados/stats")
 async def get_predios_eliminados_stats(current_user: dict = Depends(get_current_user)):
     """Obtiene estadísticas de predios eliminados por municipio"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     pipeline = [
@@ -2519,7 +2519,7 @@ async def get_conteo_reapariciones_por_municipio(
     current_user: dict = Depends(get_current_user)
 ):
     """Obtiene el conteo de reapariciones pendientes por municipio"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     # Obtener todos los códigos eliminados
@@ -2721,7 +2721,7 @@ async def get_estructura_codigo_predial(
     Retorna la estructura del código predial nacional para un municipio.
     Incluye los primeros 5 dígitos fijos (departamento + municipio).
     """
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     divipola = MUNICIPIOS_DIVIPOLA.get(municipio)
@@ -2767,7 +2767,7 @@ async def sugerir_codigo_disponible(
     Sugiere el próximo código de terreno disponible para una manzana/vereda específica.
     También verifica si hay geometría GDB disponible.
     """
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     divipola = MUNICIPIOS_DIVIPOLA.get(municipio)
@@ -2852,7 +2852,7 @@ async def verificar_codigo_completo(
     - Si está disponible
     - Si tiene geometría GDB
     """
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     if len(codigo) != 30:
@@ -3507,7 +3507,7 @@ async def get_reapariciones(
     current_user: dict = Depends(get_current_user)
 ):
     """Obtiene la lista de predios que fueron eliminados y reaparecieron"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     # Obtener todos los códigos eliminados
@@ -3624,7 +3624,7 @@ async def exportar_predios_eliminados_excel(
     current_user: dict = Depends(get_current_user)
 ):
     """Exporta predios eliminados a Excel con radicado"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     import openpyxl
@@ -4213,7 +4213,7 @@ async def import_predios_excel(
 @api_router.get("/predios/vigencias")
 async def get_vigencias_disponibles(current_user: dict = Depends(get_current_user)):
     """Obtiene las vigencias disponibles por municipio, ordenadas de más reciente a más antigua"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     # Vigencias actuales - solo predios con vigencia definida
@@ -4280,7 +4280,7 @@ async def export_predios_excel(
     current_user: dict = Depends(get_current_user)
 ):
     """Exporta predios a Excel en formato EXACTO al archivo original R1-R2"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     # Query
@@ -4911,7 +4911,7 @@ async def get_certificados_historial(
     current_user: dict = Depends(get_current_user)
 ):
     """Obtiene el historial de certificados generados"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     certificados = await db.certificados.find({}, {"_id": 0}).sort("fecha_generacion", -1).skip(skip).limit(limit).to_list(limit)
@@ -4932,7 +4932,7 @@ async def get_terreno_info(
     current_user: dict = Depends(get_current_user)
 ):
     """Obtiene información sobre el siguiente terreno disponible en una manzana"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     # Buscar todos los terrenos en esta manzana (incluyendo eliminados)
@@ -4978,7 +4978,7 @@ async def get_terreno_info(
 @api_router.get("/predios/{predio_id}")
 async def get_predio(predio_id: str, current_user: dict = Depends(get_current_user)):
     """Obtiene un predio por ID"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     predio = await db.predios.find_one({"id": predio_id, "deleted": {"$ne": True}}, {"_id": 0})
@@ -4990,7 +4990,7 @@ async def get_predio(predio_id: str, current_user: dict = Depends(get_current_us
 @api_router.post("/predios")
 async def create_predio(predio_data: PredioCreate, current_user: dict = Depends(get_current_user)):
     """Crea un nuevo predio"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     r1 = predio_data.r1
@@ -5109,7 +5109,7 @@ async def create_predio(predio_data: PredioCreate, current_user: dict = Depends(
 @api_router.patch("/predios/{predio_id}")
 async def update_predio(predio_id: str, update_data: PredioUpdate, current_user: dict = Depends(get_current_user)):
     """Actualiza un predio existente"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     predio = await db.predios.find_one({"id": predio_id, "deleted": {"$ne": True}}, {"_id": 0})
@@ -5191,8 +5191,8 @@ async def proponer_cambio_predio(
     Propone un cambio en un predio (crear, modificar, eliminar).
     Solo gestores y atención pueden proponer. Coordinadores aprueban directamente.
     """
-    # Verificar permisos - Ciudadanos y Comunicaciones no pueden proponer cambios
-    if current_user['role'] in [UserRole.CIUDADANO, UserRole.COMUNICACIONES]:
+    # Verificar permisos - Usuarios y Comunicaciones no pueden proponer cambios
+    if current_user['role'] in [UserRole.USUARIO, UserRole.COMUNICACIONES]:
         raise HTTPException(status_code=403, detail="No tiene permiso para proponer cambios en predios")
     
     # Coordinadores y administradores aprueban directamente
@@ -5272,7 +5272,7 @@ async def get_historial_cambios(
     current_user: dict = Depends(get_current_user)
 ):
     """Obtiene el historial de cambios (aprobados y rechazados)"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     query = {}
@@ -5409,7 +5409,7 @@ async def get_mis_propuestas(
     current_user: dict = Depends(get_current_user)
 ):
     """Lista las propuestas de cambio del usuario actual"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     query = {"propuesto_por": current_user['id']}
@@ -5426,7 +5426,7 @@ async def get_mis_propuestas(
 @api_router.get("/predios/cambios/stats")
 async def get_cambios_stats(current_user: dict = Depends(get_current_user)):
     """Obtiene estadísticas de cambios pendientes"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     pendientes_creacion = await db.predios_cambios.count_documents({"estado": PredioEstadoAprobacion.PENDIENTE_CREACION})
@@ -5590,7 +5590,7 @@ def get_gdb_geometry(codigo_predial: str) -> Optional[dict]:
 async def get_predio_geometry(predio_id: str, current_user: dict = Depends(get_current_user)):
     """Get geographic geometry for a property"""
     # Only staff can access geometry
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     # Get predio from database
@@ -5617,7 +5617,7 @@ async def get_predio_geometry(predio_id: str, current_user: dict = Depends(get_c
 async def get_geometry_by_code(codigo_predial: str, current_user: dict = Depends(get_current_user)):
     """Get geographic geometry directly by cadastral code"""
     # Only staff can access geometry
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     # Primero intentar con la función async que busca en MongoDB
@@ -5639,7 +5639,7 @@ async def get_geometrias_filtradas(
     current_user: dict = Depends(get_current_user)
 ):
     """Get all geometries for a municipality/zone from MongoDB collection"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     if not municipio:
@@ -5705,7 +5705,7 @@ async def get_limites_municipios(
     from shapely.geometry import shape, mapping, box, Polygon
     from shapely.ops import unary_union
     
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     try:
@@ -5864,7 +5864,7 @@ async def get_limites_municipios(
 async def get_gdb_stats(current_user: dict = Depends(get_current_user)):
     """Get statistics about available geographic data from MongoDB collection"""
     # Only staff can access stats
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     try:
@@ -5919,7 +5919,7 @@ async def get_gdb_layers(current_user: dict = Depends(get_current_user)):
     import pyogrio
     
     # Only staff can access
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     if not GDB_PATH.exists():
@@ -6725,7 +6725,7 @@ async def get_cargas_mensuales_gdb(
     current_user: dict = Depends(get_current_user)
 ):
     """Obtiene las cargas de GDB del mes actual o especificado"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     mes_consulta = mes or datetime.now().strftime("%Y-%m")
@@ -6749,7 +6749,7 @@ async def verificar_carga_gdb_mes(
     current_user: dict = Depends(get_current_user)
 ):
     """Verifica si ya se cargó GDB este mes para un municipio o en general"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     mes_actual = datetime.now().strftime("%Y-%m")
@@ -7026,7 +7026,7 @@ async def get_predios_con_geometria(
     current_user: dict = Depends(get_current_user)
 ):
     """Obtiene estadísticas de predios que tienen geometría GDB asociada"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     query = {"tiene_geometria": True}
@@ -7058,7 +7058,7 @@ async def get_geometrias_disponibles(
     current_user: dict = Depends(get_current_user)
 ):
     """Obtiene las geometrías GDB guardadas por municipio"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     pipeline = [
@@ -7099,7 +7099,7 @@ async def buscar_geometria_por_codigo(
     current_user: dict = Depends(get_current_user)
 ):
     """Busca geometría por código predial en la colección de geometrías guardadas"""
-    if current_user['role'] == UserRole.CIUDADANO:
+    if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     # Buscar exacto primero
