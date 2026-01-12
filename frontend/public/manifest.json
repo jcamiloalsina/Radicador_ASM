@@ -1,0 +1,27 @@
+{
+  "name": "Asomunicipios Catastro",
+  "short_name": "Asomunicipios",
+  "description": "Sistema de Gestión Catastral - Asociación de Municipios del Catatumbo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#047857",
+  "theme_color": "#047857",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo-asomunicipios.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-asomunicipios.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "es",
+  "dir": "ltr"
+}
