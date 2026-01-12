@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Search, Eye, Filter, Download, FileText } from 'lucide-react';
+import { Search, Eye, Filter, FileText, FileSpreadsheet, Calendar, Users, MapPin, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { MUNICIPIOS } from '../data/catalogos';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -22,16 +23,42 @@ export default function AllPetitions() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('estado') || 'todos');
+  const [municipioFilter, setMunicipioFilter] = useState('todos');
+  const [gestorFilter, setGestorFilter] = useState('todos');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [gestores, setGestores] = useState([]);
+  const [exporting, setExporting] = useState(false);
+
+  // Check if user is coordinator or admin (can see advanced filters)
+  const isCoordinatorOrAdmin = ['coordinador', 'administrador'].includes(user?.role);
 
   useEffect(() => {
     if (user?.role === 'usuario') {
       navigate('/dashboard');
     } else {
       fetchPetitions();
+      if (isCoordinatorOrAdmin) {
+        fetchGestores();
+      }
     }
   }, [user]);
 
-  // Update URL when filter changes
+  const fetchGestores = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Filter only gestores
+      const gestoresList = response.data.filter(u => u.role === 'gestor');
+      setGestores(gestoresList);
+    } catch (error) {
+      console.error('Error fetching gestores:', error);
+    }
+  };
+
   const handleStatusFilterChange = (value) => {
     setStatusFilter(value);
     if (value === 'todos') {
@@ -43,7 +70,6 @@ export default function AllPetitions() {
   };
 
   useEffect(() => {
-    // Read initial filter from URL
     const estadoFromUrl = searchParams.get('estado');
     if (estadoFromUrl && estadoFromUrl !== statusFilter) {
       setStatusFilter(estadoFromUrl);
@@ -53,6 +79,7 @@ export default function AllPetitions() {
   useEffect(() => {
     let filtered = [...petitions];
 
+    // Text search
     if (searchTerm) {
       filtered = filtered.filter(
         (p) =>
@@ -63,12 +90,36 @@ export default function AllPetitions() {
       );
     }
 
+    // Status filter
     if (statusFilter !== 'todos') {
       filtered = filtered.filter((p) => p.estado === statusFilter);
     }
 
+    // Municipio filter
+    if (municipioFilter !== 'todos') {
+      filtered = filtered.filter((p) => p.municipio === municipioFilter);
+    }
+
+    // Gestor filter
+    if (gestorFilter !== 'todos') {
+      filtered = filtered.filter((p) => 
+        p.gestores_asignados && p.gestores_asignados.includes(gestorFilter)
+      );
+    }
+
+    // Date filters
+    if (fechaDesde) {
+      const desde = new Date(fechaDesde);
+      filtered = filtered.filter((p) => new Date(p.created_at) >= desde);
+    }
+    if (fechaHasta) {
+      const hasta = new Date(fechaHasta);
+      hasta.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((p) => new Date(p.created_at) <= hasta);
+    }
+
     setFilteredPetitions(filtered);
-  }, [searchTerm, statusFilter, petitions]);
+  }, [searchTerm, statusFilter, municipioFilter, gestorFilter, fechaDesde, fechaHasta, petitions]);
 
   const fetchPetitions = async () => {
     try {
@@ -79,6 +130,82 @@ export default function AllPetitions() {
       toast.error('Error al cargar peticiones');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('todos');
+    setMunicipioFilter('todos');
+    setGestorFilter('todos');
+    setFechaDesde('');
+    setFechaHasta('');
+    searchParams.delete('estado');
+    setSearchParams(searchParams);
+  };
+
+  const exportToExcel = async () => {
+    setExporting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams();
+      if (statusFilter !== 'todos') params.append('estado', statusFilter);
+      if (municipioFilter !== 'todos') params.append('municipio', municipioFilter);
+      if (gestorFilter !== 'todos') params.append('gestor_id', gestorFilter);
+      if (fechaDesde) params.append('fecha_desde', fechaDesde);
+      if (fechaHasta) params.append('fecha_hasta', fechaHasta);
+      
+      const url = `${API}/reports/tramites/export-excel${params.toString() ? '?' + params.toString() : ''}`;
+      
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!response.ok) throw new Error('Error al generar Excel');
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `Historico_Tramites_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      toast.success('Histórico exportado a Excel');
+    } catch (error) {
+      toast.error('Error al exportar a Excel');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      let url = `${API}/reports/listado-tramites/export-pdf`;
+      const params = new URLSearchParams();
+      if (statusFilter && statusFilter !== 'todos') {
+        params.append('estado', statusFilter);
+      }
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!response.ok) throw new Error('Error al generar PDF');
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `Listado_Tramites_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      toast.success('Listado de trámites descargado');
+    } catch (error) {
+      toast.error('Error al exportar listado de trámites');
     }
   };
 
@@ -98,9 +225,14 @@ export default function AllPetitions() {
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric'
     });
+  };
+
+  const getGestorName = (gestorId) => {
+    const gestor = gestores.find(g => g.id === gestorId);
+    return gestor?.full_name || 'Sin asignar';
   };
 
   if (loading) {
@@ -111,35 +243,72 @@ export default function AllPetitions() {
     );
   }
 
+  const hasActiveFilters = statusFilter !== 'todos' || municipioFilter !== 'todos' || 
+    gestorFilter !== 'todos' || fechaDesde || fechaHasta || searchTerm;
+
   return (
     <div className="space-y-6" data-testid="all-petitions-page">
       {/* Header */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900 font-outfit" data-testid="page-heading">
-          Todas las Peticiones
-        </h2>
-        <p className="text-slate-600 mt-1">Gestiona todas las peticiones del sistema</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 font-outfit" data-testid="page-heading">
+            {isCoordinatorOrAdmin ? 'Histórico de Trámites' : 'Todas las Peticiones'}
+          </h2>
+          <p className="text-slate-600 mt-1">
+            {isCoordinatorOrAdmin 
+              ? 'Consulta y exporta el histórico completo de trámites'
+              : 'Gestiona todas las peticiones del sistema'}
+          </p>
+        </div>
+        
+        {/* Export Buttons */}
+        <div className="flex gap-2">
+          {isCoordinatorOrAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+              onClick={exportToExcel}
+              disabled={exporting}
+              data-testid="export-excel-btn"
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              {exporting ? 'Exportando...' : 'Exportar Excel'}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-slate-300 text-slate-700 hover:bg-slate-50"
+            onClick={exportToPDF}
+            data-testid="export-pdf-btn"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Exportar PDF
+          </Button>
+        </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters Card */}
       <Card className="border-slate-200">
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative">
+          {/* Basic Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por nombre, tipo de trámite o municipio..."
+                placeholder="Buscar por radicado, nombre, tipo de trámite..."
                 className="pl-10 focus-visible:ring-emerald-600"
                 data-testid="search-input"
               />
             </div>
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-slate-500" />
+              <Filter className="w-4 h-4 text-slate-500 flex-shrink-0" />
               <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                 <SelectTrigger className="focus:ring-emerald-600" data-testid="status-filter">
-                  <SelectValue />
+                  <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos los Estados</SelectItem>
@@ -153,73 +322,150 @@ export default function AllPetitions() {
               </Select>
             </div>
           </div>
+
+          {/* Advanced Filters Toggle (for coordinators/admins) */}
+          {isCoordinatorOrAdmin && (
+            <>
+              <button
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="flex items-center gap-2 mt-4 text-sm text-emerald-700 hover:text-emerald-800 font-medium"
+                data-testid="toggle-advanced-filters"
+              >
+                {showAdvancedFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {showAdvancedFilters ? 'Ocultar filtros avanzados' : 'Mostrar filtros avanzados'}
+              </button>
+
+              {/* Advanced Filters */}
+              {showAdvancedFilters && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-slate-200">
+                  {/* Municipio Filter */}
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> Municipio
+                    </label>
+                    <Select value={municipioFilter} onValueChange={setMunicipioFilter}>
+                      <SelectTrigger className="focus:ring-emerald-600" data-testid="municipio-filter">
+                        <SelectValue placeholder="Municipio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos los Municipios</SelectItem>
+                        {MUNICIPIOS.map((m) => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Gestor Filter */}
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 flex items-center gap-1">
+                      <Users className="w-3 h-3" /> Gestor Asignado
+                    </label>
+                    <Select value={gestorFilter} onValueChange={setGestorFilter}>
+                      <SelectTrigger className="focus:ring-emerald-600" data-testid="gestor-filter">
+                        <SelectValue placeholder="Gestor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos los Gestores</SelectItem>
+                        {gestores.map((g) => (
+                          <SelectItem key={g.id} value={g.id}>{g.full_name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Fecha Desde */}
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> Desde
+                    </label>
+                    <Input
+                      type="date"
+                      value={fechaDesde}
+                      onChange={(e) => setFechaDesde(e.target.value)}
+                      className="focus-visible:ring-emerald-600"
+                      data-testid="fecha-desde"
+                    />
+                  </div>
+
+                  {/* Fecha Hasta */}
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> Hasta
+                    </label>
+                    <Input
+                      type="date"
+                      value={fechaHasta}
+                      onChange={(e) => setFechaHasta(e.target.value)}
+                      className="focus-visible:ring-emerald-600"
+                      data-testid="fecha-hasta"
+                    />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Reset Filters */}
+          {hasActiveFilters && (
+            <div className="mt-4 pt-4 border-t border-slate-200 flex justify-between items-center">
+              <span className="text-sm text-slate-500">
+                {filteredPetitions.length} de {petitions.length} trámites
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetFilters}
+                className="text-slate-600 hover:text-slate-800"
+                data-testid="reset-filters-btn"
+              >
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Limpiar filtros
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Results Count and Export */}
-      <div className="flex justify-between items-center">
-        <div className="text-sm text-slate-600" data-testid="results-count">
-          Mostrando {filteredPetitions.length} de {petitions.length} peticiones
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-          onClick={async () => {
-            try {
-              const token = localStorage.getItem('token');
-              let url = `${API}/reports/listado-tramites/export-pdf`;
-              const params = new URLSearchParams();
-              if (statusFilter && statusFilter !== 'todos') {
-                params.append('estado', statusFilter);
-              }
-              if (params.toString()) {
-                url += `?${params.toString()}`;
-              }
-              
-              const response = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${token}` }
-              });
-              
-              if (!response.ok) throw new Error('Error al generar PDF');
-              
-              const blob = await response.blob();
-              const downloadUrl = window.URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = downloadUrl;
-              a.download = `Listado_Tramites_${new Date().toISOString().split('T')[0]}.pdf`;
-              a.click();
-              window.URL.revokeObjectURL(downloadUrl);
-              toast.success('Listado de trámites descargado');
-            } catch (error) {
-              toast.error('Error al exportar listado de trámites');
-            }
-          }}
-        >
-          <FileText className="w-4 h-4 mr-2" />
-          Exportar Listado PDF
-        </Button>
+      {/* Results Count */}
+      <div className="text-sm text-slate-600" data-testid="results-count">
+        Mostrando {filteredPetitions.length} de {petitions.length} trámites
       </div>
 
-      {/* Petitions List - Simplified View */}
+      {/* Petitions Table */}
       {filteredPetitions.length === 0 ? (
         <Card className="border-slate-200">
           <CardContent className="pt-6 text-center py-12">
             <p className="text-slate-600" data-testid="no-petitions-message">
-              No se encontraron peticiones con los criterios de búsqueda.
+              No se encontraron trámites con los criterios de búsqueda.
             </p>
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetFilters}
+                className="mt-4"
+              >
+                Limpiar filtros
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
         <Card className="border-slate-200">
-          <CardContent className="p-0">
-            <table className="w-full">
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full min-w-[700px]">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="text-left py-4 px-6 font-semibold text-slate-700">Radicado</th>
-                  <th className="text-left py-4 px-6 font-semibold text-slate-700">Estado</th>
-                  <th className="text-left py-4 px-6 font-semibold text-slate-700 hidden md:table-cell">Fecha</th>
-                  <th className="text-center py-4 px-6 font-semibold text-slate-700">Acción</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700">Radicado</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700">Solicitante</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700">Municipio</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700">Estado</th>
+                  {isCoordinatorOrAdmin && (
+                    <th className="text-left py-4 px-4 font-semibold text-slate-700">Gestor</th>
+                  )}
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700">Fecha</th>
+                  <th className="text-center py-4 px-4 font-semibold text-slate-700">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -230,25 +476,42 @@ export default function AllPetitions() {
                     onClick={() => navigate(`/dashboard/peticiones/${petition.id}`)}
                     data-testid={`petition-row-${petition.id}`}
                   >
-                    <td className="py-4 px-6">
-                      <div className="font-bold text-emerald-700 text-lg" data-testid={`petition-radicado-${petition.id}`}>
+                    <td className="py-3 px-4">
+                      <div className="font-bold text-emerald-700" data-testid={`petition-radicado-${petition.id}`}>
                         {petition.radicado || petition.radicado_id}
                       </div>
-                      <div className="text-sm text-slate-500 mt-1">
+                      <div className="text-xs text-slate-500 mt-0.5 truncate max-w-[200px]">
                         {petition.tipo_tramite}
                       </div>
                     </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(petition.estado)}
+                    <td className="py-3 px-4">
+                      <div className="text-sm text-slate-800 font-medium">
+                        {petition.nombre_completo || petition.creator_name}
                       </div>
                     </td>
-                    <td className="py-4 px-6 hidden md:table-cell">
-                      <div className="text-slate-600 text-sm">
+                    <td className="py-3 px-4">
+                      <div className="text-sm text-slate-600">
+                        {petition.municipio}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      {getStatusBadge(petition.estado)}
+                    </td>
+                    {isCoordinatorOrAdmin && (
+                      <td className="py-3 px-4">
+                        <div className="text-sm text-slate-600">
+                          {petition.gestores_asignados?.length > 0 
+                            ? getGestorName(petition.gestores_asignados[0])
+                            : <span className="text-slate-400">Sin asignar</span>}
+                        </div>
+                      </td>
+                    )}
+                    <td className="py-3 px-4">
+                      <div className="text-sm text-slate-600">
                         {formatDate(petition.created_at)}
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-center">
+                    <td className="py-3 px-4 text-center">
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
