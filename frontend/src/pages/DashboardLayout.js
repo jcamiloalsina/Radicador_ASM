@@ -117,7 +117,7 @@ export default function DashboardLayout() {
 
   const getRoleName = (role) => {
     const roles = {
-      ciudadano: 'Ciudadano',
+      usuario: 'Usuario',
       atencion_usuario: 'Atención al Usuario',
       gestor: 'Gestor',
       coordinador: 'Coordinador',
@@ -133,7 +133,7 @@ export default function DashboardLayout() {
   ];
 
   // Comunicaciones y otros roles de staff pueden ver predios y visor
-  if (user.role !== 'ciudadano') {
+  if (user.role !== 'usuario') {
     menuItems.push({ path: '/dashboard/todas-peticiones', label: 'Todas las Peticiones', icon: Users });
     menuItems.push({ path: '/dashboard/predios', label: 'Gestión de Predios', icon: MapPin });
     menuItems.push({ path: '/dashboard/visor-predios', label: 'Visor de Predios', icon: Map });

@@ -35,7 +35,7 @@ const STAFF_COLORS = {
   gestores_auxiliares: '#34d399',
   atencion_usuario: '#6366f1',
   administradores: '#8b5cf6',
-  ciudadanos: '#94a3b8'
+  usuarios: '#94a3b8'
 };
 
 export default function EstadisticasUnificadas() {

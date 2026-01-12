@@ -65,8 +65,8 @@ export default function MyPetitions() {
     return <Badge className={config.className} data-testid={`badge-${status}`}>{config.label}</Badge>;
   };
 
-  // For ciudadanos, only show relevant statuses
-  const getCiudadanoStatusLabel = (status) => {
+  // For usuarios, only show relevant statuses
+  const getUsuarioStatusLabel = (status) => {
     const relevantStatuses = ['radicado', 'asignado', 'rechazado', 'finalizado'];
     if (relevantStatuses.includes(status)) {
       return getStatusBadge(status);
@@ -91,8 +91,8 @@ export default function MyPetitions() {
     );
   }
 
-  const pageTitle = user?.role === 'ciudadano' ? 'Mis Radicados' : 'Mis Peticiones';
-  const pageDescription = user?.role === 'ciudadano' 
+  const pageTitle = user?.role === 'usuario' ? 'Mis Radicados' : 'Mis Peticiones';
+  const pageDescription = user?.role === 'usuario' 
     ? 'Consulta el estado de tus trámites catastrales' 
     : 'Gestiona y da seguimiento a tus trámites';
 
@@ -137,9 +137,9 @@ export default function MyPetitions() {
         <Card className="border-slate-200">
           <CardContent className="pt-6 text-center py-12">
             <p className="text-slate-600" data-testid="no-petitions-message">
-              {searchTerm ? 'No se encontraron peticiones con ese criterio de búsqueda.' : `No tienes ${user?.role === 'ciudadano' ? 'radicados' : 'peticiones'} aún.`}
+              {searchTerm ? 'No se encontraron peticiones con ese criterio de búsqueda.' : `No tienes ${user?.role === 'usuario' ? 'radicados' : 'peticiones'} aún.`}
             </p>
-            {!searchTerm && user?.role === 'ciudadano' && (
+            {!searchTerm && user?.role === 'usuario' && (
               <Button
                 onClick={() => navigate('/dashboard/peticiones/nueva')}
                 className="mt-4 bg-emerald-700 hover:bg-emerald-800 text-white"
@@ -166,7 +166,7 @@ export default function MyPetitions() {
                       Creada el {formatDate(petition.created_at)}
                     </p>
                   </div>
-                  {user?.role === 'ciudadano' ? getCiudadanoStatusLabel(petition.estado) : getStatusBadge(petition.estado)}
+                  {user?.role === 'usuario' ? getUsuarioStatusLabel(petition.estado) : getStatusBadge(petition.estado)}
                 </div>
               </CardHeader>
               <CardContent>
@@ -184,7 +184,7 @@ export default function MyPetitions() {
                     <p className="font-medium text-slate-900" data-testid={`petition-telefono-${petition.id}`}>{petition.telefono}</p>
                   </div>
                 </div>
-                {petition.estado === 'rechazado' && user?.role === 'ciudadano' && (
+                {petition.estado === 'rechazado' && user?.role === 'usuario' && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
                     <p className="text-sm text-red-800 font-medium">⚠️ Este trámite requiere subsanación</p>
                     <p className="text-xs text-red-700 mt-1">Haz clic en "Ver Detalles" para cargar los documentos solicitados</p>

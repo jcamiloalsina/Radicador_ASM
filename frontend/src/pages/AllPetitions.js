@@ -24,7 +24,7 @@ export default function AllPetitions() {
   const [statusFilter, setStatusFilter] = useState(searchParams.get('estado') || 'todos');
 
   useEffect(() => {
-    if (user?.role === 'ciudadano') {
+    if (user?.role === 'usuario') {
       navigate('/dashboard');
     } else {
       fetchPetitions();

@@ -39,8 +39,8 @@ export default function DashboardHome() {
     );
   }
 
-  // Stats for ciudadano - only relevant states
-  const ciudadanoStats = [
+  // Stats for usuario - only relevant states
+  const usuarioStats = [
     {
       title: 'Mis Radicados',
       value: stats?.total || 0,
@@ -110,7 +110,7 @@ export default function DashboardHome() {
     },
   ];
 
-  const statCards = user?.role === 'ciudadano' ? ciudadanoStats : staffStats;
+  const statCards = user?.role === 'usuario' ? usuarioStats : staffStats;
 
   return (
     <div className="space-y-8" data-testid="dashboard-home">
@@ -120,14 +120,14 @@ export default function DashboardHome() {
           Bienvenido, {user?.full_name}
         </h2>
         <p className="text-slate-600 mt-2">
-          {user?.role === 'ciudadano'
+          {user?.role === 'usuario'
             ? 'Gestiona tus radicados y haz seguimiento al estado de tus trámites'
             : 'Panel de control de peticiones catastrales - Asomunicipios'}
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${user?.role === 'ciudadano' ? 'lg:grid-cols-1 max-w-md' : 'lg:grid-cols-4'} gap-4`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${user?.role === 'usuario' ? 'lg:grid-cols-1 max-w-md' : 'lg:grid-cols-4'} gap-4`}>
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -135,7 +135,7 @@ export default function DashboardHome() {
               key={stat.title} 
               className="border-slate-200 hover:shadow-lg transition-all cursor-pointer hover:border-emerald-500" 
               data-testid={stat.testId}
-              onClick={() => navigate(user?.role === 'ciudadano' ? '/dashboard/peticiones' : `/dashboard/todas-peticiones?estado=${stat.filter || 'todos'}`)}
+              onClick={() => navigate(user?.role === 'usuario' ? '/dashboard/peticiones' : `/dashboard/todas-peticiones?estado=${stat.filter || 'todos'}`)}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-slate-600">{stat.title}</CardTitle>
@@ -158,7 +158,7 @@ export default function DashboardHome() {
           <CardTitle className="text-slate-900 font-outfit">Acciones Rápidas</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {user?.role === 'ciudadano' && (
+          {user?.role === 'usuario' && (
             <Button
               onClick={() => {
                 navigate('/dashboard/peticiones/nueva');
@@ -177,9 +177,9 @@ export default function DashboardHome() {
             data-testid="view-petitions-button"
           >
             <FileText className="w-4 h-4 mr-2" />
-            {user?.role === 'ciudadano' ? 'Ver Mis Radicados' : 'Ver Mis Peticiones'}
+            {user?.role === 'usuario' ? 'Ver Mis Radicados' : 'Ver Mis Peticiones'}
           </Button>
-          {user?.role !== 'ciudadano' && (
+          {user?.role !== 'usuario' && (
             <Button
               onClick={() => navigate('/dashboard/todas-peticiones')}
               variant="outline"
@@ -208,7 +208,7 @@ export default function DashboardHome() {
       <Card className="border-emerald-200 bg-emerald-50">
         <CardContent className="pt-6">
           <p className="text-sm text-emerald-900">
-            {user?.role === 'ciudadano'
+            {user?.role === 'usuario'
               ? 'Puedes crear nuevas peticiones y hacer seguimiento al estado de tus trámites. Si tu trámite es rechazado, podrás cargar documentos para subsanar.'
               : user?.role === 'atencion_usuario'
               ? 'Como personal de atención, puedes revisar, asignar gestores y actualizar el estado de las peticiones.'
