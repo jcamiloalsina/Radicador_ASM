@@ -8,25 +8,27 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 - **Frontend:** React + Tailwind CSS + shadcn/ui
 - **Mapas:** Leaflet + react-leaflet
 - **PDFs:** ReportLab
+- **Excel:** openpyxl
 
 ## Roles de Usuario
-1. `ciudadano` - Usuario básico, puede crear peticiones
+1. `usuario` - Usuario externo (antes "ciudadano"), puede crear peticiones y dar seguimiento
 2. `atencion_usuario` - Atiende peticiones iniciales
 3. `gestor` - Gestiona peticiones y predios
-4. `coordinador` - Aprueba cambios, gestiona permisos
+4. `coordinador` - Aprueba cambios, gestiona permisos, ve histórico completo
 5. `administrador` - Control total del sistema
-6. `comunicaciones` - **Solo lectura**: puede consultar predios, ver visor, ver trámites, descargar/cargar archivos para subsanación. No puede crear/editar/eliminar predios.
+6. `comunicaciones` - **Solo lectura**: puede consultar predios, ver visor, ver trámites, descargar/subir archivos para subsanación. No puede crear/editar/eliminar predios.
 
 **Nota:** "Gestor Auxiliar" NO es un rol, sino una condición temporal cuando un gestor necesita ayuda de otro gestor para completar un trámite.
 
 ## Funcionalidades Implementadas
 
 ### Gestión de Peticiones
-- Crear peticiones con radicado único (RASMCG-XXXX-DD-MM-YYYY)
+- Crear peticiones con radicado único consecutivo (RASMCG-XXXX-DD-MM-YYYY)
 - Subir archivos adjuntos
 - Asignar a gestores
 - Seguimiento de estados
 - Campo de descripción
+- **Histórico de Trámites** (para coordinador/admin) con filtros avanzados
 
 ### Gestión de Predios
 - Dashboard por municipio
@@ -54,16 +56,24 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 - Recuperación de contraseña por email
 - JWT tokens
 
-## Cambios Recientes (8 Enero 2025)
+### Reportes y Exportación
+- Exportar listado de trámites a PDF
+- **Exportar histórico de trámites a Excel** (coordinador/admin)
+- Filtros por estado, municipio, gestor, rango de fechas
 
-### Bug Fixes
-1. **Filtro "sin geometría" corregido**: El query `$or` de geometría era sobrescrito por el `$or` de búsqueda. Se implementó lógica de combinación con `$and`.
+## Cambios Recientes (12 Enero 2025)
 
-### Nuevas Funcionalidades
-1. **Sistema de Permisos Granulares** con notificaciones automáticas
-2. **Eliminado rol "Gestor Auxiliar"** - era innecesario como rol separado
-3. **Eliminado badge "Made with Emergent"**
-4. **Simplificada página de Gestión de Usuarios** - permisos ahora en sección separada
+### Mejoras UX/UI
+1. **Renombrado "Ciudadano" → "Usuario"** en toda la aplicación (backend y frontend)
+2. **Histórico de Trámites mejorado** para coordinadores/admins:
+   - Filtros avanzados: municipio, gestor asignado, rango de fechas
+   - Exportación a Excel con resumen por estado y municipio
+   - Tabla expandida con columnas: Solicitante, Municipio, Gestor
+3. **Migración de datos** completada: 19 usuarios actualizados de 'ciudadano' a 'usuario'
+
+### Nuevos Endpoints
+- `GET /api/reports/tramites/export-excel` - Exportar histórico a Excel (solo coordinador/admin)
+- `POST /api/admin/migrate-ciudadano-to-usuario` - Migración de roles (solo admin)
 
 ## Próximas Tareas (Backlog)
 
@@ -77,27 +87,34 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 ### P1 - Alta Prioridad
 - [ ] Rediseñar certificado catastral PDF
 - [ ] Mejorar vinculación GDB (~82% actualmente)
+- [ ] Flujo de rechazo de peticiones con observaciones editables
 
 ### P2 - Media Prioridad  
-- [ ] Flujo de rechazo de peticiones con observaciones editables
 - [ ] Seguimiento de productividad de gestores
+- [ ] Panel de acciones rápidas para gestores
+- [ ] Historial de cambios de permisos
 
 ### P3 - Baja Prioridad
 - [ ] Firmas digitales en PDFs
 - [ ] Backups automáticos de base de datos
 - [ ] Actos administrativos en PDF
+- [ ] Búsqueda global (radicados, predios, usuarios)
+- [ ] Breadcrumbs y navegación contextual
 
 ## Credenciales de Prueba
 - **Admin:** `catastro@asomunicipios.gov.co` / `Asm*123*`
+- **Usuario de prueba:** `test_usuario@test.com` / `Test*123*`
 
 ## Archivos Clave
-- `/app/backend/server.py` - API principal (monolítico)
+- `/app/backend/server.py` - API principal
+- `/app/frontend/src/pages/AllPetitions.js` - Histórico de trámites con filtros avanzados
 - `/app/frontend/src/pages/Predios.js` - Gestión de predios
 - `/app/frontend/src/pages/PermissionsManagement.js` - Gestión de permisos
-- `/app/frontend/src/pages/UserManagement.js` - Gestión de usuarios (solo roles)
+- `/app/frontend/src/pages/UserManagement.js` - Gestión de usuarios
 - `/app/frontend/src/pages/DashboardLayout.js` - Layout con navegación
 
 ## Estadísticas de Datos
 - Total predios: 174,419
 - Con geometría: 143,354
 - Sin geometría: 31,065
+- Total usuarios: 25+
