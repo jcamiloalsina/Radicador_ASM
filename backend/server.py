@@ -700,6 +700,32 @@ async def update_user_role(role_update: UserRoleUpdate, current_user: dict = Dep
     return {"message": "Rol actualizado exitosamente", "new_role": role_update.new_role}
 
 
+@api_router.post("/admin/migrate-ciudadano-to-usuario")
+async def migrate_ciudadano_to_usuario(current_user: dict = Depends(get_current_user)):
+    """Migra usuarios con rol 'ciudadano' a 'usuario' (solo admin)"""
+    if current_user['role'] != UserRole.ADMINISTRADOR:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ejecutar esta migración")
+    
+    # Count before
+    before_count = await db.users.count_documents({'role': 'ciudadano'})
+    
+    # Update all ciudadano to usuario
+    result = await db.users.update_many(
+        {'role': 'ciudadano'},
+        {'$set': {'role': 'usuario'}}
+    )
+    
+    # Count after
+    usuario_count = await db.users.count_documents({'role': 'usuario'})
+    
+    return {
+        "message": f"Migración completada",
+        "users_with_ciudadano_before": before_count,
+        "users_migrated": result.modified_count,
+        "users_with_usuario_after": usuario_count
+    }
+
+
 # ===== PERMISSIONS MANAGEMENT =====
 
 @api_router.get("/permissions/available")
