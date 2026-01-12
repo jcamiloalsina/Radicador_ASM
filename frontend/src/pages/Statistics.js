@@ -28,7 +28,7 @@ const STAFF_COLORS = {
   gestores_auxiliares: '#34d399',
   atencion_usuario: '#6366f1',
   administradores: '#8b5cf6',
-  ciudadanos: '#94a3b8'
+  usuarios: '#94a3b8'
 };
 
 export default function Statistics() {
@@ -93,7 +93,7 @@ export default function Statistics() {
     { name: 'Administradores', value: summary.staff_counts.administradores, color: STAFF_COLORS.administradores }
   ].filter(item => item.value > 0) : [];
 
-  // Calculate total staff (excluding ciudadanos)
+  // Calculate total staff (excluding usuarios)
   const totalStaff = summary?.staff_counts ? 
     summary.staff_counts.coordinadores + 
     summary.staff_counts.gestores + 
@@ -279,8 +279,8 @@ export default function Statistics() {
                 <Badge className="bg-purple-600 text-white">{summary?.staff_counts?.administradores || 0}</Badge>
               </div>
               <div className="flex items-center justify-between p-2 bg-slate-50 rounded">
-                <span className="text-slate-600">Ciudadanos</span>
-                <Badge className="bg-slate-500 text-white">{summary?.staff_counts?.ciudadanos || 0}</Badge>
+                <span className="text-slate-600">Usuarios</span>
+                <Badge className="bg-slate-500 text-white">{summary?.staff_counts?.usuarios || 0}</Badge>
               </div>
             </div>
           </CardContent>

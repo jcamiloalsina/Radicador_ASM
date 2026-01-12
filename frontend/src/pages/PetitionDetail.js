@@ -32,7 +32,7 @@ export default function PetitionDetail() {
 
   useEffect(() => {
     fetchPetition();
-    if (user?.role !== 'ciudadano') {
+    if (user?.role !== 'usuario') {
       fetchGestores();
     }
   }, [id]);
@@ -151,7 +151,7 @@ export default function PetitionDetail() {
     });
   };
 
-  const canEdit = user?.role !== 'ciudadano';
+  const canEdit = user?.role !== 'usuario';
   const canEditAllFields = ['coordinador', 'administrador'].includes(user?.role);
   const canAssignGestor = ['atencion_usuario', 'gestor', 'coordinador', 'administrador'].includes(user?.role);
 
@@ -313,7 +313,7 @@ export default function PetitionDetail() {
       )}
 
       {/* Gestores Asignados */}
-      {petition.gestores_asignados && petition.gestores_asignados.length > 0 && user?.role !== 'ciudadano' && (
+      {petition.gestores_asignados && petition.gestores_asignados.length > 0 && user?.role !== 'usuario' && (
         <Card className="border-slate-200">
           <CardHeader>
             <CardTitle className="text-slate-900 font-outfit">Gestores Asignados</CardTitle>
@@ -571,7 +571,7 @@ export default function PetitionDetail() {
                 </Dialog>
               )}
               {/* Botón para personal: subir archivos finales (solo en modo edición o siempre visible) */}
-              {user?.role !== 'ciudadano' && petition.user_id !== user?.id && (
+              {user?.role !== 'usuario' && petition.user_id !== user?.id && (
                 <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm" data-testid="staff-upload-button">
@@ -610,7 +610,7 @@ export default function PetitionDetail() {
                   </DialogContent>
                 </Dialog>
               )}
-              {user?.role !== 'ciudadano' && petition.archivos && petition.archivos.some(a => !a.uploaded_by_role || a.uploaded_by_role === 'ciudadano') && (
+              {user?.role !== 'usuario' && petition.archivos && petition.archivos.some(a => !a.uploaded_by_role || a.uploaded_by_role === 'usuario') && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -622,7 +622,7 @@ export default function PetitionDetail() {
                   data-testid="download-zip-button"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Descargar ZIP (Ciudadano)
+                  Descargar ZIP (Usuario)
                 </Button>
               )}
             </div>
@@ -632,10 +632,10 @@ export default function PetitionDetail() {
           {petition.archivos && petition.archivos.length > 0 ? (
             <div className="space-y-2">
               {petition.archivos.map((archivo, idx) => {
-                const uploadedByRole = archivo.uploaded_by_role || 'ciudadano';
-                const isCitizen = uploadedByRole === 'ciudadano';
+                const uploadedByRole = archivo.uploaded_by_role || 'usuario';
+                const isCitizen = uploadedByRole === 'usuario';
                 const badgeColor = isCitizen ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800';
-                const roleLabel = isCitizen ? 'Ciudadano' : 'Personal';
+                const roleLabel = isCitizen ? 'Usuario' : 'Personal';
                 
                 return (
                   <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-md border border-slate-200" data-testid={`file-${idx}`}>

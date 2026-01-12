@@ -64,14 +64,14 @@ export default function UserManagement() {
 
   const getRoleBadge = (role) => {
     const roleConfig = {
-      ciudadano: { label: 'Ciudadano', className: 'bg-blue-100 text-blue-800' },
+      usuario: { label: 'Usuario', className: 'bg-blue-100 text-blue-800' },
       atencion_usuario: { label: 'Atención al Usuario', className: 'bg-purple-100 text-purple-800' },
       gestor: { label: 'Gestor', className: 'bg-green-100 text-green-800' },
       coordinador: { label: 'Coordinador', className: 'bg-orange-100 text-orange-800' },
       administrador: { label: 'Administrador', className: 'bg-red-100 text-red-800' },
       comunicaciones: { label: 'Comunicaciones', className: 'bg-cyan-100 text-cyan-800' },
     };
-    const config = roleConfig[role] || roleConfig.ciudadano;
+    const config = roleConfig[role] || roleConfig.usuario;
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
@@ -149,7 +149,7 @@ export default function UserManagement() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ciudadano">Ciudadano</SelectItem>
+                        <SelectItem value="usuario">Usuario</SelectItem>
                         <SelectItem value="atencion_usuario">Atención al Usuario</SelectItem>
                         <SelectItem value="comunicaciones">Comunicaciones</SelectItem>
                         <SelectItem value="gestor">Gestor</SelectItem>
