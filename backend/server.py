@@ -1938,6 +1938,170 @@ async def export_listado_tramites_pdf(
     )
 
 
+@api_router.get("/reports/tramites/export-excel")
+async def export_tramites_excel(
+    municipio: Optional[str] = None,
+    estado: Optional[str] = None,
+    gestor_id: Optional[str] = None,
+    fecha_desde: Optional[str] = None,
+    fecha_hasta: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Export petition history as Excel (for coordinators/admins)"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo coordinadores y administradores pueden exportar el histórico")
+    
+    # Build query
+    query = {}
+    if municipio and municipio != 'todos':
+        query["municipio"] = municipio
+    if estado and estado != 'todos':
+        query["estado"] = estado
+    if gestor_id and gestor_id != 'todos':
+        query["gestores_asignados"] = gestor_id
+    
+    # Date filters
+    if fecha_desde or fecha_hasta:
+        query["created_at"] = {}
+        if fecha_desde:
+            query["created_at"]["$gte"] = fecha_desde
+        if fecha_hasta:
+            query["created_at"]["$lte"] = fecha_hasta + "T23:59:59"
+        if not query["created_at"]:
+            del query["created_at"]
+    
+    # Get petitions
+    petitions = await db.petitions.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    
+    # Get user names for gestores
+    users = await db.users.find({}, {"_id": 0, "id": 1, "full_name": 1, "email": 1}).to_list(1000)
+    user_map = {u['id']: u for u in users}
+    
+    # Create Excel workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Histórico de Trámites"
+    
+    # Styles
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="047857", end_color="047857", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    
+    # Headers
+    headers = [
+        "No.", "Radicado", "Fecha Creación", "Solicitante", "Correo", "Teléfono",
+        "Tipo de Trámite", "Municipio", "Estado", "Gestor Asignado", "Descripción"
+    ]
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+    
+    # Estado labels
+    estado_labels = {
+        'radicado': 'Radicado',
+        'asignado': 'Asignado',
+        'revision': 'En Revisión',
+        'devuelto': 'Devuelto',
+        'rechazado': 'Rechazado',
+        'finalizado': 'Finalizado'
+    }
+    
+    # Data rows
+    for idx, pet in enumerate(petitions, 1):
+        # Parse date
+        created_at = pet.get('created_at', '')
+        if isinstance(created_at, str):
+            try:
+                created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                fecha_str = created_at.strftime('%d/%m/%Y %H:%M')
+            except:
+                fecha_str = str(created_at)[:16]
+        else:
+            fecha_str = created_at.strftime('%d/%m/%Y %H:%M') if created_at else ''
+        
+        # Get gestor names
+        gestor_names = []
+        for g_id in pet.get('gestores_asignados', []):
+            if g_id in user_map:
+                gestor_names.append(user_map[g_id]['full_name'])
+        gestor_str = ', '.join(gestor_names) if gestor_names else 'Sin asignar'
+        
+        row_data = [
+            idx,
+            pet.get('radicado', pet.get('radicado_id', '')),
+            fecha_str,
+            pet.get('nombre_completo', pet.get('creator_name', '')),
+            pet.get('correo', ''),
+            pet.get('telefono', ''),
+            pet.get('tipo_tramite', ''),
+            pet.get('municipio', ''),
+            estado_labels.get(pet.get('estado', ''), pet.get('estado', '')),
+            gestor_str,
+            (pet.get('descripcion', '') or '')[:200]  # Truncate long descriptions
+        ]
+        
+        for col, value in enumerate(row_data, 1):
+            ws.cell(row=idx + 1, column=col, value=value)
+    
+    # Adjust column widths
+    column_widths = [6, 25, 18, 25, 25, 15, 30, 15, 12, 25, 40]
+    for col, width in enumerate(column_widths, 1):
+        ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = width
+    
+    # Add summary sheet
+    ws_summary = wb.create_sheet("Resumen")
+    ws_summary.cell(row=1, column=1, value="RESUMEN DEL HISTÓRICO DE TRÁMITES").font = Font(bold=True, size=14)
+    ws_summary.cell(row=2, column=1, value=f"Fecha de generación: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    ws_summary.cell(row=3, column=1, value=f"Total de trámites: {len(petitions)}")
+    
+    # Count by status
+    status_counts = {}
+    for pet in petitions:
+        est = pet.get('estado', 'unknown')
+        status_counts[est] = status_counts.get(est, 0) + 1
+    
+    row = 5
+    ws_summary.cell(row=row, column=1, value="Por Estado:").font = Font(bold=True)
+    row += 1
+    for est, count in status_counts.items():
+        ws_summary.cell(row=row, column=1, value=estado_labels.get(est, est))
+        ws_summary.cell(row=row, column=2, value=count)
+        row += 1
+    
+    # Count by municipio
+    muni_counts = {}
+    for pet in petitions:
+        muni = pet.get('municipio', 'Sin municipio')
+        muni_counts[muni] = muni_counts.get(muni, 0) + 1
+    
+    row += 1
+    ws_summary.cell(row=row, column=1, value="Por Municipio:").font = Font(bold=True)
+    row += 1
+    for muni, count in sorted(muni_counts.items(), key=lambda x: -x[1]):
+        ws_summary.cell(row=row, column=1, value=muni)
+        ws_summary.cell(row=row, column=2, value=count)
+        row += 1
+    
+    # Save to bytes
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    # Save to temp file
+    temp_path = UPLOAD_DIR / f"historico_tramites_{uuid.uuid4()}.xlsx"
+    with open(temp_path, 'wb') as f:
+        f.write(output.getvalue())
+    
+    return FileResponse(
+        path=temp_path,
+        filename=f"Historico_Tramites_{datetime.now().strftime('%Y%m%d')}.xlsx",
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+
 # ===== ADVANCED STATISTICS =====
 
 @api_router.get("/stats/by-municipality")
