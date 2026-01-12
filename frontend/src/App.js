@@ -19,6 +19,7 @@ import Predios from "./pages/Predios";
 import VisorPredios from "./pages/VisorPredios";
 import Pendientes from "./pages/Pendientes";
 import PermissionsManagement from "./pages/PermissionsManagement";
+import { OfflineIndicator, OnlineIndicator, PWAInstallPrompt } from "./components/OfflineComponents";
 
 function App() {
   return (
@@ -46,6 +47,11 @@ function App() {
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" richColors />
+      
+      {/* PWA Components */}
+      <OfflineIndicator />
+      <OnlineIndicator />
+      <PWAInstallPrompt />
     </AuthProvider>
   );
 }
