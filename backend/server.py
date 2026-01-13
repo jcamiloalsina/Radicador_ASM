@@ -521,6 +521,238 @@ async def send_test_email(request: TestEmailRequest, current_user: dict = Depend
         raise HTTPException(status_code=500, detail=f"Error al enviar correo: {str(e)}")
 
 
+@api_router.get("/reports/ficha-tecnica")
+async def generate_ficha_tecnica():
+    """Genera PDF con ficha técnica del sistema para presentación ejecutiva"""
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        spaceAfter=20,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#047857')
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=10,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#065f46')
+    )
+    
+    section_style = ParagraphStyle(
+        'SectionTitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceBefore=20,
+        spaceAfter=10,
+        textColor=colors.HexColor('#047857'),
+        borderPadding=(0, 0, 5, 0)
+    )
+    
+    body_style = ParagraphStyle(
+        'CustomBody',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=8,
+        leading=14
+    )
+    
+    bullet_style = ParagraphStyle(
+        'BulletStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        leftIndent=20,
+        spaceAfter=5,
+        leading=13
+    )
+    
+    elements = []
+    
+    # Header
+    elements.append(Paragraph("ASOMUNICIPIOS", title_style))
+    elements.append(Paragraph("Sistema de Gestión Catastral", subtitle_style))
+    elements.append(Paragraph("Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar", 
+                             ParagraphStyle('Small', parent=styles['Normal'], fontSize=10, alignment=TA_CENTER, textColor=colors.gray)))
+    elements.append(Spacer(1, 20))
+    
+    # Horizontal line
+    elements.append(Table([['']], colWidths=[6.5*inch], rowHeights=[2], 
+                         style=TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#047857'))])))
+    elements.append(Spacer(1, 20))
+    
+    # DESCRIPCIÓN GENERAL
+    elements.append(Paragraph("1. DESCRIPCIÓN GENERAL", section_style))
+    elements.append(Paragraph(
+        "El Sistema de Gestión Catastral de Asomunicipios es una plataforma web integral diseñada para modernizar "
+        "y optimizar los procesos de gestión catastral de los municipios asociados. La plataforma permite la administración "
+        "completa del ciclo de vida de trámites catastrales, gestión de predios, y visualización geográfica de información territorial.",
+        body_style
+    ))
+    elements.append(Spacer(1, 10))
+    
+    # FUNCIONALIDADES PRINCIPALES
+    elements.append(Paragraph("2. FUNCIONALIDADES PRINCIPALES", section_style))
+    
+    funcionalidades = [
+        ("<b>Gestión de Trámites (PQRS):</b> Sistema completo de radicación con número único consecutivo (RASMCG-XXXX-DD-MM-YYYY), "
+         "seguimiento de estados, asignación a gestores, y notificaciones automáticas por correo electrónico."),
+        ("<b>Gestión de Predios:</b> Administración de más de 174,000 predios con información alfanumérica (R1/R2), "
+         "filtros avanzados por municipio, zona, destino económico y vigencia."),
+        ("<b>Visor Geográfico:</b> Visualización de predios en mapa interactivo con geometrías GDB, vinculación automática "
+         "entre datos alfanuméricos y gráficos."),
+        ("<b>Importación de Datos:</b> Carga masiva de archivos Excel (R1/R2) y archivos GDB para actualización de base gráfica."),
+        ("<b>Sistema de Roles y Permisos:</b> Control de acceso granular con 6 roles diferenciados (Usuario, Atención al Usuario, "
+         "Gestor, Coordinador, Administrador, Comunicaciones)."),
+        ("<b>Histórico y Reportes:</b> Exportación de histórico de trámites a Excel con filtros avanzados, generación de certificados "
+         "catastrales en PDF."),
+        ("<b>Notificaciones:</b> Sistema de alertas por correo electrónico para asignaciones, cambios de estado y recuperación de contraseña."),
+        ("<b>Aplicación Móvil (PWA):</b> Acceso desde dispositivos móviles con capacidad de funcionamiento offline para consulta de predios.")
+    ]
+    
+    for func in funcionalidades:
+        elements.append(Paragraph(f"• {func}", bullet_style))
+    
+    elements.append(Spacer(1, 10))
+    
+    # BENEFICIOS
+    elements.append(Paragraph("3. BENEFICIOS CLAVE", section_style))
+    
+    beneficios_data = [
+        ["Beneficio", "Descripción"],
+        ["Eficiencia Operativa", "Reducción de tiempos en gestión de trámites mediante automatización de procesos"],
+        ["Trazabilidad", "Seguimiento completo del ciclo de vida de cada trámite y cambio en predios"],
+        ["Accesibilidad", "Acceso 24/7 desde cualquier dispositivo, incluyendo modo offline"],
+        ["Integración de Datos", "Unificación de información alfanumérica (R1/R2) y geográfica (GDB)"],
+        ["Transparencia", "Los usuarios pueden consultar el estado de sus trámites en tiempo real"],
+        ["Seguridad", "Autenticación robusta, roles diferenciados y auditoría de acciones"]
+    ]
+    
+    beneficios_table = Table(beneficios_data, colWidths=[2*inch, 4.5*inch])
+    beneficios_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#047857')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8fafc')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f1f5f9')]),
+        ('PADDING', (0, 0), (-1, -1), 8),
+    ]))
+    elements.append(beneficios_table)
+    elements.append(Spacer(1, 15))
+    
+    # ESTADÍSTICAS ACTUALES
+    elements.append(Paragraph("4. ESTADÍSTICAS DEL SISTEMA", section_style))
+    
+    stats_data = [
+        ["Métrica", "Valor"],
+        ["Total de Predios Registrados", "174,419"],
+        ["Predios con Geometría", "143,354 (82%)"],
+        ["Municipios Cubiertos", "25+"],
+        ["Usuarios Activos", "25+"],
+    ]
+    
+    stats_table = Table(stats_data, colWidths=[3*inch, 3.5*inch])
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#047857')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('PADDING', (0, 0), (-1, -1), 8),
+    ]))
+    elements.append(stats_table)
+    elements.append(Spacer(1, 15))
+    
+    # TECNOLOGÍA
+    elements.append(Paragraph("5. STACK TECNOLÓGICO", section_style))
+    
+    tech_items = [
+        "<b>Backend:</b> FastAPI (Python) - Framework moderno de alto rendimiento",
+        "<b>Frontend:</b> React.js con Tailwind CSS - Interfaz responsiva y moderna",
+        "<b>Base de Datos:</b> MongoDB - Base de datos NoSQL escalable",
+        "<b>Mapas:</b> Leaflet + React-Leaflet - Visualización geográfica interactiva",
+        "<b>PWA:</b> Service Worker + IndexedDB - Funcionamiento offline",
+        "<b>Correo:</b> Integración con Microsoft Office 365",
+        "<b>Seguridad:</b> JWT (JSON Web Tokens) para autenticación"
+    ]
+    
+    for tech in tech_items:
+        elements.append(Paragraph(f"• {tech}", bullet_style))
+    
+    elements.append(Spacer(1, 15))
+    
+    # MEJORAS FUTURAS
+    elements.append(Paragraph("6. ROADMAP DE MEJORAS", section_style))
+    
+    mejoras = [
+        ["Prioridad", "Mejora", "Beneficio Esperado"],
+        ["Alta", "Generación de archivos XTF (IGAC)", "Cumplimiento normativo Resolución 0301/2025"],
+        ["Alta", "Flujo de subsanación de trámites", "Reducción de tiempos en corrección de documentos"],
+        ["Media", "App nativa (Android/iOS)", "Mayor alcance y presencia en tiendas de aplicaciones"],
+        ["Media", "Dashboard de productividad", "Métricas de desempeño de gestores"],
+        ["Media", "Firmas digitales en PDFs", "Validez legal de documentos generados"],
+        ["Baja", "Backups automáticos", "Protección de datos ante contingencias"]
+    ]
+    
+    mejoras_table = Table(mejoras, colWidths=[1.2*inch, 2.5*inch, 2.8*inch])
+    mejoras_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#047857')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
+        ('BACKGROUND', (0, 1), (0, 1), colors.HexColor('#fef2f2')),
+        ('BACKGROUND', (0, 2), (0, 2), colors.HexColor('#fef2f2')),
+        ('BACKGROUND', (0, 3), (0, 4), colors.HexColor('#fefce8')),
+        ('BACKGROUND', (0, 5), (0, 5), colors.HexColor('#fefce8')),
+        ('BACKGROUND', (0, 6), (0, 6), colors.HexColor('#f0fdf4')),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(mejoras_table)
+    elements.append(Spacer(1, 20))
+    
+    # FOOTER
+    elements.append(Table([['']], colWidths=[6.5*inch], rowHeights=[2], 
+                         style=TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#047857'))])))
+    elements.append(Spacer(1, 10))
+    
+    footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=9, alignment=TA_CENTER, textColor=colors.gray)
+    elements.append(Paragraph(f"Documento generado el {datetime.now().strftime('%d de %B de %Y')}", footer_style))
+    elements.append(Paragraph("Sistema de Gestión Catastral - Asomunicipios", footer_style))
+    
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    # Save to file
+    temp_path = UPLOAD_DIR / f"Ficha_Tecnica_Asomunicipios_{datetime.now().strftime('%Y%m%d')}.pdf"
+    with open(temp_path, 'wb') as f:
+        f.write(buffer.getvalue())
+    
+    return FileResponse(
+        path=temp_path,
+        filename=f"Ficha_Tecnica_Asomunicipios_{datetime.now().strftime('%Y%m%d')}.pdf",
+        media_type='application/pdf'
+    )
+
+
 # ===== AUTH ROUTES =====
 
 @api_router.post("/auth/register")
