@@ -472,6 +472,55 @@ async def send_email(to_email: str, subject: str, body: str):
         logging.error(f"Failed to send email: {str(e)}")
 
 
+class TestEmailRequest(BaseModel):
+    to_email: str
+
+@api_router.post("/admin/test-email")
+async def send_test_email(request: TestEmailRequest, current_user: dict = Depends(get_current_user)):
+    """Envía un correo de prueba (solo admin)"""
+    if current_user['role'] != UserRole.ADMINISTRADOR:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden enviar correos de prueba")
+    
+    html_body = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #047857 0%, #065f46 100%); padding: 30px; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; text-align: center;">Asomunicipios</h1>
+            <p style="color: #d1fae5; text-align: center; margin: 10px 0 0 0;">Sistema de Gestión Catastral</p>
+        </div>
+        <div style="background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0; border-top: none;">
+            <h2 style="color: #047857; margin-top: 0;">✅ Correo de Prueba</h2>
+            <p style="color: #475569; line-height: 1.6;">
+                Este es un correo de prueba enviado desde el sistema de gestión catastral de Asomunicipios.
+            </p>
+            <p style="color: #475569; line-height: 1.6;">
+                Si estás recibiendo este mensaje, significa que la configuración de correo electrónico 
+                con <strong>Office 365</strong> está funcionando correctamente.
+            </p>
+            <div style="background: #ecfdf5; border-left: 4px solid #047857; padding: 15px; margin: 20px 0;">
+                <p style="color: #047857; margin: 0; font-weight: bold;">Configuración SMTP:</p>
+                <p style="color: #065f46; margin: 5px 0 0 0; font-size: 14px;">
+                    Servidor: smtp.office365.com<br>
+                    Remitente: catastro@asomunicipios.gov.co
+                </p>
+            </div>
+            <p style="color: #64748b; font-size: 12px; margin-top: 30px; text-align: center;">
+                Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar
+            </p>
+        </div>
+    </div>
+    """
+    
+    try:
+        await send_email(
+            request.to_email,
+            "✅ Prueba de Correo - Asomunicipios Catastro",
+            html_body
+        )
+        return {"message": f"Correo de prueba enviado a {request.to_email}", "success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al enviar correo: {str(e)}")
+
+
 # ===== AUTH ROUTES =====
 
 @api_router.post("/auth/register")
