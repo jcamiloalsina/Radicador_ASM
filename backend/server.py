@@ -450,17 +450,29 @@ async def generate_radicado() -> str:
     sequence = str(count + 1).zfill(4)
     return f"RASMCG-{sequence}-{date_str}"
 
-async def send_email(to_email: str, subject: str, body: str):
+async def send_email(to_email: str, subject: str, body: str, attachment_path: str = None, attachment_name: str = None):
     if not SMTP_USER or not SMTP_PASSWORD:
         logging.warning("SMTP credentials not configured, skipping email")
         return
     
     try:
+        from email.mime.base import MIMEBase
+        from email import encoders
+        
         msg = MIMEMultipart()
         msg['From'] = SMTP_FROM
         msg['To'] = to_email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'html'))
+        
+        # Add attachment if provided
+        if attachment_path and os.path.exists(attachment_path):
+            with open(attachment_path, 'rb') as f:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(f.read())
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', f'attachment; filename="{attachment_name or os.path.basename(attachment_path)}"')
+                msg.attach(part)
         
         server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
         server.starttls()
