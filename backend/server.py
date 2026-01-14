@@ -533,6 +533,126 @@ async def send_test_email(request: TestEmailRequest, current_user: dict = Depend
         raise HTTPException(status_code=500, detail=f"Error al enviar correo: {str(e)}")
 
 
+@api_router.post("/admin/send-ficha-tecnica")
+async def send_ficha_tecnica_email(request: TestEmailRequest, current_user: dict = Depends(get_current_user)):
+    """Envía la ficha técnica por correo con PDF adjunto (solo admin)"""
+    if current_user['role'] != UserRole.ADMINISTRADOR:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden enviar la ficha técnica")
+    
+    # Generate PDF first
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=24, spaceAfter=20, alignment=TA_CENTER, textColor=colors.HexColor('#047857'))
+    subtitle_style = ParagraphStyle('CustomSubtitle', parent=styles['Heading2'], fontSize=14, spaceAfter=10, alignment=TA_CENTER, textColor=colors.HexColor('#065f46'))
+    section_style = ParagraphStyle('SectionTitle', parent=styles['Heading2'], fontSize=14, spaceBefore=20, spaceAfter=10, textColor=colors.HexColor('#047857'))
+    body_style = ParagraphStyle('CustomBody', parent=styles['Normal'], fontSize=11, spaceAfter=8, leading=14)
+    bullet_style = ParagraphStyle('BulletStyle', parent=styles['Normal'], fontSize=10, leftIndent=20, spaceAfter=5, leading=13)
+    
+    elements = []
+    
+    elements.append(Paragraph("ASOMUNICIPIOS", title_style))
+    elements.append(Paragraph("Sistema de Gestión Catastral", subtitle_style))
+    elements.append(Paragraph("Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar", 
+                             ParagraphStyle('Small', parent=styles['Normal'], fontSize=10, alignment=TA_CENTER, textColor=colors.gray)))
+    elements.append(Spacer(1, 20))
+    elements.append(Table([['']], colWidths=[6.5*inch], rowHeights=[2], style=TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#047857'))])))
+    elements.append(Spacer(1, 20))
+    
+    elements.append(Paragraph("1. DESCRIPCIÓN GENERAL", section_style))
+    elements.append(Paragraph(
+        "El Sistema de Gestión Catastral de Asomunicipios es una plataforma web integral diseñada para modernizar "
+        "y optimizar los procesos de gestión catastral de los municipios asociados.",
+        body_style))
+    
+    elements.append(Paragraph("2. FUNCIONALIDADES PRINCIPALES", section_style))
+    funcionalidades = [
+        "<b>Gestión de Trámites:</b> Radicación con número único consecutivo, seguimiento y notificaciones.",
+        "<b>Gestión de Predios:</b> Administración de +174,000 predios con información R1/R2.",
+        "<b>Visor Geográfico:</b> Mapa interactivo con geometrías GDB.",
+        "<b>Importación de Datos:</b> Carga masiva de Excel y archivos GDB.",
+        "<b>Sistema de Roles:</b> 6 roles diferenciados con permisos granulares.",
+        "<b>Reportes:</b> Exportación a Excel/PDF con filtros avanzados.",
+        "<b>PWA:</b> Acceso móvil con funcionamiento offline."
+    ]
+    for func in funcionalidades:
+        elements.append(Paragraph(f"• {func}", bullet_style))
+    
+    elements.append(Paragraph("3. ESTADÍSTICAS", section_style))
+    stats_data = [["Métrica", "Valor"], ["Total Predios", "174,419"], ["Con Geometría", "143,354 (82%)"], ["Municipios", "25+"]]
+    stats_table = Table(stats_data, colWidths=[3*inch, 3*inch])
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#047857')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
+        ('PADDING', (0, 0), (-1, -1), 8),
+    ]))
+    elements.append(stats_table)
+    
+    elements.append(Spacer(1, 20))
+    footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=9, alignment=TA_CENTER, textColor=colors.gray)
+    elements.append(Paragraph(f"Documento generado el {datetime.now().strftime('%d/%m/%Y')}", footer_style))
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    # Save PDF temporarily
+    pdf_filename = f"Ficha_Tecnica_Asomunicipios_{datetime.now().strftime('%Y%m%d')}.pdf"
+    temp_path = UPLOAD_DIR / pdf_filename
+    with open(temp_path, 'wb') as f:
+        f.write(buffer.getvalue())
+    
+    # Send email with attachment
+    html_body = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #047857 0%, #065f46 100%); padding: 30px; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; text-align: center;">Asomunicipios</h1>
+            <p style="color: #d1fae5; text-align: center; margin: 10px 0 0 0;">Sistema de Gestión Catastral</p>
+        </div>
+        <div style="background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0; border-top: none;">
+            <h2 style="color: #047857; margin-top: 0;">📋 Ficha Técnica del Sistema</h2>
+            <p style="color: #475569; line-height: 1.6;">
+                Adjunto encontrará la <strong>Ficha Técnica</strong> del Sistema de Gestión Catastral de Asomunicipios, 
+                la cual incluye:
+            </p>
+            <ul style="color: #475569; line-height: 1.8;">
+                <li>Descripción general del sistema</li>
+                <li>Funcionalidades principales implementadas</li>
+                <li>Beneficios clave para la organización</li>
+                <li>Estadísticas actuales del sistema</li>
+                <li>Stack tecnológico utilizado</li>
+                <li>Roadmap de mejoras futuras</li>
+            </ul>
+            <div style="background: #ecfdf5; border-left: 4px solid #047857; padding: 15px; margin: 20px 0;">
+                <p style="color: #047857; margin: 0;">
+                    <strong>📎 Archivo adjunto:</strong> {pdf_filename}
+                </p>
+            </div>
+            <p style="color: #64748b; font-size: 12px; margin-top: 30px; text-align: center;">
+                Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar
+            </p>
+        </div>
+    </div>
+    """
+    
+    try:
+        await send_email(
+            request.to_email,
+            "📋 Ficha Técnica - Sistema de Gestión Catastral Asomunicipios",
+            html_body,
+            attachment_path=str(temp_path),
+            attachment_name=pdf_filename
+        )
+        return {"message": f"Ficha técnica enviada a {request.to_email}", "success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al enviar correo: {str(e)}")
+
+
 @api_router.get("/reports/ficha-tecnica")
 async def generate_ficha_tecnica():
     """Genera PDF con ficha técnica del sistema para presentación ejecutiva"""
