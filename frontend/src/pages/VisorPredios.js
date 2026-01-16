@@ -17,6 +17,21 @@ import { useAuth } from '../context/AuthContext';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Helper function para obtener la zona del código predial y formatear texto
+const getZonaFromCodigo = (codigoPredial) => {
+  if (!codigoPredial || codigoPredial.length < 7) return { codigo: '', texto: 'N/A' };
+  const zonaCodigo = codigoPredial.substring(5, 7);
+  let texto;
+  if (zonaCodigo === '00') {
+    texto = 'Rural';
+  } else if (zonaCodigo === '01') {
+    texto = 'Urbano';
+  } else {
+    texto = `Corregimiento (${zonaCodigo})`;
+  }
+  return { codigo: zonaCodigo, texto };
+};
+
 // Fix for Leaflet default marker icon
 import L from 'leaflet';
 delete L.Icon.Default.prototype._getIconUrl;
