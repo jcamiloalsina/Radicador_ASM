@@ -1297,7 +1297,7 @@ export default function VisorPredios() {
                             {selectedPredio?.codigo_homologado}
                           </p>
                           <p className="text-xs text-slate-600">
-                            {selectedPredio?.municipio} - {selectedPredio?.zona === '00' ? 'Rural' : selectedPredio?.zona === '01' ? 'Urbano' : `Corregimiento (${selectedPredio?.zona})`}
+                            {selectedPredio?.municipio} - {getZonaFromCodigo(selectedPredio?.codigo_predial_nacional || selectedPredio?.codigo_homologado).texto}
                           </p>
                           <p className="text-xs mt-1">
                             Área: {formatArea(geometry.properties?.area_m2)}
