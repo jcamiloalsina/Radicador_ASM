@@ -889,8 +889,11 @@ async def generate_ficha_tecnica():
 
 @api_router.post("/auth/register")
 async def register(user_data: UserRegister):
-    # Check if user exists
-    existing_user = await db.users.find_one({"email": user_data.email})
+    # Check if user exists (case-insensitive)
+    email_lower = user_data.email.lower()
+    existing_user = await db.users.find_one(
+        {"email": {"$regex": f"^{email_lower}$", "$options": "i"}}
+    )
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El correo ya está registrado")
     
@@ -926,7 +929,12 @@ async def register(user_data: UserRegister):
 
 @api_router.post("/auth/login")
 async def login(credentials: UserLogin):
-    user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
+    # Case-insensitive email search using regex
+    email_lower = credentials.email.lower()
+    user = await db.users.find_one(
+        {"email": {"$regex": f"^{email_lower}$", "$options": "i"}}, 
+        {"_id": 0}
+    )
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales inválidas")
     
@@ -970,7 +978,12 @@ class ResetPasswordRequest(BaseModel):
 @api_router.post("/auth/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest):
     """Send password reset email"""
-    user = await db.users.find_one({"email": request.email}, {"_id": 0})
+    # Case-insensitive email search
+    email_lower = request.email.lower()
+    user = await db.users.find_one(
+        {"email": {"$regex": f"^{email_lower}$", "$options": "i"}}, 
+        {"_id": 0}
+    )
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No existe una cuenta con ese correo")
     
