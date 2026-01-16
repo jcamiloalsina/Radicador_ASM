@@ -929,10 +929,10 @@ async def register(user_data: UserRegister):
 
 @api_router.post("/auth/login")
 async def login(credentials: UserLogin):
-    # Case-insensitive email search using regex
-    email_lower = credentials.email.lower()
+    # Case-insensitive email search using regex (escape special chars)
+    email_escaped = re.escape(credentials.email.lower())
     user = await db.users.find_one(
-        {"email": {"$regex": f"^{email_lower}$", "$options": "i"}}, 
+        {"email": {"$regex": f"^{email_escaped}$", "$options": "i"}}, 
         {"_id": 0}
     )
     if not user:
