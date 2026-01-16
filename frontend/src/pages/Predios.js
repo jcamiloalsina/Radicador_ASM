@@ -20,6 +20,36 @@ import PredioMap from '../components/PredioMap';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Helper function para obtener la zona del código predial y formatear texto
+const getZonaFromCodigo = (codigoPredial) => {
+  if (!codigoPredial || codigoPredial.length < 7) return { codigo: '', texto: 'N/A' };
+  const zonaCodigo = codigoPredial.substring(5, 7);
+  let texto;
+  if (zonaCodigo === '00') {
+    texto = 'Rural';
+  } else if (zonaCodigo === '01') {
+    texto = 'Urbano';
+  } else {
+    texto = `Corregimiento (${zonaCodigo})`;
+  }
+  return { codigo: zonaCodigo, texto };
+};
+
+// Helper para obtener sector, manzana/vereda, terreno del código predial
+const getCodigoPartes = (codigoPredial) => {
+  if (!codigoPredial || codigoPredial.length < 21) return {};
+  return {
+    departamento: codigoPredial.substring(0, 2),
+    municipio: codigoPredial.substring(2, 5),
+    zona: codigoPredial.substring(5, 7),
+    sector: codigoPredial.substring(7, 9),
+    comuna: codigoPredial.substring(9, 11),
+    barrio: codigoPredial.substring(11, 13),
+    manzana_vereda: codigoPredial.substring(13, 17),
+    terreno: codigoPredial.substring(17, 21),
+  };
+};
+
 // Componente para importar archivos R1/R2 (múltiples archivos)
 function ImportR1R2Form({ onSuccess }) {
   const [files, setFiles] = useState([]);
