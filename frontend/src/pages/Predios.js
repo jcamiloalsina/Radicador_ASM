@@ -2143,7 +2143,7 @@ export default function Predios() {
                         className="font-mono text-center"
                         placeholder="00"
                       />
-                      <span className="text-xs text-slate-400">00=Rural 01=Urb</span>
+                      <span className="text-xs text-slate-400">00=Rural, 01=Urbano, 02-99=Correg.</span>
                     </div>
                     <div>
                       <Label className="text-xs text-amber-700">Sector (8-9)</Label>
@@ -2997,7 +2997,7 @@ export default function Predios() {
                 <CardContent className="grid grid-cols-3 gap-4 text-sm">
                   <div><span className="text-slate-500">Departamento:</span> <strong>{selectedPredio.departamento}</strong></div>
                   <div><span className="text-slate-500">Municipio:</span> <strong>{selectedPredio.municipio}</strong></div>
-                  <div><span className="text-slate-500">Zona:</span> <strong>{selectedPredio.zona === '00' ? 'Rural' : 'Urbano'}</strong></div>
+                  <div><span className="text-slate-500">Zona:</span> <strong>{selectedPredio.zona === '00' ? 'Rural' : selectedPredio.zona === '01' ? 'Urbano' : `Corregimiento (${selectedPredio.zona})`}</strong></div>
                   <div><span className="text-slate-500">Sector:</span> <strong>{selectedPredio.sector}</strong></div>
                   <div><span className="text-slate-500">Manzana/Vereda:</span> <strong>{selectedPredio.manzana_vereda}</strong></div>
                   <div><span className="text-slate-500">Terreno:</span> <strong>{selectedPredio.terreno}</strong></div>
