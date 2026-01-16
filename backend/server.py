@@ -231,7 +231,7 @@ ESTADO_CIVIL_PREDIO = {
 class PredioR1Create(BaseModel):
     """Registro R1 - Información Jurídica del Predio"""
     municipio: str
-    zona: str = "00"  # 00=Rural, 01+=Urbano
+    zona: str = "00"  # 00=Rural, 01=Urbano, 02-99=Corregimientos
     sector: str = "01"
     manzana_vereda: str = "0000"
     terreno: str = "0001"
@@ -2824,7 +2824,7 @@ async def get_predios(
     municipio: Optional[str] = None,
     vigencia: Optional[int] = None,
     destino_economico: Optional[str] = None,
-    zona: Optional[str] = None,  # '00' = urbano, otros = rural
+    zona: Optional[str] = None,  # '00' = rural, '01' = urbano, '02-99' = corregimientos
     tiene_geometria: Optional[str] = None,  # Filtro para predios con/sin geometría GDB ('true' o 'false')
     search: Optional[str] = None,
     skip: int = 0,
@@ -2844,10 +2844,12 @@ async def get_predios(
     if destino_economico:
         query["destino_economico"] = destino_economico
     if zona:
-        if zona == 'urbano':
+        if zona == 'rural':
             query["zona"] = "00"
-        elif zona == 'rural':
-            query["zona"] = {"$ne": "00"}
+        elif zona == 'urbano':
+            query["zona"] = "01"
+        elif zona == 'corregimiento':
+            query["zona"] = {"$gte": "02", "$lte": "99"}
     
     # Filtro de geometría - convertir string a booleano
     geometria_filter = None
@@ -3356,7 +3358,7 @@ async def get_estructura_codigo_predial(
     estructura = {
         "departamento": {"posicion": "1-2", "valor": divipola["departamento"], "editable": False, "descripcion": "Departamento"},
         "municipio": {"posicion": "3-5", "valor": divipola["municipio"], "editable": False, "descripcion": "Municipio"},
-        "zona": {"posicion": "6-7", "valor": "", "editable": True, "descripcion": "Zona (00=Rural, 01+=Urbana)"},
+        "zona": {"posicion": "6-7", "valor": "", "editable": True, "descripcion": "Zona (00=Rural, 01=Urbano, 02-99=Corregimientos)"},
         "sector": {"posicion": "8-9", "valor": "", "editable": True, "descripcion": "Sector"},
         "comuna": {"posicion": "10-11", "valor": "", "editable": True, "descripcion": "Comuna"},
         "barrio": {"posicion": "12-13", "valor": "", "editable": True, "descripcion": "Barrio"},
