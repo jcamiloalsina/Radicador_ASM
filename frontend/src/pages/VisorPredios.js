@@ -721,7 +721,7 @@ export default function VisorPredios() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Zona</p>
-                    <p className="font-medium">{selectedPredio.zona === '00' ? 'Rural' : 'Urbano'}</p>
+                    <p className="font-medium">{selectedPredio.zona === '00' ? 'Rural' : selectedPredio.zona === '01' ? 'Urbano' : `Corregimiento (${selectedPredio.zona})`}</p>
                   </div>
                 </div>
 
@@ -1282,7 +1282,7 @@ export default function VisorPredios() {
                             {selectedPredio?.codigo_homologado}
                           </p>
                           <p className="text-xs text-slate-600">
-                            {selectedPredio?.municipio} - {selectedPredio?.zona === '00' ? 'Rural' : 'Urbano'}
+                            {selectedPredio?.municipio} - {selectedPredio?.zona === '00' ? 'Rural' : selectedPredio?.zona === '01' ? 'Urbano' : `Corregimiento (${selectedPredio?.zona})`}
                           </p>
                           <p className="text-xs mt-1">
                             Área: {formatArea(geometry.properties?.area_m2)}
