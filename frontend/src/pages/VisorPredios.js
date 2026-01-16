@@ -736,7 +736,7 @@ export default function VisorPredios() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Zona</p>
-                    <p className="font-medium">{selectedPredio.zona === '00' ? 'Rural' : selectedPredio.zona === '01' ? 'Urbano' : `Corregimiento (${selectedPredio.zona})`}</p>
+                    <p className="font-medium">{getZonaFromCodigo(selectedPredio.codigo_predial_nacional || selectedPredio.codigo_homologado).texto}</p>
                   </div>
                 </div>
 
