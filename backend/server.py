@@ -452,7 +452,7 @@ async def generate_radicado() -> str:
         {"_id": "radicado_counter"},
         {"$inc": {"sequence": 1}},
         upsert=True,
-        return_document=True  # Retorna el documento después de la actualización
+        return_document=ReturnDocument.AFTER
     )
     
     sequence = str(result["sequence"]).zfill(4)
