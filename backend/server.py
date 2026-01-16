@@ -978,10 +978,10 @@ class ResetPasswordRequest(BaseModel):
 @api_router.post("/auth/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest):
     """Send password reset email"""
-    # Case-insensitive email search
-    email_lower = request.email.lower()
+    # Case-insensitive email search (escape special chars)
+    email_escaped = re.escape(request.email.lower())
     user = await db.users.find_one(
-        {"email": {"$regex": f"^{email_lower}$", "$options": "i"}}, 
+        {"email": {"$regex": f"^{email_escaped}$", "$options": "i"}}, 
         {"_id": 0}
     )
     if not user:
