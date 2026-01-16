@@ -2887,7 +2887,21 @@ async def get_predios(
         query.update(search_filter)
     
     total = await db.predios.count_documents(query)
-    predios = await db.predios.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Usar agregación para extraer zona del código predial y ordenar
+    # La zona está en las posiciones 6-7 (índice 5-7) del codigo_predial_nacional
+    pipeline = [
+        {"$match": query},
+        {"$addFields": {
+            "zona_orden": {"$substr": ["$codigo_predial_nacional", 5, 2]}
+        }},
+        {"$sort": {"zona_orden": 1, "codigo_predial_nacional": 1}},  # Ordenar por zona ascendente, luego por código
+        {"$skip": skip},
+        {"$limit": limit},
+        {"$project": {"_id": 0, "zona_orden": 0}}  # Excluir campos auxiliares
+    ]
+    
+    predios = await db.predios.aggregate(pipeline).to_list(limit)
     
     return {
         "total": total,
