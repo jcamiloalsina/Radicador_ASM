@@ -438,16 +438,23 @@ def require_permission(permission: str):
     return permission_checker
 
 async def generate_radicado() -> str:
+    """
+    Genera un número de radicado con consecutivo global.
+    Formato: RASMCG-XXXX-DD-MM-YYYY
+    XXXX es un consecutivo global que NUNCA se reinicia.
+    """
     now = datetime.now()
     date_str = now.strftime("%d-%m-%Y")
     
-    # Get count for today
-    start_of_day = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
-    count = await db.petitions.count_documents({
-        "created_at": {"$gte": start_of_day.isoformat()}
-    })
+    # Obtener e incrementar el contador global atómicamente
+    result = await db.counters.find_one_and_update(
+        {"_id": "radicado_counter"},
+        {"$inc": {"sequence": 1}},
+        upsert=True,
+        return_document=True  # Retorna el documento después de la actualización
+    )
     
-    sequence = str(count + 1).zfill(4)
+    sequence = str(result["sequence"]).zfill(4)
     return f"RASMCG-{sequence}-{date_str}"
 
 async def send_email(to_email: str, subject: str, body: str, attachment_path: str = None, attachment_name: str = None):
