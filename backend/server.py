@@ -890,9 +890,9 @@ async def generate_ficha_tecnica():
 @api_router.post("/auth/register")
 async def register(user_data: UserRegister):
     # Check if user exists (case-insensitive)
-    email_lower = user_data.email.lower()
+    email_escaped = re.escape(user_data.email.lower())
     existing_user = await db.users.find_one(
-        {"email": {"$regex": f"^{email_lower}$", "$options": "i"}}
+        {"email": {"$regex": f"^{email_escaped}$", "$options": "i"}}
     )
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El correo ya está registrado")
