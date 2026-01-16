@@ -3025,12 +3025,12 @@ export default function Predios() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-3 gap-4 text-sm">
-                  <div><span className="text-slate-500">Departamento:</span> <strong>{selectedPredio.departamento}</strong></div>
+                  <div><span className="text-slate-500">Departamento:</span> <strong>{selectedPredio.departamento || getCodigoPartes(selectedPredio.codigo_predial_nacional).departamento}</strong></div>
                   <div><span className="text-slate-500">Municipio:</span> <strong>{selectedPredio.municipio}</strong></div>
-                  <div><span className="text-slate-500">Zona:</span> <strong>{selectedPredio.zona === '00' ? 'Rural' : selectedPredio.zona === '01' ? 'Urbano' : `Corregimiento (${selectedPredio.zona})`}</strong></div>
-                  <div><span className="text-slate-500">Sector:</span> <strong>{selectedPredio.sector}</strong></div>
-                  <div><span className="text-slate-500">Manzana/Vereda:</span> <strong>{selectedPredio.manzana_vereda}</strong></div>
-                  <div><span className="text-slate-500">Terreno:</span> <strong>{selectedPredio.terreno}</strong></div>
+                  <div><span className="text-slate-500">Zona:</span> <strong>{getZonaFromCodigo(selectedPredio.codigo_predial_nacional).texto}</strong></div>
+                  <div><span className="text-slate-500">Sector:</span> <strong>{selectedPredio.sector || getCodigoPartes(selectedPredio.codigo_predial_nacional).sector}</strong></div>
+                  <div><span className="text-slate-500">Manzana/Vereda:</span> <strong>{selectedPredio.manzana_vereda || getCodigoPartes(selectedPredio.codigo_predial_nacional).manzana_vereda}</strong></div>
+                  <div><span className="text-slate-500">Terreno:</span> <strong>{selectedPredio.terreno || getCodigoPartes(selectedPredio.codigo_predial_nacional).terreno}</strong></div>
                 </CardContent>
               </Card>
               
