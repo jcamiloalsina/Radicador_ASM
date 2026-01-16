@@ -441,7 +441,7 @@ def require_permission(permission: str):
 async def generate_radicado() -> str:
     """
     Genera un número de radicado con consecutivo global.
-    Formato: RASMCG-XXXX-DD-MM-YYYY
+    Formato: RASMGC-XXXX-DD-MM-YYYY
     XXXX es un consecutivo global que NUNCA se reinicia.
     """
     now = datetime.now()
@@ -456,7 +456,7 @@ async def generate_radicado() -> str:
     )
     
     sequence = str(result["sequence"]).zfill(4)
-    return f"RASMCG-{sequence}-{date_str}"
+    return f"RASMGC-{sequence}-{date_str}"
 
 async def send_email(to_email: str, subject: str, body: str, attachment_path: str = None, attachment_name: str = None):
     if not SMTP_USER or not SMTP_PASSWORD:
