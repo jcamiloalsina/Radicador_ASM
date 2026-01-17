@@ -160,6 +160,8 @@ export default function VisorPredios() {
   const [showUploadGdb, setShowUploadGdb] = useState(false);
   const [uploadingGdb, setUploadingGdb] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null); // Estado del progreso de carga
+  const [gdbAnalisis, setGdbAnalisis] = useState(null); // Resultado del análisis de GDB antes de cargar
+  const [gdbArchivoPendiente, setGdbArchivoPendiente] = useState(null); // Archivo pendiente de confirmación
   const [filterMunicipio, setFilterMunicipio] = useState('');
   const [filterZona, setFilterZona] = useState('todos');
   const [allGeometries, setAllGeometries] = useState(null);
