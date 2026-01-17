@@ -2634,146 +2634,242 @@ async def export_listado_tramites_pdf(
     
     # Generate PDF
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), leftMargin=0.4*inch, rightMargin=0.4*inch, topMargin=0.4*inch, bottomMargin=0.4*inch)
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), leftMargin=0.5*inch, rightMargin=0.5*inch, topMargin=0.4*inch, bottomMargin=0.4*inch)
     story = []
     styles = getSampleStyleSheet()
     
-    # ===================== HEADER =====================
-    header_data = [['', '', '']]
-    logo_path = Path("/app/frontend/public/logo-asomunicipios.png")
-    if logo_path.exists():
-        logo_img = RLImage(str(logo_path), width=1.2*inch, height=0.5*inch)
-        header_data[0][0] = logo_img
+    # Define colors
+    primary_color = HexColor('#047857')
+    secondary_color = HexColor('#064e3b')
+    light_bg = HexColor('#f0fdf4')
+    gray_text = HexColor('#64748b')
     
-    header_data[0][1] = Paragraph(
-        '<font size="14" color="#047857"><b>ASOMUNICIPIOS</b></font><br/>'
-        '<font size="8" color="#64748b">Asociación de Municipios del Catatumbo</font>',
-        ParagraphStyle('Header', alignment=TA_CENTER)
-    )
-    header_data[0][2] = Paragraph(
-        f'<font size="8" color="#64748b">Fecha: {datetime.now().strftime("%d/%m/%Y")}<br/>Hora: {datetime.now().strftime("%H:%M")}</font>',
-        ParagraphStyle('HeaderRight', alignment=TA_LEFT)
-    )
-    
-    header_table = Table(header_data, colWidths=[1.5*inch, 6*inch, 1.5*inch])
-    header_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
-    ]))
-    story.append(header_table)
-    story.append(Spacer(1, 0.15*inch))
-    
-    # Title
-    title_style = ParagraphStyle('Title', fontSize=16, alignment=TA_CENTER, textColor=colors.HexColor('#047857'), spaceAfter=5, fontName='Helvetica-Bold')
-    story.append(Paragraph("INFORME DE TRÁMITES CATASTRALES", title_style))
-    
-    # Filter info
-    filter_parts = []
-    if municipio:
-        filter_parts.append(f"Municipio: {municipio}")
-    if estado:
-        filter_parts.append(f"Estado: {estado_labels.get(estado, estado)}")
-    filter_text = " | ".join(filter_parts) if filter_parts else "Todos los trámites"
-    story.append(Paragraph(f'<font size="9" color="#64748b">{filter_text}</font>', ParagraphStyle('Filter', alignment=TA_CENTER)))
-    story.append(Spacer(1, 0.2*inch))
-    
-    # ===================== ESTADÍSTICAS =====================
-    story.append(Paragraph('<font size="12" color="#047857"><b>📊 ESTADÍSTICAS GENERALES</b></font>', styles['Normal']))
-    story.append(Spacer(1, 0.1*inch))
-    
-    # Stats cards
+    # Stats values
     finalizados = stats_estado.get('finalizado', 0)
     en_proceso = stats_estado.get('asignado', 0) + stats_estado.get('revision', 0) + stats_estado.get('devuelto', 0)
     radicados = stats_estado.get('radicado', 0)
     rechazados = stats_estado.get('rechazado', 0)
     
-    stats_data = [[
-        Paragraph(f'<font size="20" color="#047857"><b>{total}</b></font><br/><font size="8">Total Trámites</font>', ParagraphStyle('Stat', alignment=TA_CENTER)),
-        Paragraph(f'<font size="20" color="#22c55e"><b>{finalizados}</b></font><br/><font size="8">Finalizados</font>', ParagraphStyle('Stat', alignment=TA_CENTER)),
-        Paragraph(f'<font size="20" color="#f59e0b"><b>{en_proceso}</b></font><br/><font size="8">En Proceso</font>', ParagraphStyle('Stat', alignment=TA_CENTER)),
-        Paragraph(f'<font size="20" color="#3b82f6"><b>{radicados}</b></font><br/><font size="8">Radicados</font>', ParagraphStyle('Stat', alignment=TA_CENTER)),
-        Paragraph(f'<font size="20" color="#ef4444"><b>{rechazados}</b></font><br/><font size="8">Rechazados</font>', ParagraphStyle('Stat', alignment=TA_CENTER)),
-    ]]
-    
-    stats_table = Table(stats_data, colWidths=[1.8*inch]*5)
-    stats_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
-        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
-        ('INNERGRID', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+    # ===================== PROFESSIONAL HEADER =====================
+    # Header bar with gradient effect using table
+    header_bar_data = [['']]
+    header_bar = Table(header_bar_data, colWidths=[9.5*inch], rowHeights=[0.08*inch])
+    header_bar.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), primary_color),
     ]))
-    story.append(stats_table)
+    story.append(header_bar)
+    story.append(Spacer(1, 0.15*inch))
+    
+    # Logo and title row
+    logo_path = Path("/app/frontend/public/logo-asomunicipios.png")
+    header_content = []
+    
+    if logo_path.exists():
+        logo_img = RLImage(str(logo_path), width=0.9*inch, height=0.4*inch)
+        header_content.append([logo_img, '', ''])
+    
+    header_title = Paragraph(
+        '<font size="18" color="#047857"><b>INFORME DE GESTIÓN</b></font><br/>'
+        '<font size="10" color="#64748b">Trámites Catastrales</font>',
+        ParagraphStyle('Title', alignment=TA_CENTER, leading=22)
+    )
+    
+    date_info = Paragraph(
+        f'<font size="8" color="#94a3b8">Generado el</font><br/>'
+        f'<font size="10" color="#374151"><b>{datetime.now().strftime("%d de %B, %Y")}</b></font><br/>'
+        f'<font size="8" color="#94a3b8">{datetime.now().strftime("%H:%M")} hrs</font>',
+        ParagraphStyle('DateInfo', alignment=TA_CENTER, leading=12)
+    )
+    
+    header_data = [['', header_title, date_info]]
+    if logo_path.exists():
+        header_data[0][0] = logo_img
+    
+    header_table = Table(header_data, colWidths=[1.5*inch, 5.5*inch, 2.5*inch])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+        ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
+    ]))
+    story.append(header_table)
+    
+    # Subtitle line
+    story.append(Spacer(1, 0.1*inch))
+    subtitle_bar = Table([['']], colWidths=[9.5*inch], rowHeights=[0.02*inch])
+    subtitle_bar.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, -1), HexColor('#e2e8f0'))]))
+    story.append(subtitle_bar)
     story.append(Spacer(1, 0.2*inch))
     
-    # ===================== GRÁFICOS =====================
-    # Pie chart for estado distribution
+    # ===================== RESUMEN EJECUTIVO =====================
+    resumen_title = Paragraph(
+        '<font size="11" color="#047857"><b>RESUMEN EJECUTIVO</b></font>',
+        ParagraphStyle('Section', spaceAfter=8)
+    )
+    story.append(resumen_title)
+    
+    # Filter info
+    filter_parts = []
+    if municipio:
+        filter_parts.append(f"<b>Municipio:</b> {municipio}")
+    if estado:
+        filter_parts.append(f"<b>Estado:</b> {estado_labels.get(estado, estado)}")
+    filter_text = " &nbsp;|&nbsp; ".join(filter_parts) if filter_parts else "<b>Filtro:</b> Todos los trámites"
+    story.append(Paragraph(f'<font size="8" color="#64748b">{filter_text}</font>', styles['Normal']))
+    story.append(Spacer(1, 0.15*inch))
+    
+    # ===================== KPI CARDS =====================
+    def create_kpi_card(number, label, color, bg_color):
+        return Paragraph(
+            f'<font size="28" color="{color}"><b>{number}</b></font><br/>'
+            f'<font size="8" color="#64748b">{label}</font>',
+            ParagraphStyle('KPI', alignment=TA_CENTER, leading=32)
+        )
+    
+    kpi_data = [[
+        create_kpi_card(total, "TOTAL TRÁMITES", "#1e293b", "#f8fafc"),
+        create_kpi_card(finalizados, "FINALIZADOS", "#16a34a", "#f0fdf4"),
+        create_kpi_card(en_proceso, "EN PROCESO", "#d97706", "#fffbeb"),
+        create_kpi_card(radicados, "RADICADOS", "#2563eb", "#eff6ff"),
+        create_kpi_card(rechazados, "RECHAZADOS", "#dc2626", "#fef2f2"),
+    ]]
+    
+    kpi_table = Table(kpi_data, colWidths=[1.9*inch]*5, rowHeights=[0.85*inch])
+    kpi_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, 0), HexColor('#f8fafc')),
+        ('BACKGROUND', (1, 0), (1, 0), HexColor('#f0fdf4')),
+        ('BACKGROUND', (2, 0), (2, 0), HexColor('#fffbeb')),
+        ('BACKGROUND', (3, 0), (3, 0), HexColor('#eff6ff')),
+        ('BACKGROUND', (4, 0), (4, 0), HexColor('#fef2f2')),
+        ('BOX', (0, 0), (0, 0), 1, HexColor('#e2e8f0')),
+        ('BOX', (1, 0), (1, 0), 1, HexColor('#bbf7d0')),
+        ('BOX', (2, 0), (2, 0), 1, HexColor('#fde68a')),
+        ('BOX', (3, 0), (3, 0), 1, HexColor('#bfdbfe')),
+        ('BOX', (4, 0), (4, 0), 1, HexColor('#fecaca')),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+    ]))
+    story.append(kpi_table)
+    story.append(Spacer(1, 0.25*inch))
+    
+    # ===================== CHARTS SECTION =====================
+    charts_title = Paragraph(
+        '<font size="11" color="#047857"><b>DISTRIBUCIÓN DE TRÁMITES</b></font>',
+        ParagraphStyle('Section', spaceAfter=10)
+    )
+    story.append(charts_title)
+    
+    # Create chart drawing
+    chart_drawing = Drawing(650, 180)
+    
+    # Pie Chart (left side)
     if stats_estado:
-        story.append(Paragraph('<font size="11" color="#047857"><b>📈 Distribución por Estado</b></font>', styles['Normal']))
-        story.append(Spacer(1, 0.1*inch))
-        
-        drawing = Drawing(500, 150)
         pie = Pie()
-        pie.x = 80
-        pie.y = 10
-        pie.width = 120
-        pie.height = 120
+        pie.x = 60
+        pie.y = 25
+        pie.width = 130
+        pie.height = 130
         
+        pie_colors = {
+            'radicado': HexColor('#3b82f6'),
+            'asignado': HexColor('#8b5cf6'),
+            'revision': HexColor('#f59e0b'),
+            'devuelto': HexColor('#f97316'),
+            'rechazado': HexColor('#ef4444'),
+            'finalizado': HexColor('#22c55e'),
+        }
+        
+        estado_order = ['finalizado', 'radicado', 'asignado', 'revision', 'devuelto', 'rechazado']
         pie_data = []
-        pie_labels = []
-        pie_colors = [
-            colors.HexColor('#3b82f6'),  # radicado - blue
-            colors.HexColor('#8b5cf6'),  # asignado - purple
-            colors.HexColor('#f59e0b'),  # revision - amber
-            colors.HexColor('#f97316'),  # devuelto - orange
-            colors.HexColor('#ef4444'),  # rechazado - red
-            colors.HexColor('#22c55e'),  # finalizado - green
-        ]
+        active_estados = []
         
-        estado_order = ['radicado', 'asignado', 'revision', 'devuelto', 'rechazado', 'finalizado']
-        color_idx = 0
         for est in estado_order:
-            if est in stats_estado:
+            if est in stats_estado and stats_estado[est] > 0:
                 pie_data.append(stats_estado[est])
-                pie_labels.append(f"{estado_labels.get(est, est)}: {stats_estado[est]}")
-                color_idx += 1
+                active_estados.append(est)
         
         if pie_data:
             pie.data = pie_data
-            pie.labels = pie_labels
-            pie.slices.strokeWidth = 0.5
-            for i, est in enumerate([e for e in estado_order if e in stats_estado]):
-                idx = estado_order.index(est)
-                pie.slices[i].fillColor = pie_colors[idx]
+            pie.labels = None  # No labels on pie
+            pie.slices.strokeWidth = 1
+            pie.slices.strokeColor = colors.white
             
-            drawing.add(pie)
+            for i, est in enumerate(active_estados):
+                pie.slices[i].fillColor = pie_colors.get(est, HexColor('#94a3b8'))
             
-            # Legend on the right
-            legend_y = 130
-            for i, label in enumerate(pie_labels):
-                color_box = Drawing(10, 10)
-                idx = estado_order.index([e for e in estado_order if e in stats_estado][i])
-                from reportlab.graphics.shapes import Rect
-                rect = Rect(0, 0, 10, 10, fillColor=pie_colors[idx], strokeWidth=0)
-                color_box.add(rect)
-                drawing.add(String(250, legend_y - i*18, label, fontSize=9, fillColor=colors.HexColor('#374151')))
+            chart_drawing.add(pie)
             
-            story.append(drawing)
+            # Legend (right of pie)
+            legend_x = 220
+            legend_y = 150
+            for i, est in enumerate(active_estados):
+                # Color box
+                rect = Rect(legend_x, legend_y - i*22, 14, 14, 
+                           fillColor=pie_colors.get(est, HexColor('#94a3b8')), 
+                           strokeWidth=0)
+                chart_drawing.add(rect)
+                # Label
+                pct = (stats_estado[est] / total * 100) if total > 0 else 0
+                label_text = f"{estado_labels.get(est, est)}: {stats_estado[est]} ({pct:.1f}%)"
+                chart_drawing.add(String(legend_x + 20, legend_y - i*22 + 2, label_text, 
+                                        fontSize=9, fillColor=HexColor('#374151')))
     
+    # Bar chart for top municipalities (right side)
+    if stats_municipio:
+        # Sort and get top 5
+        top_municipios = sorted(stats_municipio.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        if top_municipios:
+            bar = VerticalBarChart()
+            bar.x = 420
+            bar.y = 30
+            bar.width = 200
+            bar.height = 120
+            bar.data = [[m[1] for m in top_municipios]]
+            bar.categoryAxis.categoryNames = [m[0][:10] for m in top_municipios]
+            bar.categoryAxis.labels.fontSize = 7
+            bar.categoryAxis.labels.angle = 0
+            bar.valueAxis.valueMin = 0
+            bar.valueAxis.labels.fontSize = 7
+            bar.bars[0].fillColor = primary_color
+            bar.bars[0].strokeWidth = 0
+            bar.barWidth = 25
+            
+            chart_drawing.add(bar)
+            chart_drawing.add(String(420, 160, "Top 5 Municipios", fontSize=9, fillColor=gray_text))
+    
+    story.append(chart_drawing)
     story.append(Spacer(1, 0.15*inch))
     
-    # ===================== TABLA DE TRÁMITES =====================
+    # Footer for page 1
+    footer_p1 = Paragraph(
+        '<font size="7" color="#94a3b8">ASOMUNICIPIOS - Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar</font>',
+        ParagraphStyle('FooterP1', alignment=TA_CENTER)
+    )
+    story.append(footer_p1)
+    
+    # ===================== PAGE BREAK - TABLE =====================
     from reportlab.platypus import PageBreak
     story.append(PageBreak())
     
-    story.append(Paragraph('<font size="12" color="#047857"><b>📋 LISTADO DETALLADO DE TRÁMITES</b></font>', styles['Normal']))
-    story.append(Spacer(1, 0.1*inch))
-    story.append(Paragraph(f'<font size="9" color="#64748b">Mostrando {min(len(petitions), 200)} de {len(petitions)} registros</font>', styles['Normal']))
+    # Header for page 2
+    story.append(header_bar)
     story.append(Spacer(1, 0.1*inch))
     
-    # Table data - limit to 200 for performance
-    table_data = [['#', 'RADICADO', 'FECHA', 'SOLICITANTE', 'TIPO', 'MUNICIPIO', 'ESTADO']]
+    table_title = Paragraph(
+        '<font size="12" color="#047857"><b>LISTADO DETALLADO DE TRÁMITES</b></font>',
+        ParagraphStyle('TableTitle', spaceAfter=5)
+    )
+    story.append(table_title)
+    story.append(Paragraph(
+        f'<font size="8" color="#64748b">Mostrando {min(len(petitions), 200)} de {len(petitions)} registros</font>',
+        styles['Normal']
+    ))
+    story.append(Spacer(1, 0.1*inch))
+    
+    # Table data
+    table_data = [['#', 'RADICADO', 'FECHA', 'SOLICITANTE', 'TIPO DE TRÁMITE', 'MUNICIPIO', 'ESTADO']]
     
     for idx, pet in enumerate(petitions[:200], 1):
         created_at = pet.get('created_at', '')
@@ -2786,35 +2882,33 @@ async def export_listado_tramites_pdf(
         else:
             fecha_str = created_at.strftime('%d/%m/%y') if created_at else ''
         
-        solicitante = pet.get('nombre_completo', '')[:25]
-        tipo = pet.get('tipo_tramite', '')[:20]
-        
         table_data.append([
             str(idx),
-            pet.get('radicado', '')[:22],
+            pet.get('radicado', '')[:24],
             fecha_str,
-            solicitante,
-            tipo,
-            pet.get('municipio', '')[:15],
-            estado_labels.get(pet.get('estado', ''), pet.get('estado', ''))[:12]
+            pet.get('nombre_completo', '')[:28],
+            pet.get('tipo_tramite', '')[:22],
+            pet.get('municipio', '')[:12],
+            estado_labels.get(pet.get('estado', ''), '')[:11]
         ])
     
-    # Create table with better proportions
-    col_widths = [0.35*inch, 1.6*inch, 0.65*inch, 2*inch, 1.6*inch, 1.1*inch, 0.9*inch]
+    # Create table
+    col_widths = [0.35*inch, 1.7*inch, 0.6*inch, 2.2*inch, 1.7*inch, 1*inch, 0.85*inch]
     table = Table(table_data, colWidths=col_widths, repeatRows=1)
     
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#047857')),
+        ('BACKGROUND', (0, 0), (-1, 0), primary_color),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 0), (-1, 0), 8),
         ('FONTSIZE', (0, 1), (-1, -1), 7),
         ('ALIGN', (0, 0), (0, -1), 'CENTER'),
         ('ALIGN', (2, 0), (2, -1), 'CENTER'),
         ('ALIGN', (6, 0), (6, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0fdf4')]),
+        ('GRID', (0, 0), (-1, -1), 0.5, HexColor('#d1d5db')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, HexColor('#f0fdf4')]),
         ('LEFTPADDING', (0, 0), (-1, -1), 4),
         ('RIGHTPADDING', (0, 0), (-1, -1), 4),
         ('TOPPADDING', (0, 0), (-1, -1), 5),
