@@ -582,28 +582,57 @@ export default function PetitionDetail() {
               
               {/* Selector de Gestor cuando el estado es "asignado" */}
               {editData.estado === 'asignado' && (
-                <div className="border border-blue-200 bg-blue-50 p-4 rounded-lg">
-                  <Label htmlFor="gestor_asignar" className="text-blue-800 font-medium">
-                    Asignar Gestor *
+                <div className="border border-blue-200 bg-blue-50 p-4 rounded-lg space-y-3">
+                  <Label className="text-blue-800 font-medium">
+                    Gestores del Trámite
                   </Label>
-                  <p className="text-xs text-blue-600 mb-2">
-                    Seleccione el gestor que atenderá este trámite.
-                  </p>
-                  <Select 
-                    value={editData.gestor_id || ''} 
-                    onValueChange={(value) => setEditData({ ...editData, gestor_id: value })}
-                  >
-                    <SelectTrigger data-testid="edit-gestor-select" className="border-blue-300">
-                      <SelectValue placeholder="Seleccionar gestor..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {gestores.sort((a, b) => a.full_name.localeCompare(b.full_name)).map((g) => (
-                        <SelectItem key={g.id} value={g.id}>
-                          {g.full_name} ({g.role === 'atencion_usuario' ? 'Atención al Usuario' : 'Gestor'})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  
+                  {/* Mostrar gestores ya asignados */}
+                  {petition.gestores_asignados && petition.gestores_asignados.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-blue-600 mb-2">Gestores asignados actualmente:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {petition.gestores_asignados.map((gestorId, idx) => {
+                          const gestor = gestores.find(g => g.id === gestorId);
+                          return gestor ? (
+                            <Badge key={idx} className="bg-blue-100 text-blue-800">
+                              {gestor.full_name}
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Selector para agregar nuevo gestor */}
+                  <div>
+                    <p className="text-xs text-blue-600 mb-2">
+                      Agregar otro gestor al trámite:
+                    </p>
+                    <Select 
+                      value={editData.gestor_id || ''} 
+                      onValueChange={(value) => setEditData({ ...editData, gestor_id: value })}
+                    >
+                      <SelectTrigger data-testid="edit-gestor-select" className="border-blue-300">
+                        <SelectValue placeholder="Seleccionar gestor a agregar..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {gestores
+                          .filter(g => !petition.gestores_asignados?.includes(g.id))
+                          .sort((a, b) => a.full_name.localeCompare(b.full_name))
+                          .map((g) => (
+                            <SelectItem key={g.id} value={g.id}>
+                              {g.full_name} ({g.role === 'atencion_usuario' ? 'Atención al Usuario' : 'Gestor'})
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {petition.gestores_asignados?.length > 0 && !editData.gestor_id && (
+                      <p className="text-xs text-slate-500 mt-1 italic">
+                        (Opcional - ya hay gestores asignados)
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
               
