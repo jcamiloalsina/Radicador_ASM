@@ -1542,6 +1542,39 @@ async def migrate_ciudadano_to_usuario(current_user: dict = Depends(get_current_
     }
 
 
+@api_router.post("/admin/format-user-names")
+async def format_user_names(current_user: dict = Depends(get_current_user)):
+    """Formatea los nombres de usuarios existentes con mayúsculas y tildes correctas (solo admin)"""
+    if current_user['role'] != UserRole.ADMINISTRADOR:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ejecutar esta operación")
+    
+    # Get all users
+    users = await db.users.find({}, {"_id": 0, "id": 1, "full_name": 1}).to_list(None)
+    
+    updated_count = 0
+    examples = []
+    
+    for user in users:
+        original_name = user['full_name']
+        formatted_name = format_nombre_propio(original_name)
+        
+        if original_name != formatted_name:
+            await db.users.update_one(
+                {"id": user['id']},
+                {"$set": {"full_name": formatted_name}}
+            )
+            updated_count += 1
+            if len(examples) < 5:
+                examples.append({"original": original_name, "formatted": formatted_name})
+    
+    return {
+        "message": f"Formateo de nombres completado",
+        "total_users": len(users),
+        "users_updated": updated_count,
+        "examples": examples
+    }
+
+
 # ===== PERMISSIONS MANAGEMENT =====
 
 @api_router.get("/permissions/available")
