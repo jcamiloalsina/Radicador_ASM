@@ -108,12 +108,13 @@ export default function PetitionDetail() {
       
       await axios.patch(`${API}/petitions/${id}`, updatePayload);
       
-      // Si hay gestor seleccionado, asignarlo
+      // Si hay gestor seleccionado, asignarlo con el comentario
       if (editData.estado === 'asignado' && editData.gestor_id) {
         await axios.post(`${API}/petitions/${id}/assign-gestor`, {
           petition_id: id,
           gestor_id: editData.gestor_id,
-          is_auxiliar: false
+          is_auxiliar: false,
+          comentario: editData.comentario_asignacion || null
         });
       }
       
@@ -130,6 +131,8 @@ export default function PetitionDetail() {
       
       setEditing(false);
       setShowFinalizarDialog(false);
+      // Limpiar el comentario después de guardar
+      setEditData(prev => ({ ...prev, gestor_id: '', comentario_asignacion: '' }));
       fetchPetition();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al actualizar la petición');
