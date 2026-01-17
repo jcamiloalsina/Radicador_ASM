@@ -5687,6 +5687,7 @@ async def get_vigencias_disponibles(current_user: dict = Depends(get_current_use
 @api_router.get("/predios/export-excel")
 async def export_predios_excel(
     municipio: Optional[str] = None,
+    vigencia: Optional[int] = None,
     current_user: dict = Depends(get_current_user)
 ):
     """Exporta predios a Excel en formato EXACTO al archivo original R1-R2"""
@@ -5697,6 +5698,17 @@ async def export_predios_excel(
     query = {"deleted": {"$ne": True}}
     if municipio:
         query["municipio"] = municipio
+    
+    # Aplicar filtro de vigencia
+    vigencia_exportada = vigencia
+    if vigencia:
+        query["vigencia"] = vigencia
+    else:
+        # Si no se especifica vigencia, usar la más alta disponible
+        all_vigencias = await db.predios.distinct("vigencia", {"deleted": {"$ne": True}})
+        if all_vigencias:
+            vigencia_exportada = max(all_vigencias)
+            query["vigencia"] = vigencia_exportada
     
     predios = await db.predios.find(query, {"_id": 0}).to_list(50000)
     
