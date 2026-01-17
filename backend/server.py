@@ -7939,15 +7939,30 @@ async def analizar_gdb_antes_de_cargar(
                     continue
         
         # Generar recomendaciones
+        capas_faltantes = []
+        for tipo, nombres in CAPAS_ESTANDAR.items():
+            if tipo in ["terreno_rural", "terreno_urbano"]:  # Solo verificar capas críticas
+                encontrada = any(n.upper() in nombres_capas for n in nombres)
+                if not encontrada:
+                    capas_faltantes.append(f"{nombres[0]} ({tipo})")
+        
+        if capas_faltantes:
+            capas_analisis["recomendaciones"].append(
+                f"⚠️ CAPAS ESTÁNDAR FALTANTES: {', '.join(capas_faltantes)}. La GDB no puede ser procesada sin estas capas."
+            )
+        
         if capas_analisis["no_reconocidas"]:
             capas_analisis["recomendaciones"].append(
-                "Hay capas que no siguen el estándar IGAC. Recomendamos renombrarlas antes de cargar."
+                "❌ Hay capas que NO siguen el estándar IGAC. DEBE renombrarlas antes de cargar."
             )
         
         if codigos_con_error:
             capas_analisis["recomendaciones"].append(
-                f"Se encontraron {len(codigos_con_error)} códigos prediales con errores de formato."
+                f"⚠️ Se encontraron {len(codigos_con_error)} códigos prediales con errores de formato."
             )
+        
+        # Solo puede procesar si tiene al menos una capa estándar reconocida
+        puede_procesar = len(capas_analisis["reconocidas"]) > 0 and len(capas_analisis["no_reconocidas"]) == 0
         
         return {
             "archivo": file.filename,
@@ -7959,7 +7974,9 @@ async def analizar_gdb_antes_de_cargar(
                 "codigos_con_error": codigos_con_error[:20],  # Mostrar máximo 20 errores
                 "total_errores": len(codigos_con_error)
             },
-            "puede_procesar": len(capas_analisis["reconocidas"]) > 0
+            "puede_procesar": puede_procesar,
+            "capas_faltantes": capas_faltantes,
+            "mensaje_error": "La GDB contiene capas con nombres NO estándar. Debe ajustar los nombres según el estándar IGAC antes de cargar." if not puede_procesar else None
         }
         
     finally:
