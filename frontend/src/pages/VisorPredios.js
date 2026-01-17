@@ -588,9 +588,10 @@ export default function VisorPredios() {
         }
       }
     } else {
-      // Si es carpeta GDB, cargar directamente (no se puede analizar)
-      toast.info('Cargando carpeta GDB directamente (sin análisis previo)');
-      await procederConCargaGdb(files);
+      // Si no es ZIP, mostrar error
+      toast.error('Solo se aceptan archivos .ZIP que contengan la carpeta .gdb');
+      setUploadProgress(null);
+      setUploadingGdb(false);
     }
   };
   
