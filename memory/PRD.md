@@ -75,9 +75,9 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
    - La asignación se hace dentro del modal de edición al seleccionar estado "Asignado"
 
 3. **Tiles del Mapa Desaparecen al Zoom Alto (CORREGIDO):**
-   - ✅ CORREGIDO: `maxZoom` reducido de 22 a 19 en VisorPredios.js
-   - Antes: Al hacer zoom > 19, los tiles base desaparecían (fondo gris)
-   - Ahora: El zoom máximo está alineado con los tiles disponibles de OpenStreetMap
+   - ✅ CORREGIDO: `maxZoom` reducido de 19 a 18 en VisorPredios.js
+   - Antes: Al hacer zoom > 18, los tiles base desaparecían (fondo gris)
+   - Ahora: El zoom máximo está alineado con los tiles disponibles (18 es el máximo para OpenStreetMap y Esri)
 
 4. **Logos Integrados:**
    - 10 variantes de logos descargadas a `/app/frontend/public/logos/` y `/app/backend/logos/`
