@@ -534,69 +534,63 @@ export default function VisorPredios() {
     if (!files || files.length === 0) return;
     
     setUploadingGdb(true);
-    setUploadProgress({ status: 'analizando', progress: 0, message: 'Analizando estructura de la GDB...' });
+    setUploadProgress({ status: 'analizando', progress: 0, message: 'Preparando archivos...' });
     
-    const formData = new FormData();
+    // Verificar si es un archivo ZIP (único que se puede analizar)
+    const isZipFile = files.length === 1 && files[0].name.endsWith('.zip');
     
-    // Si es un solo archivo ZIP
-    if (files.length === 1 && files[0].name.endsWith('.zip')) {
+    if (isZipFile) {
+      // Si es ZIP, primero analizar
+      const formData = new FormData();
       formData.append('file', files[0]);
-    } else {
-      // Si son múltiples archivos (carpeta .gdb) - tomar el primero que sea ZIP
-      for (let i = 0; i < files.length; i++) {
-        if (files[i].name.endsWith('.zip')) {
-          formData.append('file', files[i]);
-          break;
-        }
-      }
-    }
-    
-    try {
-      const token = localStorage.getItem('token');
       
-      // PASO 1: Analizar la GDB antes de cargar
-      setUploadProgress({ status: 'analizando', progress: 10, message: 'Validando estructura de capas...' });
-      
-      const analisisResponse = await axios.post(`${API}/gdb/analizar`, formData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      const analisis = analisisResponse.data;
-      
-      // SIEMPRE mostrar el reporte de análisis antes de cargar
-      // El usuario debe confirmar que desea proceder
-      setGdbAnalisis(analisis);
-      setGdbArchivoPendiente(files);
-      setUploadProgress(null);
-      setUploadingGdb(false);
-      return; // Esperar confirmación del usuario
-      
-    } catch (error) {
-      console.error('Error al analizar GDB:', error);
-      // Obtener mensaje de error legible
-      let errorMessage = 'Error desconocido';
-      if (error.response?.data?.detail) {
-        errorMessage = typeof error.response.data.detail === 'string' 
-          ? error.response.data.detail 
-          : JSON.stringify(error.response.data.detail);
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      // Si falla el análisis, preguntar si desea continuar sin validación
-      const continuar = window.confirm(
-        `No se pudo validar la estructura de la GDB.\n\nError: ${errorMessage}\n\n¿Desea continuar con la carga de todos modos?`
-      );
-      
-      if (continuar) {
-        await procederConCargaGdb(files);
-      } else {
+      try {
+        const token = localStorage.getItem('token');
+        
+        setUploadProgress({ status: 'analizando', progress: 10, message: 'Validando estructura de capas...' });
+        
+        const analisisResponse = await axios.post(`${API}/gdb/analizar`, formData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        const analisis = analisisResponse.data;
+        
+        // SIEMPRE mostrar el reporte de análisis antes de cargar
+        setGdbAnalisis(analisis);
+        setGdbArchivoPendiente(files);
         setUploadProgress(null);
         setUploadingGdb(false);
+        return; // Esperar confirmación del usuario
+        
+      } catch (error) {
+        console.error('Error al analizar GDB:', error);
+        let errorMessage = 'Error desconocido';
+        if (error.response?.data?.detail) {
+          errorMessage = typeof error.response.data.detail === 'string' 
+            ? error.response.data.detail 
+            : JSON.stringify(error.response.data.detail);
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        const continuar = window.confirm(
+          `No se pudo validar la estructura de la GDB.\n\nError: ${errorMessage}\n\n¿Desea continuar con la carga de todos modos?`
+        );
+        
+        if (continuar) {
+          await procederConCargaGdb(files);
+        } else {
+          setUploadProgress(null);
+          setUploadingGdb(false);
+        }
       }
+    } else {
+      // Si es carpeta GDB, cargar directamente (no se puede analizar)
+      toast.info('Cargando carpeta GDB directamente (sin análisis previo)');
+      await procederConCargaGdb(files);
     }
   };
   
