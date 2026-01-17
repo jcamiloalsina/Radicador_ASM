@@ -691,17 +691,17 @@ export default function VisorPredios() {
               )}
               
               {/* Capas No Reconocidas */}
-              {gdbAnalisis.capas_analisis?.no_reconocidas?.length > 0 && (
+              {((gdbAnalisis.analisis?.no_reconocidas?.length > 0) || (gdbAnalisis.capas_analisis?.no_reconocidas?.length > 0)) && (
                 <div className="border border-amber-200 bg-amber-50 rounded-lg p-3">
                   <h4 className="font-medium text-amber-800 flex items-center gap-2 mb-2">
                     <AlertTriangle className="w-4 h-4" />
-                    Capas No Estándar ({gdbAnalisis.capas_analisis.no_reconocidas.length})
+                    Capas No Estándar ({(gdbAnalisis.analisis?.no_reconocidas || gdbAnalisis.capas_analisis?.no_reconocidas || []).length})
                   </h4>
                   <p className="text-xs text-amber-600 mb-2">
                     Estas capas no siguen la nomenclatura estándar y podrían no ser procesadas correctamente:
                   </p>
                   <ul className="text-sm text-amber-700 space-y-2">
-                    {gdbAnalisis.capas_analisis.no_reconocidas.map((capa, idx) => (
+                    {(gdbAnalisis.analisis?.no_reconocidas || gdbAnalisis.capas_analisis?.no_reconocidas || []).map((capa, idx) => (
                       <li key={idx} className="bg-white p-2 rounded border border-amber-200">
                         <div className="font-medium">"{capa.capa}"</div>
                         <div className="text-xs text-slate-600">
@@ -717,22 +717,22 @@ export default function VisorPredios() {
               )}
               
               {/* Errores de Códigos Prediales */}
-              {gdbAnalisis.codigos_con_error?.length > 0 && (
+              {(gdbAnalisis.validacion_codigos?.codigos_con_error?.length > 0 || gdbAnalisis.codigos_con_error?.length > 0) && (
                 <div className="border border-red-200 bg-red-50 rounded-lg p-3">
                   <h4 className="font-medium text-red-800 flex items-center gap-2 mb-2">
                     <XCircle className="w-4 h-4" />
-                    Errores en Códigos Prediales ({gdbAnalisis.codigos_con_error.length})
+                    Errores en Códigos Prediales ({(gdbAnalisis.validacion_codigos?.total_errores || gdbAnalisis.codigos_con_error?.length || 0)})
                   </h4>
                   <p className="text-xs text-red-600 mb-2">
                     Estos códigos no cumplen con el formato esperado (30 dígitos):
                   </p>
                   <div className="max-h-32 overflow-y-auto bg-white rounded p-2 border border-red-200">
                     <ul className="text-xs text-red-700 space-y-1 font-mono">
-                      {gdbAnalisis.codigos_con_error.slice(0, 20).map((codigo, idx) => (
+                      {(gdbAnalisis.validacion_codigos?.codigos_con_error || gdbAnalisis.codigos_con_error || []).slice(0, 20).map((codigo, idx) => (
                         <li key={idx}>• {codigo}</li>
                       ))}
-                      {gdbAnalisis.codigos_con_error.length > 20 && (
-                        <li className="text-slate-500">... y {gdbAnalisis.codigos_con_error.length - 20} más</li>
+                      {(gdbAnalisis.validacion_codigos?.total_errores || gdbAnalisis.codigos_con_error?.length || 0) > 20 && (
+                        <li className="text-slate-500">... y {(gdbAnalisis.validacion_codigos?.total_errores || gdbAnalisis.codigos_con_error?.length) - 20} más</li>
                       )}
                     </ul>
                   </div>
@@ -740,12 +740,12 @@ export default function VisorPredios() {
               )}
               
               {/* Estadísticas */}
-              {gdbAnalisis.codigos_validos !== undefined && (
+              {(gdbAnalisis.validacion_codigos?.codigos_validos !== undefined || gdbAnalisis.codigos_validos !== undefined) && (
                 <div className="border border-slate-200 bg-slate-50 rounded-lg p-3">
-                  <h4 className="font-medium text-slate-700 mb-2">Resumen</h4>
+                  <h4 className="font-medium text-slate-700 mb-2">Resumen de Validación</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="text-emerald-700">Códigos válidos: <strong>{gdbAnalisis.codigos_validos}</strong></div>
-                    <div className="text-red-700">Códigos con error: <strong>{gdbAnalisis.codigos_con_error?.length || 0}</strong></div>
+                    <div className="text-emerald-700">Códigos válidos: <strong>{gdbAnalisis.validacion_codigos?.codigos_validos ?? gdbAnalisis.codigos_validos ?? 0}</strong></div>
+                    <div className="text-red-700">Códigos con error: <strong>{gdbAnalisis.validacion_codigos?.total_errores ?? gdbAnalisis.codigos_con_error?.length ?? 0}</strong></div>
                   </div>
                 </div>
               )}
