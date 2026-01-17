@@ -2346,9 +2346,9 @@ async def desasignar_staff(petition_id: str, user_id: str, current_user: dict = 
 
 @api_router.post("/petitions/{petition_id}/auto-asignar")
 async def auto_asignar_tramite(petition_id: str, current_user: dict = Depends(get_current_user)):
-    """Atención al usuario se auto-asigna un trámite"""
-    # Solo atención al usuario, coordinador y admin pueden auto-asignarse
-    if current_user['role'] not in [UserRole.ATENCION_USUARIO, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+    """Atención al usuario, gestor, coordinador o admin se auto-asigna un trámite"""
+    # Roles que pueden auto-asignarse
+    if current_user['role'] not in [UserRole.ATENCION_USUARIO, UserRole.GESTOR, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
         raise HTTPException(status_code=403, detail="No tiene permiso para auto-asignarse")
     
     petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
