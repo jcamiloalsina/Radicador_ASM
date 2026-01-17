@@ -1653,7 +1653,7 @@ async def create_petition(
             await send_email(
                 user['email'],
                 f"Nueva Petición - {radicado}",
-                f"<h3>Nueva petición radicada</h3><p>Radicado: {radicado}</p><p>Solicitante: {nombre_completo}</p><p>Tipo: {tipo_tramite}</p>"
+                get_nueva_peticion_email(radicado, nombre_completo, tipo_tramite, municipio)
             )
     
     return petition
