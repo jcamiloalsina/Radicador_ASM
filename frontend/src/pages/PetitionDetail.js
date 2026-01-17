@@ -50,7 +50,8 @@ export default function PetitionDetail() {
         correo: response.data.correo,
         telefono: response.data.telefono,
         tipo_tramite: response.data.tipo_tramite,
-        municipio: response.data.municipio
+        municipio: response.data.municipio,
+        observaciones_devolucion: response.data.observaciones_devolucion || ''
       });
     } catch (error) {
       toast.error('Error al cargar la petición');
