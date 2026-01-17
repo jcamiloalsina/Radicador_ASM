@@ -1246,7 +1246,7 @@ export default function VisorPredios() {
               <MapContainer
                 center={defaultCenter}
                 zoom={defaultZoom}
-                maxZoom={22}
+                maxZoom={19}
                 minZoom={5}
                 style={{ height: '100%', width: '100%' }}
                 ref={mapRef}
