@@ -640,6 +640,26 @@ export default function PetitionDetail() {
                       </p>
                     )}
                   </div>
+                  
+                  {/* Campo de comentario/instrucciones al asignar */}
+                  {editData.gestor_id && (
+                    <div className="mt-3">
+                      <Label className="text-blue-800 text-sm">
+                        Comentario o instrucciones (opcional)
+                      </Label>
+                      <Textarea
+                        value={editData.comentario_asignacion || ''}
+                        onChange={(e) => setEditData({ ...editData, comentario_asignacion: e.target.value })}
+                        placeholder="Ej: Por favor revisar la documentación del predio X, verificar linderos..."
+                        rows={2}
+                        className="mt-1 border-blue-300 text-sm"
+                        data-testid="comentario-asignacion"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Este comentario se guardará en el historial y se notificará al gestor asignado.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
               
