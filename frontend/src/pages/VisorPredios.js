@@ -691,9 +691,9 @@ export default function VisorPredios() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Diálogo de Análisis de GDB */}
+      {/* Diálogo de Análisis de GDB - z-index alto para estar sobre el mapa */}
       <Dialog open={gdbAnalisis !== null} onOpenChange={(open) => !open && setGdbAnalisis(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto z-[9999]" style={{ zIndex: 9999 }}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-emerald-700">
               <FileText className="w-5 h-5" />
