@@ -2275,11 +2275,15 @@ async def assign_gestor(
     await db.petitions.update_one({"id": petition_id}, {"$set": update_data})
     
     # Notificación en plataforma al gestor asignado (NO correo)
+    mensaje_notificacion = f"Se te ha asignado el trámite {petition['radicado']} - {petition['tipo_tramite']}"
+    if assignment.comentario and assignment.comentario.strip():
+        mensaje_notificacion += f". Instrucciones: {assignment.comentario.strip()}"
+    
     await crear_notificacion(
         usuario_id=gestor['id'],
         tipo="info",
         titulo="Nuevo trámite asignado",
-        mensaje=f"Se te ha asignado el trámite {petition['radicado']} - {petition['tipo_tramite']}",
+        mensaje=mensaje_notificacion,
         enlace=f"/dashboard/peticion/{petition_id}"
     )
     
