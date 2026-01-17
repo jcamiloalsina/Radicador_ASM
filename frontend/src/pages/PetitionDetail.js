@@ -69,15 +69,32 @@ export default function PetitionDetail() {
     }
   };
 
-  const handleUpdate = async () => {
+  // Función para verificar si debe mostrar diálogo de finalización
+  const handleSaveClick = () => {
+    // Si está cambiando a finalizado y hay archivos del staff, mostrar diálogo
+    if (editData.estado === 'finalizado' && petition?.archivos_staff?.length > 0) {
+      setShowFinalizarDialog(true);
+    } else {
+      handleUpdate(false);
+    }
+  };
+
+  const handleUpdate = async (conArchivos = false) => {
     try {
       const updatePayload = user.role === 'coordinador' || user.role === 'administrador' ? editData : {
         estado: editData.estado,
         notas: editData.notas
       };
+      
+      // Agregar flag de archivos si es finalización
+      if (editData.estado === 'finalizado') {
+        updatePayload.enviar_archivos_finalizacion = conArchivos;
+      }
+      
       await axios.patch(`${API}/petitions/${id}`, updatePayload);
       toast.success('¡Petición actualizada exitosamente!');
       setEditing(false);
+      setShowFinalizarDialog(false);
       fetchPetition();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al actualizar la petición');
