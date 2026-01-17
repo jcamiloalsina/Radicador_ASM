@@ -283,19 +283,6 @@ export default function PetitionDetail() {
           >
             Editar
           </Button>
-          <Button
-            onClick={() => {
-              const url = `${API}/petitions/${id}/export-pdf`;
-              window.open(url, '_blank');
-              toast.success('Descargando PDF...');
-            }}
-            variant="outline"
-            className="border-emerald-700 text-emerald-700 hover:bg-emerald-50"
-            data-testid="export-pdf-button"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Exportar PDF
-          </Button>
           {canAssignGestor && (
             <Dialog open={showGestorDialog} onOpenChange={setShowGestorDialog}>
               <DialogTrigger asChild>
