@@ -1794,6 +1794,89 @@ export default function VisorPredios() {
             </Card>
           )}
 
+          {/* Sección de Ortoimágenes Propias - Debajo de GDB */}
+          {(user?.role === 'administrador' || user?.role === 'coordinador' || (user?.role === 'gestor' && user?.puede_actualizar_gdb)) && (
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="py-3">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-blue-800 flex items-center gap-1">
+                    <Image className="w-4 h-4" /> Ortoimágenes Propias
+                  </label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs border-blue-500 text-blue-700 hover:bg-blue-100"
+                    onClick={() => setShowUploadOrtoDialog(true)}
+                  >
+                    <Upload className="w-3 h-3 mr-1" /> Subir Ortoimagen
+                  </Button>
+                </div>
+                
+                {ortoimagenes.length > 0 ? (
+                  <div className="space-y-2">
+                    <Select 
+                      value={ortoimagenActiva?.id || "none"} 
+                      onValueChange={(v) => {
+                        if (v === "none") {
+                          setOrtoimagenActiva(null);
+                        } else {
+                          const orto = ortoimagenes.find(o => o.id === v);
+                          if (orto) {
+                            setOrtoimagenActiva(orto);
+                            toast.success(`Ortoimagen "${orto.nombre}" activada. Zoom: ${orto.zoom_min}-${orto.zoom_max}`);
+                            // Centrar mapa en la ortoimagen si tiene bounds
+                            if (orto.bounds && mapRef.current) {
+                              const map = mapRef.current;
+                              const sw = orto.bounds[0]; // [lng, lat]
+                              const ne = orto.bounds[1]; // [lng, lat]
+                              // Convertir a formato Leaflet [lat, lng]
+                              const bounds = [[sw[1], sw[0]], [ne[1], ne[0]]];
+                              map.fitBounds(bounds, { padding: [50, 50] });
+                            }
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger className={ortoimagenActiva ? "border-emerald-500 bg-emerald-50" : ""}>
+                        <SelectValue placeholder="Seleccionar ortoimagen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sin ortoimagen propia</SelectItem>
+                        {ortoimagenes.map(orto => (
+                          <SelectItem key={orto.id} value={orto.id}>
+                            {orto.nombre} ({orto.municipio})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {ortoimagenActiva && (
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-emerald-600">
+                          ✓ Mostrando ortoimagen de alta resolución
+                        </p>
+                        {(user?.role === 'administrador' || user?.role === 'coordinador') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 p-1"
+                            onClick={() => handleDeleteOrtoimagen(ortoimagenActiva.id, ortoimagenActiva.nombre)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-blue-600 text-center py-2">
+                    No hay ortoimágenes cargadas. Suba una ortoimagen GeoTIFF para visualizar capas de alta resolución.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {!selectedPredio && (
             <Card className="bg-slate-50">
               <CardContent className="py-8 text-center">
