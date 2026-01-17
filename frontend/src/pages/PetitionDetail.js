@@ -82,9 +82,16 @@ export default function PetitionDetail() {
 
   const handleUpdate = async (conArchivos = false) => {
     try {
+      // Validar que si es devolución, tenga observaciones
+      if (editData.estado === 'devuelto' && !editData.observaciones_devolucion?.trim()) {
+        toast.error('Debe indicar las observaciones de devolución para que el usuario sepa qué corregir.');
+        return;
+      }
+      
       const updatePayload = user.role === 'coordinador' || user.role === 'administrador' ? editData : {
         estado: editData.estado,
-        notas: editData.notas
+        notas: editData.notas,
+        observaciones_devolucion: editData.observaciones_devolucion
       };
       
       // Agregar flag de archivos si es finalización
@@ -93,7 +100,14 @@ export default function PetitionDetail() {
       }
       
       await axios.patch(`${API}/petitions/${id}`, updatePayload);
-      toast.success('¡Petición actualizada exitosamente!');
+      
+      // Mensaje específico para devolución
+      if (editData.estado === 'devuelto') {
+        toast.success('Trámite devuelto. El usuario será notificado por correo con las observaciones.');
+      } else {
+        toast.success('¡Petición actualizada exitosamente!');
+      }
+      
       setEditing(false);
       setShowFinalizarDialog(false);
       fetchPetition();
