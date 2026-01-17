@@ -412,20 +412,29 @@ class TestPetitionsEndpoints:
             pytest.skip("Login failed - skipping authenticated tests")
     
     def test_create_petition_success(self):
-        """POST /api/petitions should create a new petition"""
-        response = self.session.post(f"{BASE_URL}/api/petitions", json={
+        """POST /api/petitions should create a new petition (using Form data)"""
+        # Note: This endpoint uses Form data, not JSON
+        data = {
             "nombre_completo": f"Test Petition {uuid.uuid4().hex[:6]}",
             "correo": f"test_{uuid.uuid4().hex[:6]}@test.com",
             "telefono": "3001234567",
             "tipo_tramite": "Certificado Catastral",
-            "municipio": "Ocaña"
-        })
+            "municipio": "Ocaña",
+            "descripcion": "Test petition"
+        }
         
-        assert response.status_code in [200, 201], f"Expected 200 or 201, got {response.status_code}"
+        # Use form data instead of JSON
+        response = requests.post(
+            f"{BASE_URL}/api/petitions",
+            data=data,
+            headers={"Authorization": f"Bearer {self.token}"}
+        )
         
-        data = response.json()
-        assert "id" in data, "Response should contain 'id'"
-        assert "radicado" in data, "Response should contain 'radicado'"
+        assert response.status_code in [200, 201], f"Expected 200 or 201, got {response.status_code}. Response: {response.text}"
+        
+        result = response.json()
+        assert "id" in result, "Response should contain 'id'"
+        assert "radicado" in result, "Response should contain 'radicado'"
     
     def test_list_petitions(self):
         """GET /api/petitions should return list of petitions"""
@@ -434,8 +443,11 @@ class TestPetitionsEndpoints:
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         
         data = response.json()
-        assert "petitions" in data, "Response should contain 'petitions'"
-        assert isinstance(data["petitions"], list), "petitions should be a list"
+        # API returns array directly
+        assert isinstance(data, list), "Response should be a list"
+        if len(data) > 0:
+            assert "id" in data[0], "Petition should have 'id'"
+            assert "radicado" in data[0], "Petition should have 'radicado'"
 
 
 if __name__ == "__main__":
