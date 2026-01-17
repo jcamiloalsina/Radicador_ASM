@@ -88,6 +88,12 @@ export default function PetitionDetail() {
         return;
       }
       
+      // Validar que si es asignado, tenga gestor seleccionado
+      if (editData.estado === 'asignado' && !editData.gestor_id) {
+        toast.error('Debe seleccionar un gestor para asignar el trámite.');
+        return;
+      }
+      
       const updatePayload = user.role === 'coordinador' || user.role === 'administrador' ? editData : {
         estado: editData.estado,
         notas: editData.notas,
@@ -101,9 +107,20 @@ export default function PetitionDetail() {
       
       await axios.patch(`${API}/petitions/${id}`, updatePayload);
       
+      // Si hay gestor seleccionado, asignarlo
+      if (editData.estado === 'asignado' && editData.gestor_id) {
+        const token = localStorage.getItem('token');
+        await axios.post(`${API}/petitions/${id}/asignar`, 
+          { gestor_id: editData.gestor_id },
+          { headers: { Authorization: `Bearer ${token}` }}
+        );
+      }
+      
       // Mensaje específico para devolución
       if (editData.estado === 'devuelto') {
         toast.success('Trámite devuelto. El usuario será notificado por correo con las observaciones.');
+      } else if (editData.estado === 'asignado') {
+        toast.success('Trámite asignado exitosamente.');
       } else {
         toast.success('¡Petición actualizada exitosamente!');
       }
