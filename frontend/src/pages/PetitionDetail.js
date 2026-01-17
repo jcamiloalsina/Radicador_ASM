@@ -87,8 +87,9 @@ export default function PetitionDetail() {
         return;
       }
       
-      // Validar que si es asignado, tenga gestor seleccionado
-      if (editData.estado === 'asignado' && !editData.gestor_id) {
+      // Validar que si es asignado y NO hay gestores previos, tenga gestor seleccionado
+      const tieneGestoresPrevios = petition.gestores_asignados && petition.gestores_asignados.length > 0;
+      if (editData.estado === 'asignado' && !editData.gestor_id && !tieneGestoresPrevios) {
         toast.error('Debe seleccionar un gestor para asignar el trámite.');
         return;
       }
