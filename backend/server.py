@@ -1788,35 +1788,29 @@ async def upload_petition_files(
         }}
     )
     
-    # Notify based on who uploaded
+    # Notify based on who uploaded - SOLO notificación en plataforma, NO correo
     if current_user['role'] == UserRole.USUARIO:
-        # Notify assigned gestores or atencion usuario
+        # Crear notificación en plataforma para gestores asignados o atención al usuario
         if petition.get('gestores_asignados'):
             for gestor_id in petition['gestores_asignados']:
-                gestor = await db.users.find_one({"id": gestor_id}, {"_id": 0})
-                if gestor:
-                    await send_email(
-                        gestor['email'],
-                        f"Nuevos archivos - {petition['radicado']}",
-                        get_nuevos_archivos_email(petition['radicado'], es_staff=True)
-                    )
+                await crear_notificacion(
+                    usuario_id=gestor_id,
+                    tipo="info",
+                    titulo="Nuevos archivos cargados",
+                    mensaje=f"El usuario ha cargado nuevos archivos en el trámite {petition['radicado']}",
+                    enlace=f"/dashboard/peticion/{petition_id}"
+                )
         else:
             atencion_users = await db.users.find({"role": UserRole.ATENCION_USUARIO}, {"_id": 0}).to_list(100)
             for user in atencion_users:
-                await send_email(
-                    user['email'],
-                    f"Nuevos archivos - {petition['radicado']}",
-                    get_nuevos_archivos_email(petition['radicado'], es_staff=True)
+                await crear_notificacion(
+                    usuario_id=user['id'],
+                    tipo="info",
+                    titulo="Nuevos archivos cargados",
+                    mensaje=f"El usuario ha cargado nuevos archivos en el trámite {petition['radicado']}",
+                    enlace=f"/dashboard/peticion/{petition_id}"
                 )
-    else:
-        # Notify citizen if staff uploaded
-        citizen = await db.users.find_one({"id": petition['user_id']}, {"_id": 0})
-        if citizen:
-            await send_email(
-                citizen['email'],
-                f"Nuevos documentos disponibles - {petition['radicado']}",
-                get_nuevos_archivos_email(petition['radicado'], es_staff=False)
-            )
+    # Si el staff sube archivos, NO notificar (se finaliza automáticamente y envía correo ahí)
     
     return {"message": "Archivos subidos exitosamente", "files": saved_files}
 
