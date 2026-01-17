@@ -1676,8 +1676,8 @@ async def get_petitions(current_user: dict = Depends(get_current_user)):
         # Staff (atencion_usuario, coordinador, administrador) see all petitions
         query = {}
     
-    # Increased limit to 10000 to ensure all petitions are returned
-    petitions = await db.petitions.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    # Sin límite - retorna TODAS las peticiones
+    petitions = await db.petitions.find(query, {"_id": 0}).sort("created_at", -1).to_list(None)
     
     for petition in petitions:
         if isinstance(petition['created_at'], str):
