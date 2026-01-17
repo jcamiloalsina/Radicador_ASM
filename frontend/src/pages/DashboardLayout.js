@@ -282,6 +282,37 @@ export default function DashboardLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-y-auto">
+        {/* Diálogo de advertencia de timeout */}
+        <Dialog open={showTimeoutWarning} onOpenChange={() => {}}>
+          <DialogContent className="sm:max-w-md z-[9999]" onPointerDownOutside={(e) => e.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-amber-600">
+                <AlertTriangle className="w-5 h-5" />
+                Sesión por expirar
+              </DialogTitle>
+              <DialogDescription className="text-slate-600">
+                Su sesión se cerrará automáticamente en <strong>2 minutos</strong> por inactividad.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 text-center">
+              <p className="text-sm text-slate-500">
+                ¿Desea continuar trabajando?
+              </p>
+            </div>
+            <DialogFooter className="flex gap-2 sm:gap-2">
+              <Button variant="outline" onClick={logout}>
+                Cerrar sesión ahora
+              </Button>
+              <Button 
+                onClick={extendSession}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                Continuar trabajando
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Header */}
         <div className="h-16 border-b border-slate-200 bg-white flex items-center px-6 justify-between" data-testid="dashboard-header">
           <button
