@@ -1289,10 +1289,13 @@ async def register(user_data: UserRegister):
     if not is_valid:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
     
+    # Formatear el nombre propio con mayúsculas y tildes correctas
+    nombre_formateado = format_nombre_propio(user_data.full_name)
+    
     # Always assign ciudadano role on self-registration
     user = User(
         email=user_data.email,
-        full_name=user_data.full_name,
+        full_name=nombre_formateado,
         role=UserRole.USUARIO
     )
     
