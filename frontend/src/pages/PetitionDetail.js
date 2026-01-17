@@ -434,22 +434,79 @@ export default function PetitionDetail() {
       )}
 
       {/* Gestores Asignados */}
-      {petition.gestores_asignados && petition.gestores_asignados.length > 0 && user?.role !== 'usuario' && (
+      {user?.role !== 'usuario' && (
         <Card className="border-slate-200">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-slate-900 font-outfit">Gestores Asignados</CardTitle>
+            {/* Botón auto-asignarse */}
+            {['atencion_usuario', 'coordinador', 'administrador'].includes(user?.role) && 
+             !petition.gestores_asignados?.includes(user?.id) && 
+             petition.estado !== 'finalizado' && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('token');
+                    await axios.post(`${API}/petitions/${petition.id}/auto-asignar`, {}, {
+                      headers: { Authorization: `Bearer ${token}` }
+                    });
+                    toast.success('Te has asignado al trámite');
+                    fetchPetition();
+                  } catch (error) {
+                    toast.error(error.response?.data?.detail || 'Error al auto-asignarse');
+                  }
+                }}
+                className="text-emerald-700 border-emerald-700 hover:bg-emerald-50"
+                data-testid="auto-asignar-btn"
+              >
+                <UserPlus className="w-4 h-4 mr-1" />
+                Asignarme
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {petition.gestores_asignados.map((gestorId, idx) => {
-                const gestor = gestores.find(g => g.id === gestorId);
-                return gestor ? (
-                  <Badge key={idx} className="bg-blue-100 text-blue-800" data-testid={`gestor-badge-${idx}`}>
-                    {gestor.full_name}
-                  </Badge>
-                ) : null;
-              })}
-            </div>
+            {petition.gestores_asignados && petition.gestores_asignados.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {petition.gestores_asignados.map((gestorId, idx) => {
+                  const gestor = gestores.find(g => g.id === gestorId);
+                  const canRemove = ['administrador', 'coordinador', 'atencion_usuario'].includes(user?.role) && 
+                                   petition.estado !== 'finalizado';
+                  return gestor ? (
+                    <Badge 
+                      key={idx} 
+                      className="bg-blue-100 text-blue-800 flex items-center gap-1" 
+                      data-testid={`gestor-badge-${idx}`}
+                    >
+                      {gestor.full_name}
+                      {canRemove && (
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm(`¿Quitar a ${gestor.full_name} del trámite?`)) return;
+                            try {
+                              const token = localStorage.getItem('token');
+                              await axios.delete(`${API}/petitions/${petition.id}/desasignar/${gestorId}`, {
+                                headers: { Authorization: `Bearer ${token}` }
+                              });
+                              toast.success(`${gestor.full_name} removido del trámite`);
+                              fetchPetition();
+                            } catch (error) {
+                              toast.error(error.response?.data?.detail || 'Error al quitar staff');
+                            }
+                          }}
+                          className="ml-1 text-blue-600 hover:text-red-600 transition-colors"
+                          data-testid={`remove-gestor-${idx}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">Sin gestores asignados</p>
+            )}
           </CardContent>
         </Card>
       )}
