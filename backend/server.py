@@ -8852,7 +8852,7 @@ async def upload_gdb_file(
                 titulo=f"Base Gráfica Cargada - {municipio_nombre}",
                 mensaje=f"{current_user['full_name']} ha cargado la base gráfica de {municipio_nombre} para {mes_actual}. Total geometrías: {stats['rurales'] + stats['urbanos']}, predios relacionados: {stats['relacionados']}",
                 tipo="success",
-                enviar_email=True
+                enviar_email=False  # No enviar correo para cargas de GDB
             )
         
         update_progress("completado", 100, f"¡Completado! {stats['relacionados']} predios relacionados de {stats['rurales'] + stats['urbanos']} geometrías GDB")
