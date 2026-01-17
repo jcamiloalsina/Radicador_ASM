@@ -7829,19 +7829,42 @@ async def upload_gdb_file(
     # Setup coordinate transformation function (will be set based on GDB CRS)
     project = None
     
+    def validate_colombia_coordinates(geom):
+        """Valida que las coordenadas estén dentro de Colombia (WGS84)"""
+        # Límites aproximados de Colombia en WGS84
+        # Latitud: -4.23° a 12.46° (Sur a Norte)
+        # Longitud: -81.73° a -66.87° (Oeste a Este)
+        try:
+            if geom is None:
+                return False
+            bounds = geom.bounds  # (minx, miny, maxx, maxy)
+            min_lon, min_lat, max_lon, max_lat = bounds
+            
+            # Verificar que esté en el rango de Colombia
+            if min_lon < -82 or max_lon > -66:
+                return False
+            if min_lat < -5 or max_lat > 13:
+                return False
+            return True
+        except:
+            return False
+    
     def get_transformer_for_gdf(gdf):
         """Get the appropriate transformer based on GDF's CRS"""
         try:
             if gdf.crs is None:
-                # Assume MAGNA-SIRGAS if no CRS
+                # Assume MAGNA-SIRGAS Colombia Bogotá zone if no CRS
+                logger.info("GDB sin CRS definido, asumiendo MAGNA-SIRGAS (EPSG:3116)")
                 source_crs = CRS.from_epsg(3116)
             else:
                 source_crs = CRS.from_user_input(gdf.crs)
+                logger.info(f"GDB CRS detectado: {source_crs.to_string()}")
             
             target_crs = CRS.from_epsg(4326)  # WGS84
             
             # Check if already in WGS84
             if source_crs.to_epsg() == 4326:
+                logger.info("GDB ya está en WGS84, no se requiere transformación")
                 return None
             
             transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
@@ -7850,6 +7873,7 @@ async def upload_gdb_file(
             logger.warning(f"Error setting up CRS transformation: {e}")
             # Fallback to MAGNA-SIRGAS
             try:
+                logger.info("Usando fallback MAGNA-SIRGAS (EPSG:3116)")
                 source_crs = CRS.from_epsg(3116)
                 target_crs = CRS.from_epsg(4326)
                 transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
