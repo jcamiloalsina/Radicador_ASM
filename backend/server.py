@@ -2537,6 +2537,19 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
                         email_body,
                         attachments=attachments if attachments else None
                     )
+                    
+                    # Notificar a TODOS los gestores asignados que el trámite fue finalizado
+                    gestores_asignados = petition.get('gestores_asignados', [])
+                    for gestor_id in gestores_asignados:
+                        if gestor_id != current_user['id']:  # No notificar al que finalizó
+                            await crear_notificacion(
+                                usuario_id=gestor_id,
+                                tipo="info",
+                                titulo="Trámite Finalizado",
+                                mensaje=f"El trámite {petition['radicado']} ha sido finalizado por {current_user['full_name']}.",
+                                enlace=f"/dashboard/peticiones/{petition_id}",
+                                enviar_email=False
+                            )
                 else:
                     email_body = get_actualizacion_email(
                         radicado=petition['radicado'],
