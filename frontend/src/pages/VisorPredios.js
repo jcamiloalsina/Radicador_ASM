@@ -448,6 +448,15 @@ export default function VisorPredios() {
     fillOpacity: 0.25
   };
 
+  // Estilo de polígonos de CONSTRUCCIONES - Rojo semitransparente
+  const construccionStyle = {
+    color: '#FF0000', // Rojo para el borde
+    weight: 2,
+    opacity: 1,
+    fillColor: '#FF0000', // Rojo para el relleno
+    fillOpacity: 0.35
+  };
+
   const tileLayers = {
     street: {
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
