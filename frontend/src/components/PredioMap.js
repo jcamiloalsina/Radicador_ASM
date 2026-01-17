@@ -179,7 +179,7 @@ export default function PredioMap({
               {predioData ? (
                 <>
                   <p className="font-bold text-emerald-700 mb-1 text-xs break-all">
-                    CNP: {predioData.codigo_predial_nacional}
+                    CPN: {predioData.codigo_predial_nacional}
                   </p>
                   <p className="text-xs text-slate-600">{predioData.municipio}</p>
                   <p className="text-xs text-slate-500 mt-1">
@@ -188,7 +188,7 @@ export default function PredioMap({
                 </>
               ) : (
                 <p className="font-bold text-emerald-700 mb-1 text-xs break-all">
-                  CNP: {geometry.properties?.codigo}
+                  CPN: {geometry.properties?.codigo}
                 </p>
               )}
               <div className="mt-2 pt-2 border-t text-xs">

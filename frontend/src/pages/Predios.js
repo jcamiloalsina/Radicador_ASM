@@ -3238,7 +3238,7 @@ export default function Predios() {
                 </div>
               )}
               
-              {/* Códigos - Orden: CNP, Matrícula, Homologado */}
+              {/* Códigos - Orden: CPN, Matrícula, Homologado */}
               <div className="bg-emerald-50 p-4 rounded-lg">
                 <div className="grid grid-cols-1 gap-4">
                   <div>
@@ -3271,7 +3271,7 @@ export default function Predios() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-3 gap-4 text-sm">
                   <div className="col-span-3 bg-emerald-50 p-2 rounded">
-                    <span className="text-slate-500">CNP:</span> <strong className="text-emerald-800">{selectedPredio.codigo_predial_nacional}</strong>
+                    <span className="text-slate-500">CPN:</span> <strong className="text-emerald-800">{selectedPredio.codigo_predial_nacional}</strong>
                   </div>
                   <div><span className="text-slate-500">Departamento:</span> <strong>{selectedPredio.departamento || getCodigoPartes(selectedPredio.codigo_predial_nacional).departamento}</strong></div>
                   <div><span className="text-slate-500">Municipio:</span> <strong>{selectedPredio.municipio}</strong></div>
