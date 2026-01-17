@@ -780,15 +780,13 @@ export default function VisorPredios() {
                   )}
                 </div>
 
-                {/* Matrícula Inmobiliaria */}
-                {(selectedPredio.r2_registros?.[0]?.matricula_inmobiliaria || selectedPredio.matricula_inmobiliaria) && (
-                  <div className="border-t pt-2">
-                    <p className="text-xs text-slate-500 flex items-center gap-1"><FileText className="w-3 h-3" /> Matrícula Inmobiliaria</p>
-                    <p className="font-mono font-medium text-slate-800">
-                      {selectedPredio.r2_registros?.[0]?.matricula_inmobiliaria || selectedPredio.matricula_inmobiliaria}
-                    </p>
-                  </div>
-                )}
+                {/* Matrícula Inmobiliaria - SIEMPRE mostrar */}
+                <div className="border-t pt-2">
+                  <p className="text-xs text-slate-500 flex items-center gap-1"><FileText className="w-3 h-3" /> Matrícula Inmobiliaria</p>
+                  <p className="font-mono font-medium text-slate-800">
+                    {selectedPredio.r2_registros?.[0]?.matricula_inmobiliaria || selectedPredio.matricula_inmobiliaria || 'Sin información'}
+                  </p>
+                </div>
 
                 {/* ÁREAS: R1/R2 vs GDB */}
                 <div className="border-t pt-2">
