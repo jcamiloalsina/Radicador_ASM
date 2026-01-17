@@ -2244,7 +2244,13 @@ async def assign_gestor(
         estado_cambio = True
     
     # Add to historial
-    gestor_rol = "Gestor" if gestor['role'] == UserRole.GESTOR else "Gestor Auxiliar"
+    rol_labels = {
+        UserRole.GESTOR: "Gestor",
+        UserRole.ATENCION_USUARIO: "Atención al Usuario",
+        UserRole.COORDINADOR: "Coordinador",
+        UserRole.ADMINISTRADOR: "Administrador"
+    }
+    gestor_rol = rol_labels.get(gestor['role'], "Staff")
     historial_entry = {
         "accion": f"{gestor_rol} asignado: {gestor['full_name']}",
         "usuario": current_user['full_name'],
@@ -2271,6 +2277,104 @@ async def assign_gestor(
     )
     
     return {"message": "Gestor asignado exitosamente"}
+
+
+@api_router.delete("/petitions/{petition_id}/desasignar/{user_id}")
+async def desasignar_staff(petition_id: str, user_id: str, current_user: dict = Depends(get_current_user)):
+    """Quitar staff de un radicado - Solo admin, coordinador y atención al usuario"""
+    # Verificar permisos
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.ATENCION_USUARIO]:
+        raise HTTPException(status_code=403, detail="Solo administradores, coordinadores y atención al usuario pueden quitar staff")
+    
+    petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
+    if not petition:
+        raise HTTPException(status_code=404, detail="Petición no encontrada")
+    
+    gestores_asignados = petition.get('gestores_asignados', [])
+    
+    if user_id not in gestores_asignados:
+        raise HTTPException(status_code=400, detail="El usuario no está asignado a esta petición")
+    
+    # Obtener nombre del usuario que se va a quitar
+    user_to_remove = await db.users.find_one({"id": user_id}, {"_id": 0, "full_name": 1, "role": 1})
+    user_name = user_to_remove.get('full_name', 'Usuario') if user_to_remove else 'Usuario'
+    
+    # Quitar del listado
+    gestores_asignados.remove(user_id)
+    
+    # Historial
+    historial_entry = {
+        "accion": f"Staff removido: {user_name}",
+        "usuario": current_user['full_name'],
+        "usuario_rol": current_user['role'],
+        "notas": f"Se quitó a {user_name} del trámite",
+        "fecha": datetime.now(timezone.utc).isoformat()
+    }
+    
+    current_historial = petition.get('historial', [])
+    current_historial.append(historial_entry)
+    
+    await db.petitions.update_one(
+        {"id": petition_id},
+        {"$set": {
+            "gestores_asignados": gestores_asignados,
+            "historial": current_historial,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": f"{user_name} ha sido removido del trámite"}
+
+
+@api_router.post("/petitions/{petition_id}/auto-asignar")
+async def auto_asignar_tramite(petition_id: str, current_user: dict = Depends(get_current_user)):
+    """Atención al usuario se auto-asigna un trámite"""
+    # Solo atención al usuario, coordinador y admin pueden auto-asignarse
+    if current_user['role'] not in [UserRole.ATENCION_USUARIO, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso para auto-asignarse")
+    
+    petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
+    if not petition:
+        raise HTTPException(status_code=404, detail="Petición no encontrada")
+    
+    gestores_asignados = petition.get('gestores_asignados', [])
+    
+    if current_user['id'] in gestores_asignados:
+        raise HTTPException(status_code=400, detail="Ya está asignado a esta petición")
+    
+    gestores_asignados.append(current_user['id'])
+    
+    update_data = {
+        "gestores_asignados": gestores_asignados,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Si es el primer asignado, cambiar estado
+    if petition['estado'] == PetitionStatus.RADICADO:
+        update_data['estado'] = PetitionStatus.ASIGNADO
+    
+    # Historial
+    rol_labels = {
+        UserRole.ATENCION_USUARIO: "Atención al Usuario",
+        UserRole.COORDINADOR: "Coordinador",
+        UserRole.ADMINISTRADOR: "Administrador"
+    }
+    
+    historial_entry = {
+        "accion": f"Auto-asignación: {current_user['full_name']} ({rol_labels.get(current_user['role'], 'Staff')})",
+        "usuario": current_user['full_name'],
+        "usuario_rol": current_user['role'],
+        "notas": "Auto-asignación de trámite",
+        "fecha": datetime.now(timezone.utc).isoformat()
+    }
+    
+    current_historial = petition.get('historial', [])
+    current_historial.append(historial_entry)
+    update_data['historial'] = current_historial
+    
+    await db.petitions.update_one({"id": petition_id}, {"$set": update_data})
+    
+    return {"message": "Se ha asignado exitosamente al trámite"}
 
 @api_router.patch("/petitions/{petition_id}")
 async def update_petition(petition_id: str, update_data: PetitionUpdate, current_user: dict = Depends(get_current_user)):
