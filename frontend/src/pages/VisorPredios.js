@@ -476,8 +476,13 @@ export default function VisorPredios() {
       setTimeout(checkProgress, 3000);
 
     } catch (error) {
+      // Si fue cancelado por el usuario, no mostrar error
+      if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+        return;
+      }
       toast.error(error.response?.data?.detail || 'Error al subir ortoimagen');
       setOrtoUploadProgress(null);
+      ortoAbortControllerRef.current = null;
     } finally {
       setUploadingOrto(false);
     }
