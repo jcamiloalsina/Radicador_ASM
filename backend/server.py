@@ -1493,6 +1493,9 @@ async def get_users(current_user: dict = Depends(get_current_user)):
     
     return users
 
+# Email del administrador protegido - no se puede cambiar su rol
+PROTECTED_ADMIN_EMAIL = "catastro@asomunicipios.gov.co"
+
 @api_router.patch("/users/role")
 async def update_user_role(role_update: UserRoleUpdate, current_user: dict = Depends(get_current_user)):
     # Only admin, coordinador, and atencion can change roles
@@ -1507,6 +1510,13 @@ async def update_user_role(role_update: UserRoleUpdate, current_user: dict = Dep
     user = await db.users.find_one({"id": role_update.user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
+    
+    # Proteger al admin principal - nadie puede cambiar su rol
+    if user.get('email', '').lower() == PROTECTED_ADMIN_EMAIL.lower():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="No se puede modificar el rol del administrador principal del sistema"
+        )
     
     await db.users.update_one(
         {"id": role_update.user_id},
