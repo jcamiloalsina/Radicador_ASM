@@ -110,11 +110,11 @@ export default function PetitionDetail() {
       
       // Si hay gestor seleccionado, asignarlo
       if (editData.estado === 'asignado' && editData.gestor_id) {
-        const token = localStorage.getItem('token');
-        await axios.post(`${API}/petitions/${id}/asignar`, 
-          { gestor_id: editData.gestor_id },
-          { headers: { Authorization: `Bearer ${token}` }}
-        );
+        await axios.post(`${API}/petitions/${id}/assign-gestor`, {
+          petition_id: id,
+          gestor_id: editData.gestor_id,
+          is_auxiliar: false
+        });
       }
       
       // Mensaje específico para devolución

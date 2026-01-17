@@ -1254,7 +1254,7 @@ export default function VisorPredios() {
                 <TileLayer
                   url={tileLayers[mapType].url}
                   attribution={tileLayers[mapType].attribution}
-                  maxZoom={22}
+                  maxZoom={19}
                   maxNativeZoom={19}
                 />
                 
