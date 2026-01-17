@@ -5894,9 +5894,10 @@ async def export_predios_excel(
     wb.save(buffer)
     buffer.seek(0)
     
-    # Generar nombre de archivo
+    # Generar nombre de archivo con vigencia incluida
     fecha = datetime.now().strftime('%Y%m%d')
-    filename = f"Predios_{municipio or 'Todos'}_{fecha}.xlsx"
+    vigencia_str = f"_Vigencia{vigencia_exportada}" if vigencia_exportada else ""
+    filename = f"Predios_{municipio or 'Todos'}{vigencia_str}_{fecha}.xlsx"
     
     return StreamingResponse(
         buffer,
