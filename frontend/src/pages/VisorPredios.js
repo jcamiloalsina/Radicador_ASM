@@ -763,14 +763,14 @@ export default function VisorPredios() {
               Cancelar
             </Button>
             <Button 
-              className="bg-amber-600 hover:bg-amber-700"
+              className="bg-emerald-600 hover:bg-emerald-700"
               onClick={() => {
                 if (gdbArchivoPendiente) {
                   procederConCargaGdb(gdbArchivoPendiente);
                 }
               }}
             >
-              Continuar de Todos Modos
+              Proceder con la Carga
             </Button>
           </DialogFooter>
         </DialogContent>
