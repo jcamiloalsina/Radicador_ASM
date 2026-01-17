@@ -2252,13 +2252,19 @@ async def assign_gestor(
         UserRole.ADMINISTRADOR: "Administrador"
     }
     gestor_rol = rol_labels.get(gestor['role'], "Staff")
+    
+    # Construir notas con comentario si existe
+    notas_historial = f"Asignado a {gestor['full_name']} ({gestor_rol})"
+    if assignment.comentario and assignment.comentario.strip():
+        notas_historial += f" - Comentario: {assignment.comentario.strip()}"
+    
     historial_entry = {
         "accion": f"{gestor_rol} asignado: {gestor['full_name']}",
         "usuario": current_user['full_name'],
         "usuario_rol": current_user['role'],
         "estado_anterior": petition['estado'],
         "estado_nuevo": update_data.get('estado', petition['estado']),
-        "notas": f"Asignado a {gestor['full_name']} ({gestor_rol})",
+        "notas": notas_historial,
         "fecha": datetime.now(timezone.utc).isoformat()
     }
     
