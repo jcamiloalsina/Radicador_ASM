@@ -392,6 +392,21 @@ export default function VisorPredios() {
       });
       
       setGeometry(geoResponse.data);
+      
+      // Obtener construcciones del predio
+      try {
+        const constResponse = await axios.get(`${API}/gdb/construcciones/${predio.codigo_gdb || predio.codigo_predial_nacional}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (constResponse.data.construcciones?.length > 0) {
+          setConstrucciones(constResponse.data.construcciones);
+        } else {
+          setConstrucciones(null);
+        }
+      } catch (constError) {
+        setConstrucciones(null);
+      }
+      
       toast.success('Predio encontrado');
     } catch (error) {
       if (error.response?.status === 404) {
@@ -400,6 +415,7 @@ export default function VisorPredios() {
         toast.error('Error al buscar el predio');
       }
       setGeometry(null);
+      setConstrucciones(null);
     } finally {
       setLoading(false);
     }
@@ -423,7 +439,7 @@ export default function VisorPredios() {
     return `${area} m²`;
   };
 
-  // Estilo de polígonos - Cyan/Blanco para visibilidad en satélite
+  // Estilo de polígonos de TERRENO - Cyan/Blanco para visibilidad en satélite
   const geoJSONStyle = {
     color: '#00FFFF', // Cyan brillante para el borde
     weight: 3,
