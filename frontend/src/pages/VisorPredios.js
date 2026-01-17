@@ -523,24 +523,13 @@ export default function VisorPredios() {
       
       const analisis = analisisResponse.data;
       
-      // Verificar si hay problemas críticos
-      const tieneCapasNoReconocidas = analisis.capas_analisis?.no_reconocidas?.length > 0;
-      const tieneErroresCodigos = analisis.codigos_con_error?.length > 0;
-      const faltanCapasEsenciales = !analisis.capas_analisis?.reconocidas?.some(c => 
-        c.tipo === 'terreno_rural' || c.tipo === 'terreno_urbano'
-      );
-      
-      if (tieneCapasNoReconocidas || tieneErroresCodigos || faltanCapasEsenciales) {
-        // Mostrar reporte de validación y pedir confirmación
-        setGdbAnalisis(analisis);
-        setGdbArchivoPendiente(files);
-        setUploadProgress(null);
-        setUploadingGdb(false);
-        return; // Esperar confirmación del usuario
-      }
-      
-      // Si todo está bien, proceder con la carga
-      await procederConCargaGdb(files);
+      // SIEMPRE mostrar el reporte de análisis antes de cargar
+      // El usuario debe confirmar que desea proceder
+      setGdbAnalisis(analisis);
+      setGdbArchivoPendiente(files);
+      setUploadProgress(null);
+      setUploadingGdb(false);
+      return; // Esperar confirmación del usuario
       
     } catch (error) {
       console.error('Error al analizar GDB:', error);
