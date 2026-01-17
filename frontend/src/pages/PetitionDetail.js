@@ -7,10 +7,10 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '../components/ui/dialog';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { ArrowLeft, Save, Mail, Phone, MapPin, FileText, Calendar, Upload, Download, UserPlus, X, XCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Mail, Phone, MapPin, FileText, Calendar, Upload, Download, UserPlus, X, XCircle, CheckCircle, Paperclip, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -29,6 +29,8 @@ export default function PetitionDetail() {
   const [selectedGestor, setSelectedGestor] = useState('');
   const [showGestorDialog, setShowGestorDialog] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showFinalizarDialog, setShowFinalizarDialog] = useState(false);
+  const [enviarArchivosFinalizacion, setEnviarArchivosFinalizacion] = useState(false);
 
   useEffect(() => {
     fetchPetition();
