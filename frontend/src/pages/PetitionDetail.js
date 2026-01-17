@@ -51,7 +51,8 @@ export default function PetitionDetail() {
         telefono: response.data.telefono,
         tipo_tramite: response.data.tipo_tramite,
         municipio: response.data.municipio,
-        observaciones_devolucion: response.data.observaciones_devolucion || ''
+        observaciones_devolucion: response.data.observaciones_devolucion || '',
+        gestor_id: response.data.gestores_asignados?.[0] || ''
       });
     } catch (error) {
       toast.error('Error al cargar la petición');
