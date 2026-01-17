@@ -714,18 +714,36 @@ def get_finalizacion_email(radicado: str, tipo_tramite: str, nombre_solicitante:
     )
 
 
-def get_actualizacion_email(radicado: str, estado_nuevo: str, nombre_solicitante: str) -> str:
+def get_actualizacion_email(radicado: str, estado_nuevo: str, nombre_solicitante: str, observaciones: str = None) -> str:
     """Genera el correo de actualización de estado."""
     estados_info = {
         "radicado": {"texto": "Radicado", "color": "#3b82f6", "icono": "📝", "mensaje": "Su trámite ha sido registrado en el sistema."},
         "asignado": {"texto": "Asignado", "color": "#8b5cf6", "icono": "👤", "mensaje": "Su trámite ha sido asignado a un gestor para su procesamiento."},
         "revision": {"texto": "En Revisión", "color": "#f59e0b", "icono": "🔍", "mensaje": "Su trámite está siendo revisado por nuestro equipo."},
         "rechazado": {"texto": "Rechazado", "color": "#ef4444", "icono": "❌", "mensaje": "Lamentablemente su trámite ha sido rechazado. Por favor revise las observaciones."},
-        "devuelto": {"texto": "Devuelto", "color": "#f97316", "icono": "↩️", "mensaje": "Su trámite ha sido devuelto para correcciones. Por favor revise las observaciones."},
+        "devuelto": {"texto": "Devuelto para Corrección", "color": "#f97316", "icono": "↩️", "mensaje": "Su trámite ha sido devuelto para correcciones. Por favor revise las observaciones e ingrese al sistema para corregir y reenviar."},
         "finalizado": {"texto": "Finalizado", "color": "#22c55e", "icono": "✅", "mensaje": "Su trámite ha sido completado exitosamente."}
     }
     
     info = estados_info.get(estado_nuevo, {"texto": estado_nuevo, "color": "#64748b", "icono": "📋", "mensaje": "El estado de su trámite ha sido actualizado."})
+    
+    # Agregar sección de observaciones si es devolución
+    observaciones_html = ""
+    if observaciones and estado_nuevo == "devuelto":
+        observaciones_html = f'''
+        <div style="background: #fff7ed; border: 1px solid #fdba74; padding: 15px; margin: 20px 0; border-radius: 8px;">
+            <p style="margin: 0 0 8px 0; font-weight: 600; color: #c2410c;">📋 Observaciones del Gestor:</p>
+            <p style="margin: 0; color: #9a3412; white-space: pre-line;">{observaciones}</p>
+        </div>
+        <p><strong>¿Qué debe hacer?</strong></p>
+        <ol style="color: #64748b; padding-left: 20px;">
+            <li>Ingrese al sistema con su cuenta</li>
+            <li>Vaya a "Mis Peticiones" y seleccione este trámite</li>
+            <li>Revise las observaciones y realice las correcciones solicitadas</li>
+            <li>Adjunte los documentos necesarios si aplica</li>
+            <li>Haga clic en "Reenviar para Revisión"</li>
+        </ol>
+        '''
     
     contenido = f'''
     <p>Estimado(a) <strong>{nombre_solicitante}</strong>,</p>
@@ -738,6 +756,8 @@ def get_actualizacion_email(radicado: str, estado_nuevo: str, nombre_solicitante
         </p>
         <p style="margin: 10px 0 0 0; color: #64748b;">{info["mensaje"]}</p>
     </div>
+    
+    {observaciones_html}
     
     <p>Puede consultar el detalle completo de su trámite accediendo al sistema.</p>
     
