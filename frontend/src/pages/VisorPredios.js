@@ -1009,6 +1009,160 @@ export default function VisorPredios() {
         </DialogContent>
       </Dialog>
 
+      {/* Diálogo de Subida de Ortoimagen */}
+      <Dialog open={showUploadOrtoDialog} onOpenChange={(open) => {
+        if (!uploadingOrto && !ortoUploadProgress) {
+          setShowUploadOrtoDialog(open);
+          if (!open) {
+            setOrtoFile(null);
+            setOrtoFormData({ nombre: '', municipio: '', descripcion: '' });
+          }
+        }
+      }}>
+        <DialogContent className="max-w-lg z-[9999]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-blue-700">
+              <Image className="w-5 h-5" />
+              Subir Ortoimagen
+            </DialogTitle>
+            <DialogDescription>
+              Suba un archivo GeoTIFF georeferenciado. Se generarán tiles XYZ automáticamente.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Nombre */}
+            <div className="space-y-2">
+              <Label htmlFor="orto-nombre">Nombre de la ortoimagen *</Label>
+              <Input
+                id="orto-nombre"
+                placeholder="Ej: Ortoimagen Centro Urbano"
+                value={ortoFormData.nombre}
+                onChange={(e) => setOrtoFormData(prev => ({ ...prev, nombre: e.target.value }))}
+                disabled={uploadingOrto || ortoUploadProgress}
+              />
+            </div>
+            
+            {/* Municipio */}
+            <div className="space-y-2">
+              <Label htmlFor="orto-municipio">Municipio *</Label>
+              <Input
+                id="orto-municipio"
+                placeholder="Ej: Ocaña"
+                value={ortoFormData.municipio}
+                onChange={(e) => setOrtoFormData(prev => ({ ...prev, municipio: e.target.value }))}
+                disabled={uploadingOrto || ortoUploadProgress}
+              />
+            </div>
+            
+            {/* Descripción */}
+            <div className="space-y-2">
+              <Label htmlFor="orto-descripcion">Descripción (opcional)</Label>
+              <Input
+                id="orto-descripcion"
+                placeholder="Ej: Captura de Marzo 2024, resolución 15cm"
+                value={ortoFormData.descripcion}
+                onChange={(e) => setOrtoFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+                disabled={uploadingOrto || ortoUploadProgress}
+              />
+            </div>
+            
+            {/* Archivo */}
+            <div className="space-y-2">
+              <Label>Archivo GeoTIFF *</Label>
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center">
+                {ortoFile ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-slate-700">{ortoFile.name}</p>
+                    <p className="text-xs text-slate-500">{(ortoFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                    {!uploadingOrto && !ortoUploadProgress && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setOrtoFile(null)}
+                      >
+                        Cambiar archivo
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <div className="space-y-2">
+                      <Upload className="w-8 h-8 mx-auto text-slate-400" />
+                      <p className="text-sm text-slate-500">
+                        Seleccione un archivo GeoTIFF (.tif, .tiff)
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        Archivos grandes pueden tardar varios minutos en procesar
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".tif,.tiff,.geotiff"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) setOrtoFile(file);
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+            
+            {/* Progreso */}
+            {ortoUploadProgress && (
+              <div className="border rounded-lg p-3 bg-slate-50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    {ortoUploadProgress.status === 'subiendo' && '📤 Subiendo...'}
+                    {ortoUploadProgress.status === 'procesando' && '⚙️ Procesando tiles...'}
+                    {ortoUploadProgress.status === 'verificando' && '✅ Verificando...'}
+                    {ortoUploadProgress.status === 'completado' && '✅ ¡Completado!'}
+                    {ortoUploadProgress.status === 'error' && '❌ Error'}
+                  </span>
+                  <span className="text-sm text-slate-500">{ortoUploadProgress.progress}%</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${
+                      ortoUploadProgress.status === 'error' ? 'bg-red-500' : 
+                      ortoUploadProgress.status === 'completado' ? 'bg-emerald-500' : 'bg-blue-500'
+                    }`}
+                    style={{ width: `${ortoUploadProgress.progress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-slate-500 mt-1">{ortoUploadProgress.message}</p>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowUploadOrtoDialog(false);
+                setOrtoFile(null);
+                setOrtoFormData({ nombre: '', municipio: '', descripcion: '' });
+                setOrtoUploadProgress(null);
+              }}
+              disabled={uploadingOrto && ortoUploadProgress?.status !== 'error'}
+            >
+              {ortoUploadProgress?.status === 'completado' ? 'Cerrar' : 'Cancelar'}
+            </Button>
+            {!ortoUploadProgress && (
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={handleUploadOrtoimagen}
+                disabled={uploadingOrto || !ortoFile || !ortoFormData.nombre || !ortoFormData.municipio}
+              >
+                {uploadingOrto ? 'Subiendo...' : 'Subir Ortoimagen'}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
