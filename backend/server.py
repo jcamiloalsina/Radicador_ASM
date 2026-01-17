@@ -1975,10 +1975,19 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
         
         # Send email notification to citizen if status changed
         if 'estado' in update_dict:
-            citizen = await db.users.find_one({"id": petition['user_id']}, {"_id": 0})
-            if citizen:
+            # Solo enviar email si hay un ciudadano asociado y correo electrónico
+            citizen_email = petition.get('correo')
+            nombre_solicitante = petition.get('nombre_completo', 'Usuario')
+            
+            # Intentar obtener más info del usuario si existe
+            if petition.get('user_id'):
+                citizen = await db.users.find_one({"id": petition['user_id']}, {"_id": 0})
+                if citizen:
+                    citizen_email = citizen_email or citizen.get('email')
+                    nombre_solicitante = nombre_solicitante or citizen.get('full_name', 'Usuario')
+            
+            if citizen_email:
                 estado_nuevo = update_dict['estado']
-                nombre_solicitante = petition.get('nombre_completo', citizen.get('full_name', 'Usuario'))
                 
                 # Usar plantilla especial para finalización
                 if estado_nuevo == PetitionStatus.FINALIZADO:
