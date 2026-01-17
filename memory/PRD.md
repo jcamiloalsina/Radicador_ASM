@@ -63,6 +63,30 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 
 ## Cambios Recientes
 
+### Sesión 17 Enero 2026 (Parte 7) - Fork
+1. **Bug Fix - Registro de Usuarios (CORREGIDO):**
+   - ✅ Corregido error en endpoint de registro - API usaba URL incorrecta
+   - ✅ Ahora POST /api/auth/register funciona correctamente
+   - ✅ Validación de contraseña: min 6 chars, mayúscula, minúscula, número
+
+2. **Bug Fix - Auto-asignación de Gestores (CORREGIDO):**
+   - ✅ Agregado rol 'gestor' a la lista de roles permitidos para auto-asignación
+   - ✅ POST /api/petitions/{id}/auto-asignar ahora funciona para gestores
+
+3. **Notificaciones GDB por Correo (DESACTIVADO):**
+   - ✅ Cambiado `enviar_email=False` en notificación de carga de GDB
+   - ✅ Ya no se envían correos al cargar bases gráficas
+
+4. **Sistema de Carga de Ortoimágenes (NUEVO):**
+   - ✅ Eliminada ortoimagen de prueba "Ocaña"
+   - ✅ Nuevo sistema dinámico usando MongoDB para almacenar ortoimágenes
+   - ✅ Endpoints: POST /api/ortoimagenes/subir, GET /api/ortoimagenes/disponibles
+   - ✅ Procesamiento automático de GeoTIFF a tiles XYZ con gdal2tiles
+   - ✅ Modal de subida en Visor de Predios (nombre, municipio, descripción, archivo)
+   - ✅ Barra de progreso para subida y procesamiento
+   - ✅ Solo admin, coordinador, o gestor con permiso 'upload_gdb' pueden subir
+   - ✅ Eliminación de ortoimágenes por admin/coordinador
+
 ### Sesión 17 Enero 2026 (Parte 6) - Fork
 1. **Ortoimágenes Personalizadas (IMPLEMENTADO):**
    - ✅ Nuevo sistema para cargar ortoimágenes de alta resolución (GeoTIFF)
