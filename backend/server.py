@@ -1292,6 +1292,33 @@ async def register(user_data: UserRegister):
         {"email": {"$regex": f"^{email_escaped}$", "$options": "i"}}
     )
     if existing_user:
+        # Si existe pero no está verificado, permitir re-registro (reenviar código)
+        if not existing_user.get('email_verified', False):
+            # Generar nuevo código
+            verification_code = str(random.randint(100000, 999999))
+            expires_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
+            
+            await db.users.update_one(
+                {"id": existing_user['id']},
+                {"$set": {
+                    "verification_code": verification_code,
+                    "verification_code_expires": expires_at,
+                    "password": hash_password(user_data.password),
+                    "full_name": format_nombre_propio(user_data.full_name)
+                }}
+            )
+            
+            # Enviar código por email
+            try:
+                await enviar_codigo_verificacion(user_data.email, verification_code, format_nombre_propio(user_data.full_name))
+            except Exception as e:
+                logger.error(f"Error enviando código de verificación: {e}")
+            
+            return {
+                "message": "Se ha enviado un código de verificación a su correo electrónico",
+                "requires_verification": True,
+                "email": user_data.email
+            }
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El correo ya está registrado")
     
     # Validate password
@@ -1302,11 +1329,18 @@ async def register(user_data: UserRegister):
     # Formatear el nombre propio con mayúsculas y tildes correctas
     nombre_formateado = format_nombre_propio(user_data.full_name)
     
-    # Always assign ciudadano role on self-registration
+    # Generar código de verificación (6 dígitos)
+    verification_code = str(random.randint(100000, 999999))
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
+    
+    # Always assign usuario role on self-registration
     user = User(
         email=user_data.email,
         full_name=nombre_formateado,
-        role=UserRole.USUARIO
+        role=UserRole.USUARIO,
+        email_verified=False,
+        verification_code=verification_code,
+        verification_code_expires=expires_at
     )
     
     doc = user.model_dump()
@@ -1315,17 +1349,136 @@ async def register(user_data: UserRegister):
     
     await db.users.insert_one(doc)
     
-    token = create_token(user.id, user.email, user.role)
+    # Enviar código por email
+    try:
+        await enviar_codigo_verificacion(user_data.email, verification_code, nombre_formateado)
+    except Exception as e:
+        logger.error(f"Error enviando código de verificación: {e}")
+    
+    # NO devolver token hasta que el email esté verificado
+    return {
+        "message": "Se ha enviado un código de verificación a su correo electrónico",
+        "requires_verification": True,
+        "email": user_data.email
+    }
+
+
+async def enviar_codigo_verificacion(email: str, codigo: str, nombre: str):
+    """Envía el código de verificación por email"""
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #065f46; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0;">Asomunicipios</h1>
+            <p style="margin: 5px 0 0 0;">Sistema de Gestión Catastral</p>
+        </div>
+        <div style="background-color: #f8fafc; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+            <h2 style="color: #1e293b; margin-top: 0;">¡Hola {nombre}!</h2>
+            <p style="color: #475569;">Para completar tu registro, ingresa el siguiente código de verificación:</p>
+            <div style="background-color: #065f46; color: white; font-size: 32px; font-weight: bold; padding: 20px; text-align: center; border-radius: 8px; letter-spacing: 8px; margin: 20px 0;">
+                {codigo}
+            </div>
+            <p style="color: #64748b; font-size: 14px;">Este código expira en <strong>30 minutos</strong>.</p>
+            <p style="color: #64748b; font-size: 14px;">Si no solicitaste este registro, puedes ignorar este mensaje.</p>
+        </div>
+        <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
+            <p>© 2025 Asomunicipios. Todos los derechos reservados.</p>
+        </div>
+    </div>
+    """
+    
+    await send_email_notification(
+        to_email=email,
+        subject="Código de Verificación - Asomunicipios",
+        html_content=html_content
+    )
+
+
+@api_router.post("/auth/verify-email")
+async def verify_email(data: VerifyEmailCode):
+    """Verifica el código de email enviado durante el registro"""
+    email_escaped = re.escape(data.email.lower())
+    user = await db.users.find_one(
+        {"email": {"$regex": f"^{email_escaped}$", "$options": "i"}},
+        {"_id": 0}
+    )
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    if user.get('email_verified', False):
+        raise HTTPException(status_code=400, detail="El correo ya está verificado")
+    
+    # Verificar código
+    if user.get('verification_code') != data.code:
+        raise HTTPException(status_code=400, detail="Código de verificación inválido")
+    
+    # Verificar expiración
+    expires_str = user.get('verification_code_expires')
+    if expires_str:
+        expires_at = datetime.fromisoformat(expires_str.replace('Z', '+00:00'))
+        if datetime.now(timezone.utc) > expires_at:
+            raise HTTPException(status_code=400, detail="El código de verificación ha expirado. Solicita uno nuevo.")
+    
+    # Marcar como verificado
+    await db.users.update_one(
+        {"id": user['id']},
+        {"$set": {
+            "email_verified": True,
+            "verification_code": None,
+            "verification_code_expires": None
+        }}
+    )
+    
+    # Generar token
+    token = create_token(user['id'], user['email'], user['role'])
     
     return {
+        "message": "Email verificado exitosamente",
         "token": token,
         "user": {
-            "id": user.id,
-            "email": user.email,
-            "full_name": user.full_name,
-            "role": user.role
+            "id": user['id'],
+            "email": user['email'],
+            "full_name": user['full_name'],
+            "role": user['role']
         }
     }
+
+
+@api_router.post("/auth/resend-verification")
+async def resend_verification_code(data: ResendVerificationCode):
+    """Reenvía el código de verificación"""
+    email_escaped = re.escape(data.email.lower())
+    user = await db.users.find_one(
+        {"email": {"$regex": f"^{email_escaped}$", "$options": "i"}},
+        {"_id": 0}
+    )
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    if user.get('email_verified', False):
+        raise HTTPException(status_code=400, detail="El correo ya está verificado")
+    
+    # Generar nuevo código
+    verification_code = str(random.randint(100000, 999999))
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
+    
+    await db.users.update_one(
+        {"id": user['id']},
+        {"$set": {
+            "verification_code": verification_code,
+            "verification_code_expires": expires_at
+        }}
+    )
+    
+    # Enviar código por email
+    try:
+        await enviar_codigo_verificacion(data.email, verification_code, user['full_name'])
+    except Exception as e:
+        logger.error(f"Error reenviando código de verificación: {e}")
+        raise HTTPException(status_code=500, detail="Error enviando el código. Intente más tarde.")
+    
+    return {"message": "Se ha enviado un nuevo código de verificación a su correo"}
 
 @api_router.post("/auth/login")
 async def login(credentials: UserLogin):
