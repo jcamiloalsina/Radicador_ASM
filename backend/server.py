@@ -7375,6 +7375,178 @@ async def get_gdb_layers(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Error listando capas: {str(e)}")
 
 
+# Capas estándar según normativa IGAC
+CAPAS_ESTANDAR = {
+    "terreno_rural": ["R_TERRENO", "R_TERRENO_1"],
+    "terreno_urbano": ["U_TERRENO", "U_TERRENO_1"],
+    "construccion_rural": ["R_CONSTRUCCION", "R_CONSTRUCCION_1"],
+    "construccion_urbana": ["U_CONSTRUCCION", "U_CONSTRUCCION_1"],
+    "limite_municipal": ["LIMITEMUNICIPIO", "LimiteMunicipio", "LIMITE_MUNICIPIO"]
+}
+
+
+@api_router.post("/gdb/analizar")
+async def analizar_gdb_antes_de_cargar(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Analiza un archivo GDB/ZIP antes de cargarlo para:
+    1. Listar todas las capas encontradas
+    2. Identificar cuáles son reconocidas como estándar
+    3. Detectar capas no estándar que necesitan renombrarse
+    4. Validar códigos prediales y detectar errores de formato
+    """
+    import pyogrio
+    import zipfile
+    import tempfile
+    import shutil
+    
+    if current_user['role'] == UserRole.USUARIO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    # Guardar archivo temporal
+    temp_dir = Path(tempfile.mkdtemp())
+    try:
+        file_path = temp_dir / file.filename
+        with open(file_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+        
+        # Si es ZIP, extraer
+        gdb_path = None
+        if file.filename.lower().endswith('.zip'):
+            with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+            # Buscar .gdb
+            for item in temp_dir.rglob("*.gdb"):
+                gdb_path = item
+                break
+        elif file.filename.lower().endswith('.gdb'):
+            gdb_path = file_path
+        
+        if not gdb_path or not gdb_path.exists():
+            raise HTTPException(status_code=400, detail="No se encontró archivo GDB válido")
+        
+        # Listar capas
+        layers = pyogrio.list_layers(str(gdb_path))
+        capas_encontradas = [{"nombre": layer[0], "tipo_geometria": layer[1]} for layer in layers]
+        
+        # Clasificar capas
+        capas_analisis = {
+            "reconocidas": [],
+            "no_reconocidas": [],
+            "recomendaciones": []
+        }
+        
+        nombres_capas = [c["nombre"].upper() for c in capas_encontradas]
+        
+        # Verificar capas estándar
+        for tipo, nombres_validos in CAPAS_ESTANDAR.items():
+            encontrada = None
+            for nombre in nombres_validos:
+                if nombre.upper() in nombres_capas:
+                    encontrada = nombre
+                    break
+            
+            # Buscar alternativas si no se encontró estándar
+            if not encontrada:
+                for capa in capas_encontradas:
+                    nombre_upper = capa["nombre"].upper().replace(" ", "_")
+                    if tipo == "terreno_rural" and ("TERRENO" in nombre_upper and nombre_upper.startswith("R")):
+                        capas_analisis["no_reconocidas"].append({
+                            "capa": capa["nombre"],
+                            "tipo_detectado": tipo,
+                            "sugerencia": f"Renombrar a '{nombres_validos[0]}'"
+                        })
+                    elif tipo == "terreno_urbano" and ("TERRENO" in nombre_upper and nombre_upper.startswith("U")):
+                        capas_analisis["no_reconocidas"].append({
+                            "capa": capa["nombre"],
+                            "tipo_detectado": tipo,
+                            "sugerencia": f"Renombrar a '{nombres_validos[0]}'"
+                        })
+                    elif tipo == "construccion_rural" and ("CONSTRUCCION" in nombre_upper and nombre_upper.startswith("R")):
+                        capas_analisis["no_reconocidas"].append({
+                            "capa": capa["nombre"],
+                            "tipo_detectado": tipo,
+                            "sugerencia": f"Renombrar a '{nombres_validos[0]}'"
+                        })
+                    elif tipo == "construccion_urbana" and ("CONSTRUCCION" in nombre_upper and nombre_upper.startswith("U")):
+                        capas_analisis["no_reconocidas"].append({
+                            "capa": capa["nombre"],
+                            "tipo_detectado": tipo,
+                            "sugerencia": f"Renombrar a '{nombres_validos[0]}'"
+                        })
+            else:
+                capas_analisis["reconocidas"].append({
+                    "tipo": tipo,
+                    "capa_encontrada": encontrada
+                })
+        
+        # Analizar códigos prediales en las capas de terreno
+        codigos_con_error = []
+        codigos_validos = 0
+        
+        for tipo_capa in ["terreno_rural", "terreno_urbano"]:
+            for nombre in CAPAS_ESTANDAR[tipo_capa]:
+                try:
+                    gdf = gpd.read_file(str(gdb_path), layer=nombre)
+                    if len(gdf) > 0:
+                        for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
+                            if col in gdf.columns:
+                                for idx, row in gdf.head(100).iterrows():  # Analizar primeros 100
+                                    codigo = str(row.get(col, ''))
+                                    if codigo and codigo != 'nan':
+                                        # Validar formato de código predial nacional (30 dígitos)
+                                        codigo_limpio = codigo.strip()
+                                        if len(codigo_limpio) != 30:
+                                            codigos_con_error.append({
+                                                "codigo": codigo_limpio,
+                                                "error": f"Longitud incorrecta ({len(codigo_limpio)} caracteres, debe ser 30)",
+                                                "capa": nombre
+                                            })
+                                        elif not codigo_limpio.isdigit():
+                                            codigos_con_error.append({
+                                                "codigo": codigo_limpio,
+                                                "error": "Contiene caracteres no numéricos",
+                                                "capa": nombre
+                                            })
+                                        else:
+                                            codigos_validos += 1
+                                break
+                        break
+                except:
+                    continue
+        
+        # Generar recomendaciones
+        if capas_analisis["no_reconocidas"]:
+            capas_analisis["recomendaciones"].append(
+                "Hay capas que no siguen el estándar IGAC. Recomendamos renombrarlas antes de cargar."
+            )
+        
+        if codigos_con_error:
+            capas_analisis["recomendaciones"].append(
+                f"Se encontraron {len(codigos_con_error)} códigos prediales con errores de formato."
+            )
+        
+        return {
+            "archivo": file.filename,
+            "total_capas": len(capas_encontradas),
+            "capas_encontradas": capas_encontradas,
+            "analisis": capas_analisis,
+            "validacion_codigos": {
+                "codigos_validos": codigos_validos,
+                "codigos_con_error": codigos_con_error[:20],  # Mostrar máximo 20 errores
+                "total_errores": len(codigos_con_error)
+            },
+            "puede_procesar": len(capas_analisis["reconocidas"]) > 0
+        }
+        
+    finally:
+        # Limpiar archivos temporales
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
 # ===== NOTIFICACIONES Y ALERTAS GDB =====
 
 @api_router.get("/notificaciones")
