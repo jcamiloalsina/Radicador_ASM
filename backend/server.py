@@ -6745,6 +6745,18 @@ async def aprobar_rechazar_cambio(
         {"$set": update_data}
     )
     
+    # Si se rechaza, notificar al usuario que propuso el cambio (solo plataforma, no email)
+    if not request.aprobado and cambio.get("propuesto_por"):
+        codigo_predio = cambio.get("datos_propuestos", {}).get("codigo_predial_nacional", "N/A")
+        await crear_notificacion(
+            usuario_id=cambio["propuesto_por"],
+            titulo="Cambio de Predio Rechazado",
+            mensaje=f"El cambio propuesto para el predio {codigo_predio} ha sido rechazado por {current_user['full_name']}. Motivo: {request.comentario or 'Sin comentario'}",
+            tipo="warning",
+            enlace="/dashboard/pendientes",
+            enviar_email=False  # Solo notificación en plataforma
+        )
+    
     return {
         "mensaje": "Cambio aprobado y aplicado" if request.aprobado else "Cambio rechazado",
         "estado": nuevo_estado
