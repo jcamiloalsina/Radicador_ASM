@@ -8417,21 +8417,9 @@ async def upload_gdb_file(
             # Intentar diferentes nombres de capas rurales - PRIORIZAR capas con TERRENO
             update_progress("leyendo_rural", 30, "Leyendo capa rural...")
             # Lista ordenada por prioridad - TERRENO primero, evitar ZONA_HOMOGENEA
-            rural_layers = [
-                'R_TERRENO_1', 'R_TERRENO', 'TERRENO', 'R_Terreno', 'r_terreno', 'r_terreno_1',
-                'Terreno', 'terreno', 'TERRENO_R', 'terreno_r', 'Terreno_R',
-                'R_PREDIO', 'R_Predio', 'r_predio',
-                'TERRENO_RURAL', 'terreno_rural', 'Terreno_Rural'
-            ]
+            rural_layers = ['R_TERRENO']  # SOLO nombre estándar
             
-            # Buscar dinámicamente capas con TERRENO en el nombre (excluyendo ZONA_HOMOGENEA y anotaciones Anno)
-            for layer_name in available_layers:
-                layer_upper = layer_name.upper()
-                # Solo agregar si tiene TERRENO y NO es zona homogénea y NO es anotación
-                if 'TERRENO' in layer_upper and 'ZONA' not in layer_upper and 'HOMOGENEA' not in layer_upper and not layer_upper.endswith('ANNO'):
-                    if layer_name not in rural_layers:
-                        rural_layers.insert(0, layer_name)
-            
+            # NO buscar dinámicamente - solo aceptar el nombre estándar
             gdf_rural = None
             rural_layer_found = None
             for rural_layer in rural_layers:
