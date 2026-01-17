@@ -8641,18 +8641,8 @@ async def upload_gdb_file(
         update_progress("leyendo_construcciones", 70, "Buscando capas de construcciones...")
         
         construcciones_guardadas = 0
-        construcciones_layers = [
-            'R_CONSTRUCCION', 'R_CONSTRUCCION_1', 'R_Construccion', 'r_construccion',
-            'U_CONSTRUCCION', 'U_CONSTRUCCION_1', 'U_Construccion', 'u_construccion',
-            'CONSTRUCCION', 'Construccion', 'construccion'
-        ]
-        
-        # Buscar dinámicamente capas de construcciones
-        for layer_name in available_layers:
-            layer_upper = layer_name.upper()
-            if 'CONSTRUCCION' in layer_upper or 'CONSTRUCC' in layer_upper:
-                if layer_name not in construcciones_layers:
-                    construcciones_layers.insert(0, layer_name)
+        # SOLO nombres estándar
+        construcciones_layers = ['R_CONSTRUCCION', 'U_CONSTRUCCION']
         
         try:
             # Limpiar construcciones anteriores del municipio
