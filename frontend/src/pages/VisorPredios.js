@@ -157,7 +157,7 @@ export default function VisorPredios() {
   const [selectedPredio, setSelectedPredio] = useState(null);
   const [geometry, setGeometry] = useState(null);
   const [gdbStats, setGdbStats] = useState(null);
-  const [mapType, setMapType] = useState('street'); // OpenStreetMap por defecto (mejor cobertura)
+  const [mapType, setMapType] = useState('satellite'); // Satélite Google por defecto
   const [showUploadGdb, setShowUploadGdb] = useState(false);
   const [uploadingGdb, setUploadingGdb] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null); // Estado del progreso de carga
@@ -463,24 +463,29 @@ export default function VisorPredios() {
   };
 
   const tileLayers = {
+    satellite: {
+      url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      attribution: '&copy; Google',
+      maxZoom: 20
+    },
+    hybrid: {
+      url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+      attribution: '&copy; Google',
+      maxZoom: 20
+    },
     street: {
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 19
     },
-    satellite: {
+    esri_satellite: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       attribution: '&copy; Esri',
-      maxZoom: 18  // Esri puede no tener cobertura en algunas áreas
+      maxZoom: 18
     },
     topographic: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
       attribution: '&copy; Esri, HERE, Garmin',
-      maxZoom: 18
-    },
-    cartodb: {
-      url: 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-      attribution: '&copy; CartoDB',
       maxZoom: 18
     }
   };
