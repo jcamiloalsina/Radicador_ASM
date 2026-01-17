@@ -8358,13 +8358,15 @@ async def upload_gdb_file(
             '20614': 'Río de Oro',
         }
         
-        municipio_nombre = municipio or CODIGO_TO_MUNICIPIO.get(gdb_name, gdb_name)
+        # Intentar detectar municipio desde el nombre del archivo primero
+        municipio_nombre_inicial = municipio or CODIGO_TO_MUNICIPIO.get(gdb_name, None)
         
-        update_progress("leyendo", 25, f"Leyendo capas de {municipio_nombre}...")
+        update_progress("leyendo", 25, f"Leyendo capas de {gdb_name}...")
         
         # Leer capas del GDB para obtener estadísticas y relacionar con predios
         stats = {"rurales": 0, "urbanos": 0, "relacionados": 0}
         codigos_gdb = set()
+        municipio_detectado_desde_codigos = None
         
         try:
             # Primero listar todas las capas disponibles para diagnóstico
@@ -8373,7 +8375,7 @@ async def upload_gdb_file(
                 import pyogrio
                 layers_info = pyogrio.list_layers(str(gdb_found))
                 available_layers = [layer[0] for layer in layers_info]
-                logger.info(f"GDB {municipio_nombre}: Capas disponibles: {available_layers}")
+                logger.info(f"GDB {gdb_name}: Capas disponibles: {available_layers}")
                 update_progress("analizando", 28, f"Capas encontradas: {', '.join(available_layers[:5])}...")
             except Exception as e:
                 logger.warning(f"No se pudo listar capas: {e}")
