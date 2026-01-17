@@ -549,27 +549,18 @@ def get_email_template(titulo: str, contenido: str, radicado: str = None, tipo_n
     </head>
     <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <!-- Header con gradiente y patrón de calles -->
-            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-radius: 16px 16px 0 0; overflow: hidden;">
-                <tr>
-                    <td style="background: linear-gradient(135deg, {color["bg"]} 0%, #064e3b 100%); padding: 0;">
-                        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-image: url('{frontend_url}/pattern-streets.png'); background-repeat: repeat;">
-                            <tr>
-                                <td style="padding: 30px; text-align: center;">
-                                    <!-- Logo -->
-                                    <img src="{logo_url}" alt="Asomunicipios" style="height: 70px; margin-bottom: 15px; border-radius: 10px; background: white; padding: 8px;">
-                                    <h1 style="color: white; margin: 0; font-size: 22px; font-weight: 600;">
-                                        Asociación de Municipios del Catatumbo
-                                    </h1>
-                                    <p style="color: #a7f3d0; margin: 8px 0 0 0; font-size: 14px;">
-                                        Provincia de Ocaña y Sur del Cesar
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
+            <!-- Header con gradiente -->
+            <div style="background: linear-gradient(135deg, {color["bg"]} 0%, #064e3b 100%); 
+                        border-radius: 16px 16px 0 0; padding: 30px; text-align: center;">
+                <!-- Logo -->
+                <img src="{logo_url}" alt="Asomunicipios" style="height: 70px; margin-bottom: 15px; border-radius: 10px; background: white; padding: 8px;">
+                <h1 style="color: white; margin: 0; font-size: 22px; font-weight: 600;">
+                    Asociación de Municipios del Catatumbo
+                </h1>
+                <p style="color: #a7f3d0; margin: 8px 0 0 0; font-size: 14px;">
+                    Provincia de Ocaña y Sur del Cesar
+                </p>
+            </div>
             
             <!-- Contenido principal -->
             <div style="background: white; padding: 35px; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
