@@ -175,17 +175,20 @@ export default function PredioMap({
           style={geoJSONStyle}
         >
           <Popup>
-            <div className="text-sm min-w-[150px]">
+            <div className="text-sm min-w-[180px]">
               {predioData ? (
                 <>
-                  <p className="font-bold text-emerald-700 mb-1">
-                    {predioData.codigo_homologado}
+                  <p className="font-bold text-emerald-700 mb-1 text-xs break-all">
+                    CNP: {predioData.codigo_predial_nacional}
                   </p>
                   <p className="text-xs text-slate-600">{predioData.municipio}</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    <span className="font-medium">Matrícula:</span> {predioData.r2_registros?.[0]?.matricula_inmobiliaria || predioData.matricula_inmobiliaria || 'Sin información'}
+                  </p>
                 </>
               ) : (
-                <p className="font-bold text-emerald-700 mb-1">
-                  {geometry.properties?.codigo}
+                <p className="font-bold text-emerald-700 mb-1 text-xs break-all">
+                  CNP: {geometry.properties?.codigo}
                 </p>
               )}
               <div className="mt-2 pt-2 border-t text-xs">
