@@ -196,7 +196,7 @@ export default function VisorPredios() {
   const [selectedPredio, setSelectedPredio] = useState(null);
   const [geometry, setGeometry] = useState(null);
   const [gdbStats, setGdbStats] = useState(null);
-  const [mapType, setMapType] = useState('satellite'); // Satélite Google por defecto
+  const [mapType, setMapType] = useState('satellite'); // Esri Satélite por defecto (cambia a Google en zoom alto)
   const [showUploadGdb, setShowUploadGdb] = useState(false);
   const [uploadingGdb, setUploadingGdb] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null); // Estado del progreso de carga
@@ -503,9 +503,16 @@ export default function VisorPredios() {
 
   const tileLayers = {
     satellite: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attribution: '&copy; Esri',
+      maxZoom: 20,
+      maxNativeZoom: 17  // Esri óptimo hasta 17, después cambia a Google
+    },
+    google_satellite: {
       url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
       attribution: '&copy; Google',
-      maxZoom: 20
+      maxZoom: 20,
+      maxNativeZoom: 20
     },
     hybrid: {
       url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
@@ -516,11 +523,6 @@ export default function VisorPredios() {
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 19
-    },
-    esri_satellite: {
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      attribution: '&copy; Esri',
-      maxZoom: 18
     },
     topographic: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
