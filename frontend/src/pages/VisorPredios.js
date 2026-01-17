@@ -1045,9 +1045,12 @@ export default function VisorPredios() {
 
       {/* Diálogo de Subida de Ortoimagen */}
       <Dialog open={showUploadOrtoDialog} onOpenChange={(open) => {
-        if (!uploadingOrto && !ortoUploadProgress) {
-          setShowUploadOrtoDialog(open);
-          if (!open) {
+        if (!open) {
+          // Si está subiendo, cancelar la subida
+          if (uploadingOrto || ortoUploadProgress) {
+            cancelOrtoUpload();
+          } else {
+            setShowUploadOrtoDialog(false);
             setOrtoFile(null);
             setOrtoFormData({ nombre: '', municipio: '', descripcion: '' });
           }
