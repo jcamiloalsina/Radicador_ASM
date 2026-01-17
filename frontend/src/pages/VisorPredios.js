@@ -176,6 +176,7 @@ export default function VisorPredios() {
   });
   const [marcadorCoordenadas, setMarcadorCoordenadas] = useState(null); // [lat, lng] del marcador
   const [resumenCargasMensuales, setResumenCargasMensuales] = useState(null); // Resumen de cargas GDB del mes
+  const [construcciones, setConstrucciones] = useState(null); // Construcciones del predio seleccionado
   const mapRef = useRef(null);
 
   // Default center: Norte de Santander, Colombia
