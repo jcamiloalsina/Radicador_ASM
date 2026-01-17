@@ -409,7 +409,7 @@ export default function PetitionDetail() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-slate-900 font-outfit">Gestores Asignados</CardTitle>
             {/* Botón auto-asignarse */}
-            {['atencion_usuario', 'coordinador', 'administrador'].includes(user?.role) && 
+            {['atencion_usuario', 'coordinador', 'administrador', 'gestor'].includes(user?.role) && 
              !petition.gestores_asignados?.includes(user?.id) && 
              petition.estado !== 'finalizado' && (
               <Button 
