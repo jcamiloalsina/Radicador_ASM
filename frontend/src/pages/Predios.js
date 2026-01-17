@@ -3405,7 +3405,7 @@ export default function Predios() {
                           <div className="space-y-4">
                             {/* Tabla 1: Zonas Físicas, Económicas y Área Terreno */}
                             <div>
-                              <p className="text-sm font-semibold text-slate-700 mb-2">Información de Zonas y Terreno</p>
+                              <p className="text-sm font-semibold text-slate-700 mb-2">Información de Zonas y Terreno ({r2.zonas.length} {r2.zonas.length === 1 ? 'registro' : 'registros'})</p>
                               <div className="overflow-x-auto">
                                 <table className="w-full text-sm border rounded-lg">
                                   <thead>
@@ -3419,9 +3419,9 @@ export default function Predios() {
                                   <tbody>
                                     {r2.zonas.map((zona, zIdx) => (
                                       <tr key={zIdx} className="border-b last:border-b-0 hover:bg-slate-50">
-                                        <td className="py-2 px-3 font-medium">{zona.zona_numero}</td>
-                                        <td className="py-2 px-3 text-center">{zona.zona_fisica}</td>
-                                        <td className="py-2 px-3 text-center">{zona.zona_economica}</td>
+                                        <td className="py-2 px-3 font-medium">{zIdx + 1}</td>
+                                        <td className="py-2 px-3 text-center">{zona.zona_fisica || '0'}</td>
+                                        <td className="py-2 px-3 text-center">{zona.zona_economica || '0'}</td>
                                         <td className="py-2 px-3 text-right font-medium">
                                           {formatAreaHectareas(zona.area_terreno)}
                                         </td>
@@ -3434,7 +3434,7 @@ export default function Predios() {
                             
                             {/* Tabla 2: Construcción */}
                             <div>
-                              <p className="text-sm font-semibold text-slate-700 mb-2">Información de Construcción</p>
+                              <p className="text-sm font-semibold text-slate-700 mb-2">Información de Construcción ({r2.zonas.length} {r2.zonas.length === 1 ? 'registro' : 'registros'})</p>
                               <div className="overflow-x-auto">
                                 <table className="w-full text-sm border rounded-lg">
                                   <thead>
