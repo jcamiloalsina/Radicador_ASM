@@ -144,10 +144,12 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 ## Próximas Tareas (Backlog)
 
 ### P0 - Crítico
+- [ ] **Consolidación de Base de Datos**: Decidir entre mantener `test_database` o migrar a `asomunicipios`
 - [ ] **Generación de archivos XTF** según Resolución IGAC 0301/2025
   - Ver: `/app/memory/XTF_LADM_COL_SINIC.md`
 
 ### P1 - Alta Prioridad
+- [ ] **UI de Validación GDB**: Interfaz para mostrar reporte de validación antes de procesar GDB
 - [ ] Mejorar funcionalidad offline del PWA (consulta de predios, R1/R2 y visor sin conexión)
 - [x] Flujo de devolución de peticiones con observaciones editables ✅
 - [ ] Mejorar vinculación GDB-Predios (~82% actualmente, issue recurrente)
