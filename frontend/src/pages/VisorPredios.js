@@ -252,6 +252,7 @@ export default function VisorPredios() {
   const [ortoFormData, setOrtoFormData] = useState({ nombre: '', municipio: '', descripcion: '' });
   const [ortoFile, setOrtoFile] = useState(null);
   const [ortoUploadProgress, setOrtoUploadProgress] = useState(null);
+  const ortoAbortControllerRef = useRef(null); // Ref para cancelar la subida
   const mapRef = useRef(null);
 
   // Default center: Norte de Santander, Colombia
