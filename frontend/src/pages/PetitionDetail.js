@@ -617,6 +617,33 @@ export default function PetitionDetail() {
                 </div>
               )}
               
+              {/* Selector de Gestor cuando el estado es "asignado" */}
+              {editData.estado === 'asignado' && (
+                <div className="border border-blue-200 bg-blue-50 p-4 rounded-lg">
+                  <Label htmlFor="gestor_asignar" className="text-blue-800 font-medium">
+                    Asignar Gestor *
+                  </Label>
+                  <p className="text-xs text-blue-600 mb-2">
+                    Seleccione el gestor que atenderá este trámite.
+                  </p>
+                  <Select 
+                    value={editData.gestor_id || ''} 
+                    onValueChange={(value) => setEditData({ ...editData, gestor_id: value })}
+                  >
+                    <SelectTrigger data-testid="edit-gestor-select" className="border-blue-300">
+                      <SelectValue placeholder="Seleccionar gestor..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {gestores.sort((a, b) => a.full_name.localeCompare(b.full_name)).map((g) => (
+                        <SelectItem key={g.id} value={g.id}>
+                          {g.full_name} ({g.role === 'atencion_usuario' ? 'Atención al Usuario' : 'Gestor'})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
               <div>
                 <Label htmlFor="notas">Notas</Label>
                 <Textarea
