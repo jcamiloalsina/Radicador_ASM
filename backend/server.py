@@ -6176,48 +6176,46 @@ async def export_predios_excel(
             
             zonas = r2.get('zonas', [])
             
-            # Zona 1 (columnas 9-11)
-            if len(zonas) >= 1:
-                ws_r2.cell(row=row, column=9, value=zonas[0].get('zona_fisica', ''))
-                ws_r2.cell(row=row, column=10, value=zonas[0].get('zona_economica', ''))
-                ws_r2.cell(row=row, column=11, value=zonas[0].get('area_terreno', 0))
+            # Zona 1 (columnas 9-11) - siempre llenar con 0 si vacío
+            z1 = zonas[0] if len(zonas) >= 1 else {}
+            ws_r2.cell(row=row, column=9, value=z1.get('zona_fisica', 0) or 0)
+            ws_r2.cell(row=row, column=10, value=z1.get('zona_economica', 0) or 0)
+            ws_r2.cell(row=row, column=11, value=z1.get('area_terreno', 0) or 0)
             
             # Zona 2 (columnas 12-14)
-            if len(zonas) >= 2:
-                ws_r2.cell(row=row, column=12, value=zonas[1].get('zona_fisica', ''))
-                ws_r2.cell(row=row, column=13, value=zonas[1].get('zona_economica', ''))
-                ws_r2.cell(row=row, column=14, value=zonas[1].get('area_terreno', 0))
+            z2 = zonas[1] if len(zonas) >= 2 else {}
+            ws_r2.cell(row=row, column=12, value=z2.get('zona_fisica', 0) or 0)
+            ws_r2.cell(row=row, column=13, value=z2.get('zona_economica', 0) or 0)
+            ws_r2.cell(row=row, column=14, value=z2.get('area_terreno', 0) or 0)
             
             # Construcción 1 (columnas 15-22)
-            if len(zonas) >= 1:
-                ws_r2.cell(row=row, column=15, value=zonas[0].get('habitaciones', 0))
-                ws_r2.cell(row=row, column=16, value=zonas[0].get('banos', 0))
-                ws_r2.cell(row=row, column=17, value=zonas[0].get('locales', 0))
-                ws_r2.cell(row=row, column=18, value=zonas[0].get('pisos', 0))
-                ws_r2.cell(row=row, column=19, value=zonas[0].get('tipificacion', ''))
-                ws_r2.cell(row=row, column=20, value=zonas[0].get('uso', ''))
-                ws_r2.cell(row=row, column=21, value=zonas[0].get('puntaje', 0))
-                ws_r2.cell(row=row, column=22, value=zonas[0].get('area_construida', 0))
+            ws_r2.cell(row=row, column=15, value=z1.get('habitaciones', 0) or 0)
+            ws_r2.cell(row=row, column=16, value=z1.get('banos', 0) or 0)
+            ws_r2.cell(row=row, column=17, value=z1.get('locales', 0) or 0)
+            ws_r2.cell(row=row, column=18, value=z1.get('pisos', 0) or 0)
+            ws_r2.cell(row=row, column=19, value=z1.get('tipificacion', 0) or 0)
+            ws_r2.cell(row=row, column=20, value=z1.get('uso', 0) or 0)
+            ws_r2.cell(row=row, column=21, value=z1.get('puntaje', 0) or 0)
+            ws_r2.cell(row=row, column=22, value=z1.get('area_construida', 0) or 0)
             
             # Construcción 2 (columnas 23-30)
-            if len(zonas) >= 2:
-                ws_r2.cell(row=row, column=23, value=zonas[1].get('habitaciones', 0))
-                ws_r2.cell(row=row, column=24, value=zonas[1].get('banos', 0))
-                ws_r2.cell(row=row, column=25, value=zonas[1].get('locales', 0))
-                ws_r2.cell(row=row, column=26, value=zonas[1].get('pisos', 0))
-                ws_r2.cell(row=row, column=27, value=zonas[1].get('tipificacion', ''))
-                ws_r2.cell(row=row, column=28, value=zonas[1].get('uso', ''))
-                ws_r2.cell(row=row, column=29, value=zonas[1].get('puntaje', 0))
-                ws_r2.cell(row=row, column=30, value=zonas[1].get('area_construida', 0))
+            ws_r2.cell(row=row, column=23, value=z2.get('habitaciones', 0) or 0)
+            ws_r2.cell(row=row, column=24, value=z2.get('banos', 0) or 0)
+            ws_r2.cell(row=row, column=25, value=z2.get('locales', 0) or 0)
+            ws_r2.cell(row=row, column=26, value=z2.get('pisos', 0) or 0)
+            ws_r2.cell(row=row, column=27, value=z2.get('tipificacion', 0) or 0)
+            ws_r2.cell(row=row, column=28, value=z2.get('uso', 0) or 0)
+            ws_r2.cell(row=row, column=29, value=z2.get('puntaje', 0) or 0)
+            ws_r2.cell(row=row, column=30, value=z2.get('area_construida', 0) or 0)
             
             # Construcción 3 (columnas 31-38)
-            if len(zonas) >= 3:
-                ws_r2.cell(row=row, column=31, value=zonas[2].get('habitaciones', 0))
-                ws_r2.cell(row=row, column=32, value=zonas[2].get('banos', 0))
-                ws_r2.cell(row=row, column=33, value=zonas[2].get('locales', 0))
-                ws_r2.cell(row=row, column=34, value=zonas[2].get('pisos', 0))
-                ws_r2.cell(row=row, column=35, value=zonas[2].get('tipificacion', ''))
-                ws_r2.cell(row=row, column=36, value=zonas[2].get('uso', ''))
+            z3 = zonas[2] if len(zonas) >= 3 else {}
+            ws_r2.cell(row=row, column=31, value=z3.get('habitaciones', 0) or 0)
+            ws_r2.cell(row=row, column=32, value=z3.get('banos', 0) or 0)
+            ws_r2.cell(row=row, column=33, value=z3.get('locales', 0) or 0)
+            ws_r2.cell(row=row, column=34, value=z3.get('pisos', 0) or 0)
+            ws_r2.cell(row=row, column=35, value=z3.get('tipificacion', 0) or 0)
+            ws_r2.cell(row=row, column=36, value=z3.get('uso', 0) or 0)
                 ws_r2.cell(row=row, column=37, value=zonas[2].get('puntaje', 0))
                 ws_r2.cell(row=row, column=38, value=zonas[2].get('area_construida', 0))
             
