@@ -575,6 +575,9 @@ export default function VisorPredios() {
     
     try {
       const token = localStorage.getItem('token');
+      
+      const response = await axios.post(`${API}/gdb/upload`, formData, {
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         },
