@@ -492,6 +492,300 @@ async def send_email(to_email: str, subject: str, body: str, attachment_path: st
         logging.error(f"Failed to send email: {str(e)}")
 
 
+def get_email_template(titulo: str, contenido: str, radicado: str = None, tipo_notificacion: str = "info", boton_texto: str = None, boton_url: str = None) -> str:
+    """
+    Genera una plantilla HTML profesional para correos electrónicos.
+    
+    Args:
+        titulo: Título principal del correo
+        contenido: Contenido HTML del mensaje
+        radicado: Número de radicado (opcional)
+        tipo_notificacion: "info", "success", "warning", "error"
+        boton_texto: Texto del botón CTA (opcional)
+        boton_url: URL del botón (opcional)
+    """
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://muni-cadastro.preview.emergentagent.com')
+    logo_url = f"{frontend_url}/logo-asomunicipios.png"
+    
+    # Colores según tipo de notificación
+    colores = {
+        "info": {"bg": "#047857", "accent": "#10b981", "badge": "#0ea5e9"},
+        "success": {"bg": "#047857", "accent": "#10b981", "badge": "#22c55e"},
+        "warning": {"bg": "#d97706", "accent": "#f59e0b", "badge": "#f59e0b"},
+        "error": {"bg": "#dc2626", "accent": "#ef4444", "badge": "#ef4444"}
+    }
+    color = colores.get(tipo_notificacion, colores["info"])
+    
+    radicado_html = ""
+    if radicado:
+        radicado_html = f'''
+        <div style="background: linear-gradient(135deg, {color["badge"]} 0%, {color["accent"]} 100%); 
+                    color: white; padding: 8px 16px; border-radius: 20px; 
+                    display: inline-block; font-size: 14px; font-weight: bold; margin-bottom: 15px;">
+            📋 Radicado: {radicado}
+        </div>
+        '''
+    
+    boton_html = ""
+    if boton_texto and boton_url:
+        boton_html = f'''
+        <div style="text-align: center; margin: 25px 0;">
+            <a href="{boton_url}" style="background: linear-gradient(135deg, {color["bg"]} 0%, {color["accent"]} 100%); 
+                      color: white; padding: 14px 30px; border-radius: 8px; 
+                      text-decoration: none; font-weight: bold; display: inline-block;
+                      box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                {boton_texto}
+            </a>
+        </div>
+        '''
+    
+    return f'''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <!-- Header con patrón de fondo -->
+            <div style="background: linear-gradient(135deg, {color["bg"]} 0%, #064e3b 100%); 
+                        border-radius: 16px 16px 0 0; padding: 30px; text-align: center;
+                        position: relative; overflow: hidden;">
+                <!-- Patrón de calles/mapa de fondo -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.1;
+                            background-image: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><path d=\"M0 50h100M50 0v100M25 0v100M75 0v100M0 25h100M0 75h100\" stroke=\"white\" stroke-width=\"0.5\" fill=\"none\"/><circle cx=\"25\" cy=\"25\" r=\"3\" fill=\"white\"/><circle cx=\"75\" cy=\"75\" r=\"3\" fill=\"white\"/><circle cx=\"50\" cy=\"50\" r=\"4\" fill=\"white\"/></svg>');
+                            background-size: 60px 60px;">
+                </div>
+                <!-- Logo -->
+                <div style="position: relative; z-index: 1;">
+                    <img src="{logo_url}" alt="Asomunicipios" style="height: 70px; margin-bottom: 15px; border-radius: 10px; background: white; padding: 8px;">
+                    <h1 style="color: white; margin: 0; font-size: 22px; font-weight: 600;">
+                        Asociación de Municipios del Catatumbo
+                    </h1>
+                    <p style="color: #a7f3d0; margin: 8px 0 0 0; font-size: 14px;">
+                        Provincia de Ocaña y Sur del Cesar
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Contenido principal -->
+            <div style="background: white; padding: 35px; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
+                {radicado_html}
+                <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 20px; font-weight: 600;">
+                    {titulo}
+                </h2>
+                <div style="color: #475569; font-size: 15px; line-height: 1.7;">
+                    {contenido}
+                </div>
+                {boton_html}
+            </div>
+            
+            <!-- Footer -->
+            <div style="background: #f8fafc; padding: 25px; border-radius: 0 0 16px 16px; 
+                        border: 1px solid #e2e8f0; border-top: none; text-align: center;">
+                <p style="color: #64748b; font-size: 13px; margin: 0 0 10px 0;">
+                    Este es un mensaje automático del Sistema de Gestión Catastral
+                </p>
+                <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+                    © {datetime.now().year} Asomunicipios - Todos los derechos reservados
+                </p>
+                <div style="margin-top: 15px;">
+                    <a href="{frontend_url}" style="color: {color["bg"]}; text-decoration: none; font-size: 13px;">
+                        Acceder al Sistema
+                    </a>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    '''
+
+
+def get_finalizacion_email(radicado: str, tipo_tramite: str, nombre_solicitante: str, con_archivos: bool = False) -> str:
+    """Genera el correo de finalización de trámite."""
+    contenido = f'''
+    <p>Estimado(a) <strong>{nombre_solicitante}</strong>,</p>
+    
+    <p>Nos complace informarle que su trámite ha sido <strong style="color: #22c55e;">finalizado exitosamente</strong>.</p>
+    
+    <div style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+        <p style="margin: 0 0 8px 0;"><strong>Tipo de trámite:</strong> {tipo_tramite}</p>
+        <p style="margin: 0;"><strong>Estado:</strong> ✅ Finalizado</p>
+    </div>
+    '''
+    
+    if con_archivos:
+        contenido += '''
+    <p>📎 <strong>Documentos adjuntos:</strong> Se han incluido los documentos de respuesta en este correo. 
+    Por favor revise los archivos adjuntos.</p>
+    '''
+    
+    contenido += '''
+    <p>Si tiene alguna pregunta o requiere información adicional, no dude en contactarnos.</p>
+    
+    <p style="margin-top: 25px;">Atentamente,<br>
+    <strong>Equipo de Gestión Catastral</strong><br>
+    <span style="color: #64748b;">Asomunicipios</span></p>
+    '''
+    
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://muni-cadastro.preview.emergentagent.com')
+    
+    return get_email_template(
+        titulo="¡Su trámite ha sido finalizado!",
+        contenido=contenido,
+        radicado=radicado,
+        tipo_notificacion="success",
+        boton_texto="Ver Detalles del Trámite",
+        boton_url=f"{frontend_url}/mis-peticiones"
+    )
+
+
+def get_actualizacion_email(radicado: str, estado_nuevo: str, nombre_solicitante: str) -> str:
+    """Genera el correo de actualización de estado."""
+    estados_info = {
+        "radicado": {"texto": "Radicado", "color": "#3b82f6", "icono": "📝", "mensaje": "Su trámite ha sido registrado en el sistema."},
+        "asignado": {"texto": "Asignado", "color": "#8b5cf6", "icono": "👤", "mensaje": "Su trámite ha sido asignado a un gestor para su procesamiento."},
+        "revision": {"texto": "En Revisión", "color": "#f59e0b", "icono": "🔍", "mensaje": "Su trámite está siendo revisado por nuestro equipo."},
+        "rechazado": {"texto": "Rechazado", "color": "#ef4444", "icono": "❌", "mensaje": "Lamentablemente su trámite ha sido rechazado. Por favor revise las observaciones."},
+        "devuelto": {"texto": "Devuelto", "color": "#f97316", "icono": "↩️", "mensaje": "Su trámite ha sido devuelto para correcciones. Por favor revise las observaciones."},
+        "finalizado": {"texto": "Finalizado", "color": "#22c55e", "icono": "✅", "mensaje": "Su trámite ha sido completado exitosamente."}
+    }
+    
+    info = estados_info.get(estado_nuevo, {"texto": estado_nuevo, "color": "#64748b", "icono": "📋", "mensaje": "El estado de su trámite ha sido actualizado."})
+    
+    contenido = f'''
+    <p>Estimado(a) <strong>{nombre_solicitante}</strong>,</p>
+    
+    <p>Le informamos que el estado de su trámite ha sido actualizado.</p>
+    
+    <div style="background: #f8fafc; border-left: 4px solid {info["color"]}; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+        <p style="margin: 0; font-size: 18px;">
+            {info["icono"]} <strong style="color: {info["color"]};">{info["texto"]}</strong>
+        </p>
+        <p style="margin: 10px 0 0 0; color: #64748b;">{info["mensaje"]}</p>
+    </div>
+    
+    <p>Puede consultar el detalle completo de su trámite accediendo al sistema.</p>
+    
+    <p style="margin-top: 25px;">Atentamente,<br>
+    <strong>Equipo de Gestión Catastral</strong><br>
+    <span style="color: #64748b;">Asomunicipios</span></p>
+    '''
+    
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://muni-cadastro.preview.emergentagent.com')
+    tipo_noti = "error" if estado_nuevo == "rechazado" else ("warning" if estado_nuevo == "devuelto" else "info")
+    
+    return get_email_template(
+        titulo="Actualización de su Trámite",
+        contenido=contenido,
+        radicado=radicado,
+        tipo_notificacion=tipo_noti,
+        boton_texto="Ver Mi Trámite",
+        boton_url=f"{frontend_url}/mis-peticiones"
+    )
+
+
+def get_nueva_peticion_email(radicado: str, solicitante: str, tipo_tramite: str, municipio: str) -> str:
+    """Genera el correo de nueva petición para staff."""
+    contenido = f'''
+    <p>Se ha registrado una nueva petición en el sistema.</p>
+    
+    <div style="background: #eff6ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="padding: 8px 0; color: #64748b; width: 140px;">👤 Solicitante:</td>
+                <td style="padding: 8px 0; font-weight: 600; color: #1e293b;">{solicitante}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; color: #64748b;">📋 Tipo de Trámite:</td>
+                <td style="padding: 8px 0; font-weight: 600; color: #1e293b;">{tipo_tramite}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; color: #64748b;">📍 Municipio:</td>
+                <td style="padding: 8px 0; font-weight: 600; color: #1e293b;">{municipio}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <p>Por favor, revise y gestione esta solicitud a la brevedad posible.</p>
+    '''
+    
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://muni-cadastro.preview.emergentagent.com')
+    
+    return get_email_template(
+        titulo="Nueva Petición Registrada",
+        contenido=contenido,
+        radicado=radicado,
+        tipo_notificacion="info",
+        boton_texto="Ver Petición",
+        boton_url=f"{frontend_url}/todas-peticiones"
+    )
+
+
+def get_asignacion_email(radicado: str, tipo_tramite: str, gestor_nombre: str) -> str:
+    """Genera el correo de asignación para gestor."""
+    contenido = f'''
+    <p>Hola <strong>{gestor_nombre}</strong>,</p>
+    
+    <p>Se te ha asignado un nuevo trámite para gestionar.</p>
+    
+    <div style="background: #faf5ff; border-left: 4px solid #8b5cf6; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+        <p style="margin: 0 0 8px 0;"><strong>Tipo de trámite:</strong> {tipo_tramite}</p>
+        <p style="margin: 0;"><strong>Estado:</strong> Asignado a ti</p>
+    </div>
+    
+    <p>Por favor, revisa el trámite y procede con su gestión según los procedimientos establecidos.</p>
+    
+    <p style="margin-top: 25px;">Saludos,<br>
+    <strong>Sistema de Gestión Catastral</strong></p>
+    '''
+    
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://muni-cadastro.preview.emergentagent.com')
+    
+    return get_email_template(
+        titulo="Nuevo Trámite Asignado",
+        contenido=contenido,
+        radicado=radicado,
+        tipo_notificacion="info",
+        boton_texto="Ver Trámite Asignado",
+        boton_url=f"{frontend_url}/mis-peticiones"
+    )
+
+
+def get_nuevos_archivos_email(radicado: str, es_staff: bool = False) -> str:
+    """Genera el correo de notificación de nuevos archivos."""
+    if es_staff:
+        contenido = '''
+        <p>El solicitante ha cargado nuevos documentos en su trámite.</p>
+        
+        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+            <p style="margin: 0;">📎 <strong>Nuevos archivos disponibles</strong></p>
+            <p style="margin: 8px 0 0 0; color: #92400e;">Por favor revise los documentos adjuntos.</p>
+        </div>
+        '''
+    else:
+        contenido = '''
+        <p>Se han agregado nuevos documentos a su trámite.</p>
+        
+        <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+            <p style="margin: 0;">📎 <strong>Documentos disponibles</strong></p>
+            <p style="margin: 8px 0 0 0; color: #065f46;">Puede descargarlos desde el sistema.</p>
+        </div>
+        '''
+    
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://muni-cadastro.preview.emergentagent.com')
+    
+    return get_email_template(
+        titulo="Nuevos Documentos en su Trámite",
+        contenido=contenido,
+        radicado=radicado,
+        tipo_notificacion="info",
+        boton_texto="Ver Documentos",
+        boton_url=f"{frontend_url}/mis-peticiones"
+    )
+
+
 class TestEmailRequest(BaseModel):
     to_email: str
 
