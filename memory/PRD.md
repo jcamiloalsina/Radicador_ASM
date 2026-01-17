@@ -64,20 +64,24 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 ## Cambios Recientes
 
 ### Sesión 17 Enero 2026 (Parte 4) - Fork
-1. **Verificación Bug Construcciones:**
-   - ✅ El problema de coordenadas de construcciones (-106 vs -73) NO existe actualmente
-   - ✅ Las coordenadas en BD están correctas (lon ~-73, lat ~8 para Colombia)
-   - ✅ Las construcciones se visualizan correctamente en el mapa (polígonos rojos)
-   - ✅ 779 construcciones cargadas para Ábrego
+1. **Corrección Bug Construcciones - Match Exacto:**
+   - ✅ CORREGIDO: El endpoint `/gdb/construcciones/{codigo}` ahora usa match EXACTO
+   - Antes: Prefijo de 20 caracteres traía construcciones de otros predios (ej: 26 en vez de 2)
+   - Ahora: Solo retorna construcciones con código EXACTAMENTE igual al predio
 
 2. **Corrección de Formato de Áreas:**
    - formatArea() ahora redondea a 2 decimales
    - Antes: "206.43093544051322 m²" → Ahora: "206.43 m²"
 
-3. **Estado de Base de Datos:**
-   - `test_database`: Base de datos principal (224,915 predios, 40 usuarios, 38,178 geometrías)
-   - `asomunicipios`: Base antigua/vacía (solo 11,267 predios legacy)
-   - **Pendiente:** Decisión del usuario sobre consolidación/renombramiento
+3. **Diagnóstico de Datos Inconsistentes:**
+   - 39,524 predios tienen `tiene_geometria=true` pero sin geometría real en BD
+   - Esto se resolverá cuando el usuario recargue los GDBs desde cero
+   - El predio `540030101000000010001000000000` no tiene construcciones porque su zona no fue cargada en el GDB
+
+4. **Estado de Base de Datos:**
+   - `test_database`: Base de datos activa (224,915 predios, 40 usuarios, 38,178 geometrías)
+   - `asomunicipios`: Base legacy/vacía
+   - **Usuario confirmó:** Van a limpiar BD y cargar desde 0
 
 ### Sesión 17 Enero 2026 (Parte 3)
 1. **Cambios Pendientes - Tabla Comparativa:**
