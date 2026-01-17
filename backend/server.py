@@ -2211,12 +2211,13 @@ async def reenviar_petition(petition_id: str, current_user: dict = Depends(get_c
     if not petition:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Petición no encontrada")
     
-    # Solo el propietario puede reenviar
-    if petition['user_id'] != current_user['id']:
+    # Solo el propietario puede reenviar (usar .get() para evitar KeyError)
+    petition_user_id = petition.get('user_id')
+    if not petition_user_id or petition_user_id != current_user['id']:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para reenviar esta petición")
     
     # Solo se puede reenviar si está devuelta
-    if petition['estado'] != PetitionStatus.DEVUELTO:
+    if petition.get('estado') != PetitionStatus.DEVUELTO:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Solo puede reenviar peticiones devueltas")
     
     # Cambiar estado a revisión
