@@ -310,7 +310,7 @@ export default function DashboardLayout() {
             
             {/* Dropdown de notificaciones */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-slate-200 z-50">
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-slate-200 z-[9999]">
                 <div className="p-3 border-b border-slate-200 flex items-center justify-between">
                   <h3 className="font-semibold text-slate-800">Notificaciones</h3>
                   {noLeidas > 0 && (
