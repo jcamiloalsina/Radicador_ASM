@@ -209,7 +209,6 @@ export default function PetitionDetail() {
 
   const canEdit = user?.role !== 'usuario';
   const canEditAllFields = ['coordinador', 'administrador'].includes(user?.role);
-  const canAssignGestor = ['atencion_usuario', 'gestor', 'coordinador', 'administrador'].includes(user?.role);
 
   if (loading) {
     return (
