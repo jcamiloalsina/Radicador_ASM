@@ -111,3 +111,44 @@ code {
 .municipio-label::before {
   display: none !important;
 }
+
+/* ===========================================
+   Z-INDEX GLOBAL - Para elementos sobre mapas
+   Leaflet usa z-index hasta ~1000, por lo que
+   elementos UI como dialogs, dropdowns, toasts
+   necesitan estar por encima.
+   =========================================== */
+   
+/* Clases utilitarias para z-index sobre mapas */
+.map-overlay-top {
+  z-index: 9999 !important;
+}
+
+/* Estilos globales para shadcn/ui sobre mapas */
+[data-radix-portal],
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+/* Dialog overlay y content */
+[role="dialog"],
+[data-state="open"][role="dialog"] {
+  z-index: 9999 !important;
+}
+
+/* Dropdown menus */
+[role="menu"],
+[role="listbox"] {
+  z-index: 9999 !important;
+}
+
+/* Sonner toasts */
+[data-sonner-toaster] {
+  z-index: 99999 !important;
+}
+
+/* Select content */
+[cmdk-root],
+[data-radix-select-content] {
+  z-index: 9999 !important;
+}
