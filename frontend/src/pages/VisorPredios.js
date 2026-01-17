@@ -1447,8 +1447,8 @@ export default function VisorPredios() {
                 <TileLayer
                   url={tileLayers[mapType].url}
                   attribution={tileLayers[mapType].attribution}
-                  maxZoom={15}
-                  maxNativeZoom={15}
+                  maxZoom={tileLayers[mapType]?.maxZoom || 18}
+                  maxNativeZoom={tileLayers[mapType]?.maxZoom || 18}
                 />
                 
                 {/* Mostrar límites de municipios usando componente con acceso al mapa */}
