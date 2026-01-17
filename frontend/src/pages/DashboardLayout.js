@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { Button } from '../components/ui/button';
-import { LogOut, FileText, Activity, Users, Menu, X, UserCog, BarChart3, PieChart, MapPin, Map, Clock, Bell, Shield } from 'lucide-react';
+import { LogOut, FileText, Activity, Users, Menu, X, UserCog, BarChart3, PieChart, MapPin, Map, Clock, Bell, Shield, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
