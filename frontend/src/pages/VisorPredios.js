@@ -1406,33 +1406,14 @@ export default function VisorPredios() {
                           asChild
                         >
                           <span>
-                            {uploadingGdb ? 'Procesando...' : 'Subir ZIP'}
-                          </span>
-                        </Button>
-                      </label>
-                      <label className="cursor-pointer flex-1">
-                        <input
-                          type="file"
-                          webkitdirectory=""
-                          directory=""
-                          multiple
-                          onChange={handleUploadGdb}
-                          className="hidden"
-                          disabled={uploadingGdb}
-                        />
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="w-full border-emerald-500 text-emerald-700 hover:bg-emerald-100"
-                          disabled={uploadingGdb}
-                          asChild
-                        >
-                          <span>
-                            {uploadingGdb ? 'Procesando...' : 'Subir Carpeta GDB'}
+                            {uploadingGdb ? 'Procesando...' : 'Subir archivo ZIP'}
                           </span>
                         </Button>
                       </label>
                     </div>
+                    <p className="text-xs text-slate-500 mt-2">
+                      Solo archivos .ZIP que contengan la carpeta .gdb
+                    </p>
                   </div>
                 )}
                 
