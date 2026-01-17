@@ -1811,12 +1811,11 @@ async def download_citizen_files_as_zip(petition_id: str, current_user: dict = D
     if not petition:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Petición no encontrada")
     
-    # Filter files uploaded by citizen
+    # Filter files uploaded by citizen (check string value, not enum)
     citizen_files = []
     for archivo in petition.get('archivos', []):
         uploaded_by_role = archivo.get('uploaded_by_role', 'usuario')
-        if uploaded_by_role == UserRole.USUARIO or not archivo.get('uploaded_by_role'):
-            # If no uploaded_by_role, assume it's from citizen (backward compatibility)
+        if uploaded_by_role == 'usuario' or not archivo.get('uploaded_by_role'):
             citizen_files.append(archivo)
     
     if not citizen_files:
@@ -1832,7 +1831,6 @@ async def download_citizen_files_as_zip(petition_id: str, current_user: dict = D
         for archivo in citizen_files:
             file_path = Path(archivo['path'])
             if file_path.exists():
-                # Add file to ZIP with original name
                 zipf.write(file_path, archivo['original_name'])
     
     return FileResponse(
