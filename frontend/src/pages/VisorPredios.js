@@ -1439,7 +1439,7 @@ export default function VisorPredios() {
               <MapContainer
                 center={defaultCenter}
                 zoom={defaultZoom}
-                maxZoom={15}
+                maxZoom={tileLayers[mapType]?.maxZoom || 18}
                 minZoom={5}
                 style={{ height: '100%', width: '100%' }}
                 ref={mapRef}
