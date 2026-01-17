@@ -19,7 +19,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 // Componente inteligente que cambia de Esri a Google cuando el zoom es alto
-const SmartTileLayer = ({ mapType, tileLayers }) => {
+const SmartTileLayer = ({ mapType, tileLayers, ortoimagenActiva }) => {
   const map = useMap();
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
   
@@ -28,6 +28,35 @@ const SmartTileLayer = ({ mapType, tileLayers }) => {
       setCurrentZoom(map.getZoom());
     }
   });
+  
+  // Si hay ortoimagen activa, mostrarla en lugar del mapa base
+  if (ortoimagenActiva) {
+    const ortoTileUrl = `${BACKEND_URL}/api/ortoimagenes/tiles/${ortoimagenActiva.id}/{z}/{x}/{y}.png`;
+    return (
+      <>
+        {/* Capa base para áreas fuera de la ortoimagen */}
+        <TileLayer
+          url={tileLayers.satellite.url}
+          attribution={tileLayers.satellite.attribution}
+          maxZoom={20}
+          opacity={0.3}
+        />
+        {/* Capa de ortoimagen personalizada */}
+        <TileLayer
+          key={`orto-${ortoimagenActiva.id}`}
+          url={ortoTileUrl}
+          attribution={`© Ortoimagen ${ortoimagenActiva.nombre}`}
+          maxZoom={ortoimagenActiva.zoom_max || 20}
+          minZoom={ortoimagenActiva.zoom_min || 14}
+          tms={true}
+          errorTileUrl=""
+        />
+        <div className="absolute bottom-8 left-2 z-[1000] bg-emerald-600/90 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+          🛰️ Ortoimagen: {ortoimagenActiva.nombre}
+        </div>
+      </>
+    );
+  }
   
   // Si es satélite y zoom > 17, usar Google automáticamente
   const effectiveLayer = (mapType === 'satellite' && currentZoom > 17) 
