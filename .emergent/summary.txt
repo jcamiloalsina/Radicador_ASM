@@ -1,63 +1,86 @@
 <analysis>**original_problem_statement:**
-The user wants to build a web application for cadastral management (gestoría catastral) called Asomunicipios. The initial goal was broad functionality, but the focus has pivoted to fixing user-reported bugs, improving user experience, and refining existing features like email notifications and PDF reports.
+The user wants to enhance the Asomunicipios cadastral management web application. The initial request was to fix a series of bugs related to dashboard counters and the notification system.
 
-**PRODUCT REQUIREMENTS:**
-- **Bug Fixes:**
-    - Login email must be case-insensitive.
-    - The petition ID () must be a global sequential number that does not reset daily.
-    - The property zona (zone) must be correctly interpreted from the national property code (00=Rural, 01=Urbano, 02-99=Corregimiento).
-    - The property list must be sorted by zone in ascending order.
-    - The Download ZIP button must work correctly (it was failing due to authentication).
-    - The Export Petitions to PDF feature was erroring out and had a poor design.
-    - Notification counters on the dashboard and in the bell icon are not updating correctly.
-    - The Devueltos (returned) petitions list shows a count but the list is empty.
-- **Feature Enhancements:**
-    - Redesign all email notifications to be more professional, including the company logo and a better layout.
-    - Implement a workflow where uploading a final document by staff automatically finalizes the petition and notifies the user with the file attached.
-    - Allow the user to configure which events trigger an email notification versus just an in-app notification to reduce email clutter.
-- **UI/UX:**
-    - Remove the non-functional Export PDF button from the individual petition view.
+After those fixes, the user made several new requests, supported by images:
+1.  **UI/Data Fixes:**
+    *   Display the  (real estate registration number) in the property details view.
+    *   Automatically format user names from all-caps (e.g., YACID PINO CARRASCAL) to title case with accents (Yacid Pino Carrascal).
+    *   Fix the Pending Changes view to show the full national property code () instead of an internal ID.
+2.  **Workflow Enhancements:**
+    *   Implement a full workflow for staff to **reject/return** a petition to the user with comments, allowing the user to correct and resubmit it.
+    *   Improve the Pending Changes modal to show a clear **before-and-after comparison** of the data being changed.
+    *   When a staff member rejects a pending change, they must provide a reason in a modal, and the user who proposed the change should be notified via an in-app notification.
+3.  **GDB & GIS Processing:**
+    *   Address an issue where uploading a GDB file (for Ábrego) deleted existing urban properties. This led to a requirement to **standardize the GDB layer names** (, , etc.) that the system will accept.
+    *   The system must be ableto process and link **construction layers** (, ) from the GDB to their corresponding land parcels.
+    *   The construction polygons should be visualized on the map viewer.
+    *   The system should validate the GDB before processing, creating a report of non-standard layers and any property codes with formatting errors.
+4.  **Bug Fix:**
+    *   An Excel export filtered for a specific year ( 2025) was incorrectly exporting data from 2023.
 
 **User's preferred language**: Spanish
 
 **what currently exists?**
-A full-stack application (FastAPI, React, MongoDB) for cadastral management. It includes role-based access, property and petition management, a GIS viewer, and a Docker-based deployment setup.
-
-In this session, a significant number of user-reported bugs were addressed. The login was made case-insensitive, the petition ID generation was fixed to be globally sequential, and the property zone logic was corrected throughout the application. The email notification templates were completely redesigned for a more professional look. A new workflow was added to auto-finalize petitions upon final document upload. The PDF report for petitions was overhauled to include statistical charts and a clean layout. The API was updated to remove limits on data fetching.
+A full-stack application (FastAPI, React, MongoDB). In this session, the agent fixed all the initial bugs related to notifications and dashboard counters. It then implemented a significant number of new features based on user requests:
+- **Workflows:** A complete petition rejection/return flow is implemented. The pending changes approval process now includes a comparison view and a rejection modal with mandatory comments and notifications.
+- **Data Formatting:** User names are now automatically formatted to title case with accents on creation and update. An endpoint to migrate existing names was also created.
+- **UI/UX:** The  and correct property codes are now displayed in their respective views.
+- **GIS/GDB:** The backend can now process standardized GDB layers, including , , and construction layers. It links constructions to their parent parcels. The frontend  was updated to render both land and construction polygons.
+- **Bug Fixes:** The Excel export  bug was fixed.
 
 **Last working item**:
-- **Last item agent was working:** The agent was addressing a set of related bugs concerning the notification system and dashboard counters, as reported by the user. The user also specified which notifications should be sent via email versus which should only appear in the application.
+- **Last item agent was working:** The agent was performing a live demonstration for the user by loading a real GDB file (for Ábrego) and visualizing a property with its associated constructions on the map. The agent successfully loaded the data and displayed the property's land parcel (yellow polygon). However, the associated construction polygons (red) were not appearing on the map.
 - **Status:** IN PROGRESS
 - **Agent Testing Done:** N
 - **Which testing method agent to use?** both
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: Notification and Counter Bugs (P0)**
-- **Issue 2: GDB Not Linking to All Properties (P1)**
+- **Issue 1: Construction Visualization Bug (P0)**
+- **Issue 2: Database Inconsistency (P1)**
+- **Issue 3: GDB Not Linking to All Properties (P2)**
 
 **Issues Detail:**
-- **Issue 1: Notification and Counter Bugs**
-    - **Description:** A group of related UI bugs:
-        1.  The Devueltos (Returned) card on the dashboard shows a count of 1, but the corresponding list is empty.
-        2.  The Pendientes (Pending) counter in the sidebar does not update correctly after a petition is actioned.
-        3.  Notifications viewed via the bell icon in the header are not being marked as read, and the unread count persists.
-    - **Attempted fixes:** The agent fixed the root cause of the Devueltos bug by removing the hard limit on the number of petitions fetched from the backend API. However, the UI counter and notification read status issues were not fixed.
+- **Issue 1: Construction Visualization Bug**
+    - **Description:** After successfully loading a GDB with construction data, the construction polygons are not being rendered on the map in . The agent debugged and confirmed the backend endpoint () is correctly returning the construction data and geometries. The root cause is an incorrect coordinate transformation (CRS projection) in the backend, resulting in longitude values outside of Colombia (e.g., -106 instead of -73).
+    - **Attempted fixes:** Confirmed the backend endpoint returns data.
     - **Next debug checklist:**
-        1.  **Backend:** In , review the  and  (or similar) endpoints. Ensure the logic to update the  flag in the  collection is correct and functioning.
-        2.  **Frontend:** In , inspect the  function and the event handlers for the bell icon. Verify that the API call to mark notifications as read is being triggered correctly upon interaction.
-        3.  **Frontend:** In  (for dashboard cards) and  (for the sidebar), review how the counts for pending/returned tasks are fetched and managed in the state. The state needs to be updated or re-fetched after a petition's status changes.
+        1.  In , locate the  endpoint.
+        2.  Review the usage: pyproj [-h] [-v] {sync} ...
+
+pyproj version: 3.7.2 [PROJ version: 9.5.1]
+
+options:
+  -h, --help     show this help message and exit
+  -v, --verbose  Show verbose debugging version information.
+
+commands:
+  {sync} or  logic that re-projects the coordinates from the source CRS to WGS84 (EPSG:4326).
+        3.  Ensure the correct source CRS is being used for the transformation.
     - **Status:** IN PROGRESS
     - **Is recurring issue?** N
     - **Should Test frontend/backend/both after fix?** both
     - **Blocked on other issue:** None
 
-- **Issue 2: GDB Not Linking to All Properties**
-    - **Description:** A recurring and unresolved issue where the automated process to link properties from the database ( collection) to their corresponding GDB geometries is incomplete. This results in many properties lacking a map representation.
-    - **Attempted fixes:** None in this session. A previous session highlighted the problem but did not resolve the root cause.
+- **Issue 2: Database Inconsistency**
+    - **Description:** During debugging, the agent discovered that data is scattered across at least two MongoDB databases ( and ), but the application's  file is configured to use . This has caused confusion and apparent data loss when collections were empty in one database but populated in another.
+    - **Attempted fixes:** None. The issue was only identified.
     - **Next debug checklist:**
-        1.  Analyze a sample of unlinked properties from Sardinata and Hacarí.
-        2.  Compare the  in the  collection with the  field in the  collection to find mismatch patterns.
+        1.  Decide with the user which database should be the single source of truth (likely ).
+        2.  Create a backup of both databases.
+        3.  Write and execute a migration script to merge any necessary data from  into .
+        4.  Update the  variable in  to point to the correct database ().
+    - **Status:** NOT STARTED
+    - **Is recurring issue?** N
+    - **Should Test frontend/backend/both after fix?** Backend
+    - **Blocked on other issue:** None
+
+- **Issue 3: GDB Not Linking to All Properties**
+    - **Description:** A recurring and unresolved issue where the automated process to link properties from the  collection to their corresponding  is incomplete, resulting in many properties lacking a map representation. This issue was deprioritized to address new user requests but remains unresolved.
+    - **Attempted fixes:** None in this session.
+    - **Next debug checklist:**
+        1.  Analyze a sample of unlinked properties.
+        2.  Compare the  in  with the  in  to find mismatch patterns.
         3.  Refine the matching logic in the  function in .
     - **Status:** NOT STARTED
     - **Is recurring issue?** Y
@@ -65,27 +88,22 @@ In this session, a significant number of user-reported bugs were addressed. The 
     - **Blocked on other issue:** None
 
 **In progress Task List**:
-- **Task 1: Finalize Notification Logic Implementation (P0)**
+- **Task 1: Implement GDB Validation Report (P1)**
 
 **Task Detail:**
-- **Task 1: Finalize Notification Logic Implementation**
-    - **Where to resume:** The user selected which events should trigger an email. The agent started by commenting out the corresponding  calls in . The next step is to replace these commented-out calls with the appropriate  function call to create an in-app notification instead. This needs to be done for:
-        - New petition creation ( function)
-        - Gestor assignment ( function)
-        - New file uploads ( function)
-    - **What will be achieved with this?** The notification system will align with the user's requirements, sending emails only for critical events (like petition finalization) and using in-app notifications for less critical updates, reducing email spam.
+- **Task 1: Implement GDB Validation Report**
+    - **Where to resume:** The backend logic for GDB analysis is partially built. The next step is to create a user-facing UI (likely a new page or modal) that presents the validation report before the final GDB processing begins.
+    - **What will be achieved with this?** The user will be able to upload a GDB, see a report of which layers are standard and will be processed, which are non-standard and will be ignored, and a list of any property codes with formatting errors. It will also include an option to download the list of erroneous codes as an Excel file. This fulfills the user's request for better quality control over GDB uploads.
     - **Status:** IN PROGRESS
-    - **Should Test frontend/backend/both after fix?** Backend
+    - **Should Test frontend/backend/both after fix?** both
     - **Blocked on something:** None
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-  - **P0: Enhance PWA Offline Functionality:** Implement a robust offline strategy for the PWA to allow consultation of properties, R1/R2 data, and the map viewer without an internet connection.
-  - **P1: Implement Petition Rejection Workflow:** A core requirement where a rejected petition returns to the creator with an editable observaciones field for correction and resubmission.
-  - **P2: Implement Permissions Change History:** An admin feature to view a log of all permission changes made to users.
-
+  - **P0: PWA Offline Functionality:** Implement a robust offline strategy for property and map consultation.
+  - **P1: Permissions Change History:** Admin feature to log all user permission changes.
 - **Future Tasks (On Hold):**
-  - **Implement XTF File Generation:** This major feature is explicitly on hold.
+  - Implement XTF File Generation.
   - Redesign the Cadastral Certificate PDF.
   - Track  productivity.
   - Generate PDFs for Administrative Acts.
@@ -93,23 +111,17 @@ In this session, a significant number of user-reported bugs were addressed. The 
   - Implement Automatic Database Backups.
 
 **Completed work in this session**
-- **Bug Fix: Case-Insensitive Login:** User login is no longer case-sensitive for the email field.
-- **Bug Fix: Sequential Petition ID:** The  ID is now globally sequential and no longer resets daily. A  collection was added to MongoDB to manage this.
-- **Bug Fix: Correct Zone Logic:** The application now correctly interprets and displays the property zone (Rural, Urbano, Corregimiento) based on the national property code.
-- **Bug Fix: Property List Sorting:** The list of properties is now correctly sorted by zone in ascending order ( first).
-- **Feature: Professional Email Templates:** All system emails were redesigned with a professional HTML template, including the Asomunicipios logo and improved layout.
-- **Feature: Auto-Finalize on Upload:** When staff upload a final document, the petition is now automatically marked as Finalizado and a notification email with the attachment is sent to the user.
-- **Feature: Redesigned PDF Report:** The Export Petitions to PDF report was completely redesigned with a professional layout, a cover page with statistical charts (pie, bar), and fixed data mapping errors.
-- **Bug Fix: Download ZIP Functionality:** The Download ZIP button was fixed to handle authentication correctly, allowing users to download files.
-- **Bug Fix: API Petition Limit Removed:** The backend API no longer has a hard limit on the number of petitions it returns, fixing an issue where old petitions were not visible.
-- **UI Cleanup:** The non-functional Exportar PDF button was removed from the petition detail view.
+- **Bug Fix:** All initial notification and dashboard counter bugs were fixed and verified.
+- **Feature: Petition Rejection Workflow:** A complete flow for returning petitions with comments and allowing user resubmission has been implemented.
+- **Feature: Pending Change Enhancements:** The approval modal now shows a before/after comparison, and the rejection process requires comments and sends an in-app notification.
+- **Feature: GDB Construction Processing:** The backend now reads standardized construction layers (, ) from GDBs and links them to land parcels.
+- **Feature: Construction Visualization:** The  map viewer was updated to display construction polygons (though currently bugged).
+- **Feature: Name Formatting:** User names are automatically converted to title case with accents.
+- **Bug Fix:** The Excel export now correctly uses the selected .
+- **UI Fixes:**  and the full national property code are now displayed correctly.
 
 **Earlier issues found/mentioned but not fixed**
-- **Issue 1: Cadastral Certificate PDF layout does not match the user's example.**
-    - **Debug checklist:** Requires a complete redesign of the PDF generation logic for the certificate to match the user-provided layout.
-    - **Why to solve this issue and what will be achieved with this?** This is a core business requirement for official document generation.
-    - **Should Test frontend/backend/both after fix:** Backend.
-    - **Is recurring issue?** N
+None. All user-reported issues from this session were either fixed or are listed in the pending issues.
 
 **Known issue recurrence from previous fork**
 - **Issue recurrence in previous fork:** GDB Not Linking to All Properties
@@ -120,84 +132,104 @@ In this session, a significant number of user-reported bugs were addressed. The 
 
 
 **Key Technical Concepts**
-- **Backend:** FastAPI, Motor (AsyncIOMotorClient), ReportLab, Matplotlib
-- **Frontend:** React, React Router, Tailwind CSS, shadcn/ui
-- **Database:** MongoDB aggregation pipeline (, , ), atomic increments ().
-- **Deployment:** Docker, Docker Compose, Nginx
+- **Backend:** FastAPI, Motor, ReportLab, Matplotlib, **pyogrio**, **shapely**, **pyproj**, **unrar-cffi**.
+- **Frontend:** React, React Router, Tailwind CSS, shadcn/ui, **react-leaflet**.
+- **GIS:** Coordinate Reference System (CRS) transformation, GDB layer parsing, linking geometries based on attribute fields ().
 
 **key DB schema**
-- ****: **NEW** collection created to manage global sequential IDs.
-  - :  (e.g., radicado_counter)
-  - :  (the last used value)
+- ****: **NEW** collection to store geometries for constructions.
+  - :  (construction code)
+  - :  (links to the parent  )
+  - :  (GeoJSON)
+  - :  (e.g., , )
+- ****: **MODIFIED** to include fields for the rejection workflow.
+  - : 
+  - : 
+  - : 
+  - : 
 
 **changes in tech stack**
-- **Matplotlib** was introduced and used in the backend to generate the charts for the PDF report.
+- **unrar-cffi**: Added to handle  file extraction for GDBs.
 
 **All files of reference**
-- : The central file for almost all changes in this session, including bug fixes, email templates, and PDF generation.
-- : Contains the logic for auto-finalizing petitions and the corrected ZIP download feature.
-- : Contains the corrected logic for displaying the property zone.
-- : Where the dashboard counters are displayed (buggy).
-- : Where the sidebar counters and notification bell are managed (buggy).
+- : The core file for all backend logic, including GIS processing and new endpoints.
+- : Contains all logic for map display, including fetching and rendering land parcels and constructions.
+- : Contains the UI for approving/rejecting pending changes.
+- : Contains the UI for the petition rejection/return workflow.
+- : A static asset created to document GDB standards for the user's team.
 
 **Areas that need refactoring**:
-- ****: This file is now extremely large (over 7000 lines) and difficult to maintain. It is critical to break it down into multiple smaller files based on functionality (e.g., , , ).
-- ****: This component handles many states and actions; it could be broken down into smaller sub-components.
+- ****: The file is critically oversized and complex. It urgently needs to be broken down into a structured project with routers (e.g., , ), services, and models.
+- **Database Configuration:** The application needs a single, unified database. The current state of using multiple databases is a high-risk source of bugs.
 
 **key api endpoints**
-- : **MODIFIED**. Completely rewritten to generate a new professional PDF report with charts.
-- : **MODIFIED**. The  was removed to return all petitions.
-- : The frontend implementation was changed to call this with an authenticated  request instead of .
-- : The frontend now triggers an automatic finalization flow after a successful upload by staff.
+- : **MODIFIED**. Now handles rejections with comments and triggers notifications.
+- : **MODIFIED**. Now accepts a  query parameter.
+- : **NEW**. Analyzes a GDB file and returns a report of its layers.
+- : **NEW**. Fetches all construction geometries associated with a given land parcel.
+- : **NEW**. Allows a user to resubmit a returned petition.
 
 **Critical Info for New Agent**
-- **Refactor :** The  file has become a monolith. The next agent should strongly consider planning a refactoring task to split it into routers and services to improve maintainability.
-- **Notification Logic is Mid-Flight:** The work to align notifications with user preferences is incomplete. The agent must finish replacing  calls with  and then address the related UI counter bugs.
-- **PDF Generation uses Matplotlib:** The new professional PDF report for petitions uses  to generate charts as images, which are then embedded into the PDF using . The font Calibri Light was requested by the user.
+- **Database Chaos is Real:** The most critical non-coding issue is the presence of multiple databases (, ). The app is currently pointed at , which may have incomplete data. You must resolve this by consolidating data and updating the  file to prevent severe data inconsistencies.
+- **Fix the Coordinate Bug:** The immediate coding task is to fix the coordinate projection bug in the  endpoint. The constructions are being found, but their geometry is being transformed incorrectly, preventing them from appearing on the map. Look at the usage: pyproj [-h] [-v] {sync} ...
+
+pyproj version: 3.7.2 [PROJ version: 9.5.1]
+
+options:
+  -h, --help     show this help message and exit
+  -v, --verbose  Show verbose debugging version information.
+
+commands:
+  {sync} logic in .
+- **GDB Standardization is the Goal:** The user has agreed on a strict standard for GDB layer names (e.g., , , with no suffixes like ). The next step is to build the UI for the validation report that enforces this standard and flags errors.
 
 **documents and test reports created in this job**
-None.
+- 
+- 
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **msg 566:** User confirmed notification preferences (send email for 1, 2, 3, 5) and insisted the platform must search all petitions, not a limited number. **Status: IN PROGRESS.**
-2.  **msg 523:** User reported multiple bugs: Devueltos count is wrong, pending counters don't update, notifications aren't marked as read. Also requested a proposal for which notifications should be emails. **Status: IN PROGRESS.**
-3.  **msg 504:** User provided feedback on the redesigned PDF: the first page needs to be more professional, text is overlapping on the chart, and requested Calibri Light font. **Status: DONE.**
-4.  **msg 471:** User reported bugs: ZIP download fails (Not authenticated) and the exported PDF has a disproportionate logo and overlapping text. **Status: DONE.**
-5.  **msg 427:** User reported bugs: email image is missing, Descargar ZIP doesn't work, and Exportar listado en PDF throws an error. **Status: DONE.**
-6.  **msg 420:** User asked if the login page background image could be used in the emails. **Status: DONE.**
-7.  **msg 407:** User requested removing the street pattern background from emails if it doesn't look like the login page background. **Status: DONE.**
-8.  **msg 392:** User noted the transparent street background was not implemented in the email. **Status: DONE.**
-9.  **msg 358:** User reported 3 issues: remove Exportar PDF button, asked for confirmation on auto-finalize flow, and pointed out 60 60 text appearing in emails. **Status: DONE.**
-10. **msg 355:** User requested improving the email notification design with the company logo and a more visually appealing layout, like the login page. **Status: DONE.**
+1.  **msg 479:** No, I want to see it as if it were the live platform, please. User rejected a mock-up image and requested a live demo. **Status: DONE.**
+2.  **msg 475:** Yes, but I would like to see it on the platform or for you to generate an image. User requested a visual confirmation of the construction feature. **Status: IN PROGRESS.**
+3.  **msg 471:** Proceed with everything. I understand we are going to standardize the names, however I would like to see how you will relate the construction to a property before you format the layer names. User approved the plan but wanted to see the construction-linking logic first. **Status: DONE.**
+4.  **msg 462:** 1. Make the standardization table an image to download and send to the GIS team. 2. I dont quite understand the property code validation. 3. I like the options but Id like a real-world example to understand what error you identify, before applying. User requested a downloadable asset and more clarity on the validation logic. **Status: DONE.**
+5.  **msg 458:** Recommendation A. Lets standardize with a single name... Make me a table of how it will look to share with the GIS group... The system should read the layers and notify which ones are not written as allowed and load the ones that pass... and I need the property codes with format errors, what do you suggest for this point? I would like to see an example first." User confirms the standardization strategy and asks for specific deliverables. **Status: DONE.**
+6.  **msg 438:** "I need you to read the following GDB from Ábrego... the layers are U_Terreno and R_Terreno... How do we incorporate them... or do you think we should just leave Terreno and construction?" User uploaded a real GDB and asked for advice on handling non-standard layer names. **Status: IN PROGRESS.**
+7.  **msg 359:** "Yes please, lets do a test. User requested a live test of the implemented features. **Status: IN PROGRESS.**
+8.  **msg 255:** User confirms all proposals for the second round of features (comparison view, rejection modal, GDB standardization, Excel fix) and clarifies priorities/details. **Status: DONE.**
+9.  **msg 243:** User provided a new batch of major feature requests and bug reports with images, including the GDB issue, the Excel  bug, and the need for a UI to compare pending changes. **Status: IN PROGRESS.**
+10. **msg 221:** What happened that you are not doing the pending tasks?. User intervened after the agent got stuck in a timeout loop. **Status: DONE.**
 
 **Project Health Check:**
 - **Broken:**
-    - The notification system (marking as read, UI counters).
-    - The GDB-to-property linking process remains a critical data integrity issue.
+    - **Construction Visualization:** Geometries are not appearing on the map due to a coordinate projection bug.
+    - **Database Integrity:** The application is using one of several databases (), leading to data inconsistency and potential data loss. This is a critical architectural flaw.
 - **Mocked:** None.
 
 **3rd Party Integrations**
-- **react-leaflet:** Map visualization.
-- **openpyxl:** Excel file processing.
-- **pyogrio, shapely, pyproj, geopandas:** Advanced GIS data processing.
-- **ReportLab:** PDF generation.
-- **Matplotlib:** **NEW**. Used for generating charts within PDFs.
-- **Office 365 SMTP:** For sending transactional emails.
+- react-leaflet
+- openpyxl
+- pyogrio, shapely, pyproj, geopandas
+- ReportLab
+- Matplotlib
+- Office 365 SMTP
+- **unrar-cffi** (NEW)
 
 **Testing status**
-- **Testing agent used after significant changes:** NO
+- **Testing agent used after significant changes:** YES
 - **Troubleshoot agent used after agent stuck in loop:** NO
-- **Test files created:** None
-- **Known regressions:** The notification counter system seems to have regressed or was revealed to be buggy.
+- **Test files created:**
+    - 
+    - 
+- **Known regressions:** None.
 
 **Credentials to test flow:**
 - **Administrator:**
   - **Email:** 
   - **Password:** 
-- **Usuario (Test Account):**
+- **Gestor (Example from DB):**
   - **Email:** 
   - **Password:** 
 
 **What agent forgot to execute**
-- The agent was in the middle of implementing the user's notification preferences and did not complete the task.
-- The agent did not fix the UI bugs related to the notification counters and mark as read functionality, despite identifying the problem area.</analysis>
+- The migration script to format names in the existing  collection was not successfully run due to timeouts and subsequent database inconsistencies. This task should be re-attempted after the database is consolidated.</analysis>
