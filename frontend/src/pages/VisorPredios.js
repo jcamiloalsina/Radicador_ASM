@@ -576,10 +576,19 @@ export default function VisorPredios() {
       
     } catch (error) {
       console.error('Error al analizar GDB:', error);
+      // Obtener mensaje de error legible
+      let errorMessage = 'Error desconocido';
+      if (error.response?.data?.detail) {
+        errorMessage = typeof error.response.data.detail === 'string' 
+          ? error.response.data.detail 
+          : JSON.stringify(error.response.data.detail);
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       // Si falla el análisis, preguntar si desea continuar sin validación
       const continuar = window.confirm(
-        'No se pudo validar la estructura de la GDB. ¿Desea continuar con la carga de todos modos?\n\n' +
-        'Error: ' + (error.response?.data?.detail || error.message)
+        `No se pudo validar la estructura de la GDB.\n\nError: ${errorMessage}\n\n¿Desea continuar con la carga de todos modos?`
       );
       
       if (continuar) {
