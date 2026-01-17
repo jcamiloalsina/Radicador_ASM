@@ -3255,8 +3255,8 @@ export default function Predios() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-500">Código Homologado</p>
-                      <p className="font-medium text-slate-700">{selectedPredio.codigo_homologado}</p>
+                      <p className="text-xs text-slate-500">Matrícula Inmobiliaria</p>
+                      <p className="font-medium text-slate-700">{selectedPredio.r2_registros?.[0]?.matricula_inmobiliaria || selectedPredio.matricula_inmobiliaria || 'Sin matrícula'}</p>
                     </div>
                   </div>
                 </div>
@@ -3266,10 +3266,13 @@ export default function Predios() {
               <Card>
                 <CardHeader className="py-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <LayoutGrid className="w-4 h-4" /> Ubicación Código Nacional Catastral
+                    <LayoutGrid className="w-4 h-4" /> Ubicación - Código Nacional Predial
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="col-span-3 bg-emerald-50 p-2 rounded">
+                    <span className="text-slate-500">CNP:</span> <strong className="text-emerald-800">{selectedPredio.codigo_predial_nacional}</strong>
+                  </div>
                   <div><span className="text-slate-500">Departamento:</span> <strong>{selectedPredio.departamento || getCodigoPartes(selectedPredio.codigo_predial_nacional).departamento}</strong></div>
                   <div><span className="text-slate-500">Municipio:</span> <strong>{selectedPredio.municipio}</strong></div>
                   <div><span className="text-slate-500">Zona:</span> <strong>{getZonaFromCodigo(selectedPredio.codigo_predial_nacional).texto}</strong></div>
