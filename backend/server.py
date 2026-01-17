@@ -8490,7 +8490,28 @@ async def upload_gdb_file(
         except Exception as e:
             logger.warning(f"Error leyendo capas GDB: {e}")
         
-        update_progress("guardando_geometrias", 50, f"Guardando {len(codigos_gdb)} geometrías únicas...")
+        # === DETECCIÓN AUTOMÁTICA DEL MUNICIPIO DESDE LOS CÓDIGOS PREDIALES ===
+        # Los códigos prediales tienen formato: DDMMMZZZ... donde DD=depto, MMM=municipio
+        if codigos_gdb:
+            codigo_municipio_detectado = None
+            for codigo in codigos_gdb:
+                if len(codigo) >= 5:
+                    # Tomar los primeros 5 dígitos (departamento + municipio)
+                    codigo_muni = codigo[:5]
+                    if codigo_muni in CODIGO_TO_MUNICIPIO:
+                        codigo_municipio_detectado = codigo_muni
+                        municipio_detectado_desde_codigos = CODIGO_TO_MUNICIPIO[codigo_muni]
+                        break
+            
+            if municipio_detectado_desde_codigos:
+                logger.info(f"GDB: Municipio detectado desde códigos prediales: {municipio_detectado_desde_codigos} (código {codigo_municipio_detectado})")
+                if municipio_nombre_inicial and municipio_nombre_inicial != municipio_detectado_desde_codigos:
+                    logger.warning(f"GDB: Discrepancia - Nombre archivo: {municipio_nombre_inicial}, Códigos prediales: {municipio_detectado_desde_codigos}")
+        
+        # Usar el municipio detectado desde códigos si está disponible, sino el del nombre del archivo
+        municipio_nombre = municipio_detectado_desde_codigos or municipio_nombre_inicial or gdb_name
+        
+        update_progress("guardando_geometrias", 50, f"Guardando {len(codigos_gdb)} geometrías de {municipio_nombre}...")
         
         # Guardar geometrías en colección para búsquedas posteriores
         geometrias_guardadas = 0
