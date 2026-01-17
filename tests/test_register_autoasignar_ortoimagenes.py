@@ -198,19 +198,25 @@ class TestAutoAsignacion:
     
     def test_auto_asignar_updates_petition_state(self):
         """POST /api/petitions/{id}/auto-asignar should update petition state to 'asignado'"""
-        # Create a new petition
-        create_response = self.session.post(f"{BASE_URL}/api/petitions", json={
-            "nombre_completo": f"Test State Update {uuid.uuid4().hex[:6]}",
-            "correo": f"test_state_{uuid.uuid4().hex[:6]}@test.com",
-            "telefono": "3001234567",
-            "tipo_tramite": "Certificado Catastral",
-            "municipio": "Ocaña"
-        })
+        # Get a petition in radicado state
+        petitions_response = self.session.get(f"{BASE_URL}/api/petitions?estado=radicado&limit=10")
         
-        if create_response.status_code not in [200, 201]:
-            pytest.skip("Could not create test petition")
+        if petitions_response.status_code != 200:
+            pytest.skip("Could not fetch petitions")
         
-        petition_id = create_response.json().get("id")
+        petitions = petitions_response.json()
+        if isinstance(petitions, dict):
+            petitions = petitions.get("petitions", [])
+        
+        # Find a petition that is not already assigned to current user
+        petition_id = None
+        for p in petitions:
+            if self.user["id"] not in p.get("gestores_asignados", []):
+                petition_id = p["id"]
+                break
+        
+        if not petition_id:
+            pytest.skip("No unassigned petitions available for testing")
         
         # Auto-assign
         assign_response = self.session.post(f"{BASE_URL}/api/petitions/{petition_id}/auto-asignar")
