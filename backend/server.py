@@ -1982,11 +1982,31 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
                 
                 # Usar plantilla especial para finalización
                 if estado_nuevo == PetitionStatus.FINALIZADO:
+                    # Verificar si hay archivos del staff para adjuntar
+                    archivos_staff = petition.get('archivos_staff', [])
+                    enviar_archivos = update_data.enviar_archivos_finalizacion and len(archivos_staff) > 0
+                    
                     email_body = get_finalizacion_email(
                         radicado=petition['radicado'],
                         tipo_tramite=petition['tipo_tramite'],
                         nombre_solicitante=nombre_solicitante,
-                        con_archivos=False  # TODO: implementar lógica de archivos adjuntos
+                        con_archivos=enviar_archivos
+                    )
+                    
+                    # Si se deben enviar archivos, prepararlos
+                    attachments = []
+                    if enviar_archivos:
+                        uploads_dir = Path("uploads") / petition_id
+                        for archivo in archivos_staff:
+                            archivo_path = uploads_dir / archivo.get('filename', '')
+                            if archivo_path.exists():
+                                attachments.append(str(archivo_path))
+                    
+                    await send_email(
+                        citizen['email'],
+                        f"¡Trámite Finalizado! - {petition['radicado']}",
+                        email_body,
+                        attachments=attachments if attachments else None
                     )
                 else:
                     email_body = get_actualizacion_email(
@@ -1994,12 +2014,12 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
                         estado_nuevo=estado_nuevo,
                         nombre_solicitante=nombre_solicitante
                     )
-                
-                await send_email(
-                    citizen['email'],
-                    f"Actualización de Trámite - {petition['radicado']}",
-                    email_body
-                )
+                    
+                    await send_email(
+                        citizen['email'],
+                        f"Actualización de Trámite - {petition['radicado']}",
+                        email_body
+                    )
     
     updated_petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
     
