@@ -786,6 +786,34 @@ export default function VisorPredios() {
                 </div>
               )}
               
+              {/* Mensaje de Error si no puede procesar */}
+              {gdbAnalisis.mensaje_error && (
+                <div className="border-2 border-red-500 bg-red-100 rounded-lg p-4">
+                  <h4 className="font-bold text-red-800 flex items-center gap-2 mb-2">
+                    <XCircle className="w-5 h-5" />
+                    NO SE PUEDE PROCESAR
+                  </h4>
+                  <p className="text-red-700 text-sm">{gdbAnalisis.mensaje_error}</p>
+                  {gdbAnalisis.capas_faltantes?.length > 0 && (
+                    <p className="text-red-600 text-xs mt-2">
+                      Capas faltantes: <strong>{gdbAnalisis.capas_faltantes.join(', ')}</strong>
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              {/* Recomendaciones */}
+              {gdbAnalisis.analisis?.recomendaciones?.length > 0 && (
+                <div className="border border-amber-200 bg-amber-50 rounded-lg p-3">
+                  <h4 className="font-medium text-amber-800 mb-2">📋 Recomendaciones</h4>
+                  <ul className="text-sm text-amber-700 space-y-1">
+                    {gdbAnalisis.analisis.recomendaciones.map((rec, idx) => (
+                      <li key={idx}>{rec}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
               {/* Estadísticas */}
               {(gdbAnalisis.validacion_codigos?.codigos_validos !== undefined || gdbAnalisis.codigos_validos !== undefined) && (
                 <div className="border border-slate-200 bg-slate-50 rounded-lg p-3">
