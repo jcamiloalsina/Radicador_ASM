@@ -2688,9 +2688,9 @@ async def reenviar_petition(petition_id: str, current_user: dict = Depends(get_c
 
 @api_router.get("/gestores")
 async def get_gestores(current_user: dict = Depends(get_current_user)):
-    # Get all gestores, auxiliares y atención al usuario (pueden ser asignados a trámites)
+    # Get all users that can be assigned to petitions (gestores, auxiliares, atencion_usuario, coordinadores, admin)
     gestores = await db.users.find(
-        {"role": {"$in": [UserRole.GESTOR, UserRole.ATENCION_USUARIO]}},
+        {"role": {"$in": [UserRole.GESTOR, UserRole.ATENCION_USUARIO, UserRole.COORDINADOR, UserRole.ADMINISTRADOR]}},
         {"_id": 0, "password": 0}
     ).sort("full_name", 1).to_list(1000)  # Ordenar alfabéticamente por nombre
     
