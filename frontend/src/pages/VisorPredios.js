@@ -431,12 +431,14 @@ export default function VisorPredios() {
 
   const formatArea = (area) => {
     if (!area) return '0 m²';
-    if (area >= 10000) {
-      const ha = Math.floor(area / 10000);
-      const m2 = Math.floor(area % 10000);
+    const areaNum = parseFloat(area);
+    if (isNaN(areaNum)) return '0 m²';
+    if (areaNum >= 10000) {
+      const ha = Math.floor(areaNum / 10000);
+      const m2 = Math.floor(areaNum % 10000);
       return `${ha} ha ${m2} m²`;
     }
-    return `${area} m²`;
+    return `${areaNum.toFixed(2)} m²`;
   };
 
   // Estilo de polígonos de TERRENO - Cyan/Blanco para visibilidad en satélite
