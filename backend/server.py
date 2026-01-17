@@ -9324,49 +9324,318 @@ async def update_user_gdb_permission(
     }
 
 
-# ===== ORTOIMÁGENES - TILES XYZ =====
+# ===== ORTOIMÁGENES - SISTEMA DE CARGA Y TILES XYZ =====
 
 ORTOIMAGENES_PATH = Path("/app/ortoimagenes/tiles")
+ORTOIMAGENES_ORIGINALES_PATH = Path("/app/ortoimagenes/originales")
 
-# Registro de ortoimágenes disponibles
-ORTOIMAGENES_DISPONIBLES = {
-    "ocana": {
-        "nombre": "Ortoimagen Ocaña (Prueba)",
-        "municipio": "Ocaña",
-        "descripcion": "Barrio de prueba - Ortoimagen de alta resolución",
-        "zoom_min": 14,
-        "zoom_max": 20,
-        "bounds": [[-73.34486140341858, 8.23718522977008], [-73.34203180495008, 8.24056119762953]],  # SW, NE corners desde tilemapresource.xml
-        "fecha_captura": "2024",
-        "resolucion": "~15cm"
-    }
-}
+# Asegurar que los directorios existan
+ORTOIMAGENES_PATH.mkdir(parents=True, exist_ok=True)
+ORTOIMAGENES_ORIGINALES_PATH.mkdir(parents=True, exist_ok=True)
+
+# Diccionario para tracking de progreso de procesamiento de ortoimágenes
+ortoimagen_processing_progress = {}
 
 @api_router.get("/ortoimagenes/disponibles")
-async def listar_ortoimagenes():
-    """Lista las ortoimágenes disponibles en el sistema"""
+async def listar_ortoimagenes(current_user: dict = Depends(get_current_user)):
+    """Lista las ortoimágenes disponibles en el sistema (desde MongoDB)"""
+    ortoimagenes = await db.ortoimagenes.find(
+        {"activa": True},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Verificar que los tiles existan físicamente
     result = []
-    for key, info in ORTOIMAGENES_DISPONIBLES.items():
-        tile_path = ORTOIMAGENES_PATH / key
+    for orto in ortoimagenes:
+        tile_path = ORTOIMAGENES_PATH / orto["id"]
         if tile_path.exists():
-            result.append({
-                "id": key,
-                "activa": True,
-                **info
-            })
+            result.append(orto)
+    
     return {"ortoimagenes": result}
+
+@api_router.get("/ortoimagenes/todas")
+async def listar_todas_ortoimagenes(current_user: dict = Depends(get_current_user)):
+    """Lista todas las ortoimágenes (activas e inactivas) - solo para admin/coordinador"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    ortoimagenes = await db.ortoimagenes.find({}, {"_id": 0}).to_list(100)
+    return {"ortoimagenes": ortoimagenes}
+
+@api_router.post("/ortoimagenes/subir")
+async def subir_ortoimagen(
+    file: UploadFile = File(...),
+    nombre: str = Form(...),
+    municipio: str = Form(...),
+    descripcion: str = Form(""),
+    background_tasks: BackgroundTasks = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Sube una ortoimagen (GeoTIFF) y la procesa en tiles XYZ.
+    Solo usuarios con permiso 'upload_gdb' pueden subir ortoimágenes.
+    """
+    # Verificar permisos: admin, coordinador, o gestor con permiso upload_gdb
+    user_db = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
+    permissions = user_db.get('permissions', [])
+    
+    has_permission = (
+        current_user['role'] in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR] or
+        (current_user['role'] == UserRole.GESTOR and 'upload_gdb' in permissions)
+    )
+    
+    if not has_permission:
+        raise HTTPException(status_code=403, detail="No tiene permiso para subir ortoimágenes")
+    
+    # Validar archivo
+    if not file.filename.lower().endswith(('.tif', '.tiff', '.geotiff')):
+        raise HTTPException(status_code=400, detail="Solo se aceptan archivos GeoTIFF (.tif, .tiff)")
+    
+    # Generar ID único para la ortoimagen
+    orto_id = f"orto_{uuid.uuid4().hex[:8]}"
+    
+    # Guardar archivo original
+    original_path = ORTOIMAGENES_ORIGINALES_PATH / f"{orto_id}.tif"
+    
+    try:
+        # Guardar archivo en chunks para manejar archivos grandes
+        with open(original_path, "wb") as buffer:
+            while chunk := await file.read(1024 * 1024):  # 1MB chunks
+                buffer.write(chunk)
+        
+        file_size = original_path.stat().st_size
+        logger.info(f"Ortoimagen guardada: {original_path} ({file_size / (1024*1024):.2f} MB)")
+        
+    except Exception as e:
+        logger.error(f"Error guardando ortoimagen: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al guardar el archivo: {str(e)}")
+    
+    # Inicializar progreso
+    ortoimagen_processing_progress[orto_id] = {
+        "status": "subido",
+        "progress": 10,
+        "message": "Archivo recibido, iniciando procesamiento..."
+    }
+    
+    # Crear registro en MongoDB
+    orto_doc = {
+        "id": orto_id,
+        "nombre": nombre,
+        "municipio": municipio,
+        "descripcion": descripcion,
+        "archivo_original": str(original_path),
+        "activa": False,  # Se activa cuando termine el procesamiento
+        "procesando": True,
+        "zoom_min": 14,
+        "zoom_max": 20,
+        "bounds": None,  # Se llena después del procesamiento
+        "fecha_subida": datetime.now(timezone.utc).isoformat(),
+        "subido_por": current_user['id'],
+        "subido_por_nombre": current_user['full_name']
+    }
+    
+    await db.ortoimagenes.insert_one(orto_doc)
+    
+    # Procesar en background
+    if background_tasks:
+        background_tasks.add_task(procesar_ortoimagen_background, orto_id, str(original_path), nombre)
+    else:
+        # Si no hay background_tasks, procesar sincrónicamente
+        await procesar_ortoimagen_background(orto_id, str(original_path), nombre)
+    
+    return {
+        "message": "Ortoimagen recibida. El procesamiento de tiles puede tomar varios minutos.",
+        "id": orto_id,
+        "nombre": nombre
+    }
+
+async def procesar_ortoimagen_background(orto_id: str, tiff_path: str, nombre: str):
+    """Procesa un GeoTIFF y genera tiles XYZ usando gdal2tiles"""
+    import subprocess
+    
+    def update_progress(status: str, progress: int, message: str):
+        ortoimagen_processing_progress[orto_id] = {
+            "status": status,
+            "progress": progress,
+            "message": message
+        }
+    
+    tiles_output_path = ORTOIMAGENES_PATH / orto_id
+    
+    try:
+        update_progress("procesando", 20, "Leyendo información del archivo GeoTIFF...")
+        
+        # Obtener información del GeoTIFF con gdalinfo
+        result = subprocess.run(
+            ["gdalinfo", "-json", tiff_path],
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        
+        if result.returncode != 0:
+            raise Exception(f"Error leyendo GeoTIFF: {result.stderr}")
+        
+        import json
+        gdal_info = json.loads(result.stdout)
+        
+        # Extraer bounds
+        bounds = None
+        if "wgs84Extent" in gdal_info:
+            coords = gdal_info["wgs84Extent"]["coordinates"][0]
+            # coords es un polígono, extraer SW y NE
+            lngs = [c[0] for c in coords]
+            lats = [c[1] for c in coords]
+            bounds = [[min(lngs), min(lats)], [max(lngs), max(lats)]]
+        elif "cornerCoordinates" in gdal_info:
+            cc = gdal_info["cornerCoordinates"]
+            bounds = [
+                [cc["lowerLeft"][0], cc["lowerLeft"][1]],
+                [cc["upperRight"][0], cc["upperRight"][1]]
+            ]
+        
+        update_progress("tiles", 30, "Generando tiles XYZ (esto puede tomar varios minutos)...")
+        
+        # Ejecutar gdal2tiles
+        tiles_output_path.mkdir(parents=True, exist_ok=True)
+        
+        gdal_cmd = [
+            "gdal2tiles.py",
+            "-z", "14-20",  # Niveles de zoom
+            "-w", "none",   # Sin archivo HTML
+            "-r", "average",  # Método de remuestreo
+            "--processes=2",  # Usar 2 procesos
+            tiff_path,
+            str(tiles_output_path)
+        ]
+        
+        logger.info(f"Ejecutando: {' '.join(gdal_cmd)}")
+        
+        result = subprocess.run(
+            gdal_cmd,
+            capture_output=True,
+            text=True,
+            timeout=1800  # 30 minutos máximo
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"gdal2tiles error: {result.stderr}")
+            raise Exception(f"Error generando tiles: {result.stderr}")
+        
+        update_progress("verificando", 90, "Verificando tiles generados...")
+        
+        # Verificar que se generaron tiles
+        tile_files = list(tiles_output_path.glob("**/*.png"))
+        if len(tile_files) == 0:
+            raise Exception("No se generaron tiles")
+        
+        # Leer bounds del tilemapresource.xml si existe
+        tilemap_xml = tiles_output_path / "tilemapresource.xml"
+        if tilemap_xml.exists():
+            import xml.etree.ElementTree as ET
+            tree = ET.parse(tilemap_xml)
+            root = tree.getroot()
+            bbox = root.find("BoundingBox")
+            if bbox is not None:
+                bounds = [
+                    [float(bbox.get("minx")), float(bbox.get("miny"))],
+                    [float(bbox.get("maxx")), float(bbox.get("maxy"))]
+                ]
+        
+        # Determinar zoom min/max real
+        zoom_levels = [int(d.name) for d in tiles_output_path.iterdir() if d.is_dir() and d.name.isdigit()]
+        zoom_min = min(zoom_levels) if zoom_levels else 14
+        zoom_max = max(zoom_levels) if zoom_levels else 20
+        
+        # Actualizar en MongoDB
+        await db.ortoimagenes.update_one(
+            {"id": orto_id},
+            {"$set": {
+                "activa": True,
+                "procesando": False,
+                "bounds": bounds,
+                "zoom_min": zoom_min,
+                "zoom_max": zoom_max,
+                "total_tiles": len(tile_files),
+                "fecha_procesado": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        update_progress("completado", 100, f"¡Completado! {len(tile_files)} tiles generados")
+        logger.info(f"Ortoimagen {orto_id} procesada: {len(tile_files)} tiles, bounds={bounds}")
+        
+    except Exception as e:
+        logger.error(f"Error procesando ortoimagen {orto_id}: {e}")
+        update_progress("error", 0, f"Error: {str(e)}")
+        
+        # Marcar como error en MongoDB
+        await db.ortoimagenes.update_one(
+            {"id": orto_id},
+            {"$set": {
+                "procesando": False,
+                "error": str(e)
+            }}
+        )
+
+@api_router.get("/ortoimagenes/progreso/{orto_id}")
+async def obtener_progreso_ortoimagen(orto_id: str, current_user: dict = Depends(get_current_user)):
+    """Obtiene el progreso del procesamiento de una ortoimagen"""
+    if orto_id in ortoimagen_processing_progress:
+        return ortoimagen_processing_progress[orto_id]
+    
+    # Verificar en MongoDB
+    orto = await db.ortoimagenes.find_one({"id": orto_id}, {"_id": 0})
+    if not orto:
+        raise HTTPException(status_code=404, detail="Ortoimagen no encontrada")
+    
+    if orto.get("procesando"):
+        return {"status": "procesando", "progress": 50, "message": "Procesando..."}
+    elif orto.get("activa"):
+        return {"status": "completado", "progress": 100, "message": "Ortoimagen lista"}
+    elif orto.get("error"):
+        return {"status": "error", "progress": 0, "message": orto["error"]}
+    else:
+        return {"status": "pendiente", "progress": 0, "message": "En espera"}
+
+@api_router.delete("/ortoimagenes/{orto_id}")
+async def eliminar_ortoimagen(orto_id: str, current_user: dict = Depends(get_current_user)):
+    """Elimina una ortoimagen y sus tiles"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso para eliminar ortoimágenes")
+    
+    orto = await db.ortoimagenes.find_one({"id": orto_id}, {"_id": 0})
+    if not orto:
+        raise HTTPException(status_code=404, detail="Ortoimagen no encontrada")
+    
+    # Eliminar tiles
+    tiles_path = ORTOIMAGENES_PATH / orto_id
+    if tiles_path.exists():
+        import shutil
+        shutil.rmtree(tiles_path)
+    
+    # Eliminar archivo original
+    original_path = Path(orto.get("archivo_original", ""))
+    if original_path.exists():
+        original_path.unlink()
+    
+    # Eliminar de MongoDB
+    await db.ortoimagenes.delete_one({"id": orto_id})
+    
+    return {"message": f"Ortoimagen '{orto['nombre']}' eliminada"}
 
 @api_router.get("/ortoimagenes/tiles/{orto_id}/{z}/{x}/{y}.png")
 async def servir_tile_ortoimagen(orto_id: str, z: int, x: int, y: int):
     """Sirve un tile específico de una ortoimagen"""
-    if orto_id not in ORTOIMAGENES_DISPONIBLES:
+    # Verificar que la ortoimagen existe
+    tile_base = ORTOIMAGENES_PATH / orto_id
+    if not tile_base.exists():
         raise HTTPException(status_code=404, detail="Ortoimagen no encontrada")
     
     # gdal2tiles genera tiles en formato TMS (y invertida)
     # Convertir de XYZ a TMS: y_tms = 2^z - 1 - y
     y_tms = (2 ** z) - 1 - y
     
-    tile_path = ORTOIMAGENES_PATH / orto_id / str(z) / str(x) / f"{y_tms}.png"
+    tile_path = tile_base / str(z) / str(x) / f"{y_tms}.png"
     
     if not tile_path.exists():
         # Retornar tile transparente si no existe
