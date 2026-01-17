@@ -1335,9 +1335,19 @@ export default function Predios() {
   const handleExportExcel = async () => {
     try {
       const token = localStorage.getItem('token');
-      const municipio = filterMunicipio !== 'todos' ? `?municipio=${encodeURIComponent(filterMunicipio)}` : '';
       
-      const response = await axios.get(`${API}/predios/export-excel${municipio}`, {
+      // Construir parámetros de consulta
+      const params = new URLSearchParams();
+      if (filterMunicipio !== 'todos' && filterMunicipio) {
+        params.append('municipio', filterMunicipio);
+      }
+      if (filterVigencia) {
+        params.append('vigencia', filterVigencia);
+      }
+      
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      
+      const response = await axios.get(`${API}/predios/export-excel${queryString}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
@@ -1345,8 +1355,11 @@ export default function Predios() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
+      
+      // Nombre del archivo con vigencia incluida
       const fecha = new Date().toISOString().split('T')[0];
-      link.setAttribute('download', `Predios_${filterMunicipio !== 'todos' ? filterMunicipio : 'Todos'}_${fecha}.xlsx`);
+      const vigenciaStr = filterVigencia ? `_Vigencia${String(filterVigencia).slice(-4)}` : '';
+      link.setAttribute('download', `Predios_${filterMunicipio !== 'todos' && filterMunicipio ? filterMunicipio : 'Todos'}${vigenciaStr}_${fecha}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
