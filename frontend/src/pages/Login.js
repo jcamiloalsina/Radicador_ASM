@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import { LogIn, Mail, ArrowLeft, RefreshCw } from 'lucide-react';
+import { LogIn, Mail, ArrowLeft, RefreshCw, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -17,8 +17,18 @@ export default function Login() {
   const [showVerification, setShowVerification] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [resending, setResending] = useState(false);
+  const [sessionExpiredMsg, setSessionExpiredMsg] = useState(null);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Verificar si la sesión expiró por inactividad
+  useEffect(() => {
+    const expired = localStorage.getItem('session_expired');
+    if (expired === 'inactivity') {
+      setSessionExpiredMsg('Su sesión se cerró automáticamente por inactividad.');
+      localStorage.removeItem('session_expired');
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
