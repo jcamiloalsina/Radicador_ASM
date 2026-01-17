@@ -2828,7 +2828,6 @@ async def export_listado_tramites_pdf(
         f"Documento generado el {datetime.now().strftime('%d/%m/%Y a las %H:%M')} | ASOMUNICIPIOS - Sistema de Gestión Catastral",
         footer_style
     ))
-    ))
     
     doc.build(story)
     pdf_bytes = buffer.getvalue()
