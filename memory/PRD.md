@@ -61,9 +61,19 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 - Cambios de permisos
 - **Remitente:** "Asomunicipios Catastro" (vía Gmail SMTP)
 
-## Cambios Recientes (12 Enero 2025)
+## Cambios Recientes
 
-### Sesión Actual
+### Sesión 17 Enero 2026
+1. **Bugs de Notificaciones CORREGIDOS:**
+   - Sistema de marcar notificaciones como leídas funcionando correctamente
+   - Contador de campanita se actualiza al marcar notificaciones
+   - "Marcar todas como leídas" funciona correctamente
+2. **Bugs de Dashboard CORREGIDOS:**
+   - Contador "Devueltos" ahora muestra correctamente las peticiones
+   - Filtro de peticiones por estado funciona correctamente
+   - Stats del dashboard coinciden con datos reales
+
+### Sesión 12 Enero 2025
 1. **Renombrado "Ciudadano" → "Usuario"** en toda la aplicación
 2. **Migración de datos:** 19 usuarios actualizados a nuevo rol
 3. **Histórico de Trámites mejorado** con filtros avanzados y exportación Excel
@@ -80,9 +90,10 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
   - Ver: `/app/memory/XTF_LADM_COL_SINIC.md`
 
 ### P1 - Alta Prioridad
-- [ ] Configurar SMTP Office 365 (requiere desactivar Security Defaults)
+- [ ] Mejorar funcionalidad offline del PWA (consulta de predios, R1/R2 y visor sin conexión)
 - [ ] Flujo de rechazo de peticiones con observaciones editables
-- [ ] Mejorar vinculación GDB (~82% actualmente)
+- [ ] Mejorar vinculación GDB-Predios (~82% actualmente, issue recurrente)
+- [ ] Configurar SMTP Office 365 (requiere desactivar Security Defaults)
 
 ### P2 - Media Prioridad
 - [ ] Convertir PWA a app nativa con Capacitor (para tiendas)
