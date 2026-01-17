@@ -63,7 +63,24 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 
 ## Cambios Recientes
 
-### Sesión 17 Enero 2026
+### Sesión 17 Enero 2026 (Parte 2)
+1. **Flujo de Devolución de Peticiones IMPLEMENTADO:**
+   - Nuevo estado "Devuelto" con campo `observaciones_devolucion`
+   - Staff puede devolver peticiones indicando qué corregir
+   - Usuario ve banner naranja con observaciones y botón "Reenviar para Revisión"
+   - Al reenviar, se notifica al staff que devolvió (por email y plataforma)
+   - Campo editable de observaciones aparece al seleccionar estado "Devuelto"
+
+2. **Formateo Automático de Nombres:**
+   - Nuevo endpoint `POST /api/admin/format-user-names` para migrar nombres
+   - Registro de usuarios auto-formatea nombres (YACID PINO → Yacid Pino)
+   - Tildes automáticas en nombres comunes (Garcia → García, Gutierrez → Gutiérrez)
+
+3. **Mejoras en UI de Predios:**
+   - Matrícula inmobiliaria ahora visible en panel "Predio Seleccionado" del visor
+   - "Cambios Pendientes" muestra "Código Predial Nacional" (30 dígitos) en lugar de código interno
+
+### Sesión 17 Enero 2026 (Parte 1)
 1. **Bugs de Notificaciones CORREGIDOS:**
    - Sistema de marcar notificaciones como leídas funcionando correctamente
    - Contador de campanita se actualiza al marcar notificaciones
