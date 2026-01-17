@@ -213,6 +213,7 @@ class GestorAssignment(BaseModel):
     petition_id: str
     gestor_id: str
     is_auxiliar: bool = False
+    comentario: Optional[str] = None  # Comentario/instrucciones al asignar
 
 class Petition(BaseModel):
     model_config = ConfigDict(extra="ignore")
