@@ -316,11 +316,25 @@ export default function VisorPredios() {
   useEffect(() => {
     fetchGdbStats();
     fetchLimitesMunicipios('oficial'); // Siempre usar límites oficiales
+    fetchOrtoimagenes(); // Cargar ortoimágenes disponibles
     // Verificar estado de cargas GDB del mes (solo para roles autorizados)
     if (user?.role === 'administrador' || user?.role === 'coordinador' || (user?.role === 'gestor' && user?.puede_actualizar_gdb)) {
       verificarCargasMensuales();
     }
   }, []);
+  
+  // Fetch ortoimágenes disponibles
+  const fetchOrtoimagenes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/ortoimagenes/disponibles`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOrtoimagenes(response.data.ortoimagenes || []);
+    } catch (error) {
+      console.error('Error cargando ortoimágenes:', error);
+    }
+  };
 
   // Cargar geometrías cuando cambian los filtros Y el usuario quiere ver predios
   useEffect(() => {
