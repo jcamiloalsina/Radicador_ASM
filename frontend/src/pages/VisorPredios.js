@@ -676,14 +676,14 @@ export default function VisorPredios() {
               )}
               
               {/* Capas Reconocidas */}
-              {gdbAnalisis.capas_analisis?.reconocidas?.length > 0 && (
+              {(gdbAnalisis.analisis?.reconocidas?.length > 0 || gdbAnalisis.capas_analisis?.reconocidas?.length > 0) && (
                 <div className="border border-emerald-200 bg-emerald-50 rounded-lg p-3">
                   <h4 className="font-medium text-emerald-800 flex items-center gap-2 mb-2">
                     <CheckCircle className="w-4 h-4" />
-                    Capas Estándar Reconocidas ({gdbAnalisis.capas_analisis.reconocidas.length})
+                    Capas Estándar Reconocidas ({(gdbAnalisis.analisis?.reconocidas || gdbAnalisis.capas_analisis?.reconocidas || []).length})
                   </h4>
                   <ul className="text-sm text-emerald-700 space-y-1">
-                    {gdbAnalisis.capas_analisis.reconocidas.map((capa, idx) => (
+                    {(gdbAnalisis.analisis?.reconocidas || gdbAnalisis.capas_analisis?.reconocidas || []).map((capa, idx) => (
                       <li key={idx}>✓ {capa.tipo}: <strong>{capa.capa_encontrada}</strong></li>
                     ))}
                   </ul>
