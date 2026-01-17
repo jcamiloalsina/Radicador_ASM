@@ -1984,18 +1984,28 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
         if 'estado' in update_dict:
             citizen = await db.users.find_one({"id": petition['user_id']}, {"_id": 0})
             if citizen:
-                status_names = {
-                    PetitionStatus.RADICADO: "Radicado",
-                    PetitionStatus.ASIGNADO: "Asignado",
-                    PetitionStatus.RECHAZADO: "Rechazado",
-                    PetitionStatus.REVISION: "En Revisión",
-                    PetitionStatus.DEVUELTO: "Devuelto",
-                    PetitionStatus.FINALIZADO: "Finalizado"
-                }
+                estado_nuevo = update_dict['estado']
+                nombre_solicitante = petition.get('nombre_completo', citizen.get('full_name', 'Usuario'))
+                
+                # Usar plantilla especial para finalización
+                if estado_nuevo == PetitionStatus.FINALIZADO:
+                    email_body = get_finalizacion_email(
+                        radicado=petition['radicado'],
+                        tipo_tramite=petition['tipo_tramite'],
+                        nombre_solicitante=nombre_solicitante,
+                        con_archivos=False  # TODO: implementar lógica de archivos adjuntos
+                    )
+                else:
+                    email_body = get_actualizacion_email(
+                        radicado=petition['radicado'],
+                        estado_nuevo=estado_nuevo,
+                        nombre_solicitante=nombre_solicitante
+                    )
+                
                 await send_email(
                     citizen['email'],
                     f"Actualización de Trámite - {petition['radicado']}",
-                    f"<h3>Su trámite ha sido actualizado</h3><p>Radicado: {petition['radicado']}</p><p>Nuevo estado: {status_names.get(update_dict['estado'])}</p>"
+                    email_body
                 )
     
     updated_petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
