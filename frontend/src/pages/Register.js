@@ -58,7 +58,7 @@ export default function Register() {
             Asomunicipios en línea
           </p>
           <p className="text-emerald-200 text-sm mt-1">
-            Tu radicador catastral en línea
+            Tu radicador catastral
           </p>
         </div>
       </div>
