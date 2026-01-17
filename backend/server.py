@@ -7162,7 +7162,7 @@ async def marcar_todas_leidas(current_user: dict = Depends(get_current_user)):
     )
     return {"message": f"{result.modified_count} notificaciones marcadas como leídas"}
 
-async def crear_notificacion(usuario_id: str, titulo: str, mensaje: str, tipo: str = "info", enviar_email: bool = False):
+async def crear_notificacion(usuario_id: str, titulo: str, mensaje: str, tipo: str = "info", enlace: str = None, enviar_email: bool = False):
     """Crea una notificación para un usuario y opcionalmente envía email"""
     notificacion = {
         "id": str(uuid.uuid4()),
@@ -7170,6 +7170,7 @@ async def crear_notificacion(usuario_id: str, titulo: str, mensaje: str, tipo: s
         "titulo": titulo,
         "mensaje": mensaje,
         "tipo": tipo,  # info, warning, success, error
+        "enlace": enlace,
         "leida": False,
         "fecha": datetime.now(timezone.utc).isoformat()
     }
