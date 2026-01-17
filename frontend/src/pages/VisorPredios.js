@@ -1341,6 +1341,32 @@ export default function VisorPredios() {
                         </div>
                       </Popup>
                     </GeoJSON>
+                    
+                    {/* Renderizar construcciones del predio (polígonos rojos) */}
+                    {construcciones && construcciones.map((const_item, idx) => (
+                      const_item.geometry && (
+                        <GeoJSON
+                          key={`construccion-${idx}`}
+                          data={const_item.geometry}
+                          style={construccionStyle}
+                        >
+                          <Popup>
+                            <div className="text-sm min-w-[150px]">
+                              <p className="font-bold text-red-700 mb-1 text-xs">🏠 Construcción</p>
+                              <p className="text-xs">Área: {formatArea(const_item.area_m2)}</p>
+                              {const_item.pisos > 1 && (
+                                <p className="text-xs">Pisos: {const_item.pisos}</p>
+                              )}
+                              {const_item.tipo_construccion && (
+                                <p className="text-xs">Tipo: {const_item.tipo_construccion}</p>
+                              )}
+                              <p className="text-xs text-slate-500 mt-1">Zona: {const_item.tipo_zona}</p>
+                            </div>
+                          </Popup>
+                        </GeoJSON>
+                      )
+                    ))}
+                    
                     <FitBounds geometry={geometry} />
                   </>
                 )}
