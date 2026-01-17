@@ -19,18 +19,6 @@ export default function DashboardLayout() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [cambiosPendientesCount, setCambiosPendientesCount] = useState(0);
 
-  useEffect(() => {
-    if (user) {
-      fetchNotificaciones();
-      // Verificar alerta GDB
-      checkGdbAlert();
-      // Cargar conteo de cambios pendientes si es coordinador o admin
-      if (['administrador', 'coordinador'].includes(user.role)) {
-        fetchCambiosPendientes();
-      }
-    }
-  }, [user]);
-
   const fetchCambiosPendientes = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -75,6 +63,16 @@ export default function DashboardLayout() {
       console.error('Error checking GDB alert:', error);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotificaciones();
+      checkGdbAlert();
+      if (['administrador', 'coordinador'].includes(user.role)) {
+        fetchCambiosPendientes();
+      }
+    }
+  }, [user]);
 
   const marcarLeida = async (notificacionId) => {
     try {
