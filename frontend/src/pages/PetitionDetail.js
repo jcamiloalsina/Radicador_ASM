@@ -638,10 +638,23 @@ export default function PetitionDetail() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    const url = `${API}/petitions/${id}/download-zip`;
-                    window.open(url, '_blank');
-                    toast.success('Descargando ZIP...');
+                  onClick={async () => {
+                    try {
+                      const response = await axios.get(`${API}/petitions/${id}/download-zip`, {
+                        responseType: 'blob'
+                      });
+                      const url = window.URL.createObjectURL(new Blob([response.data]));
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.setAttribute('download', `${petition.radicado}_archivos.zip`);
+                      document.body.appendChild(link);
+                      link.click();
+                      link.remove();
+                      window.URL.revokeObjectURL(url);
+                      toast.success('ZIP descargado exitosamente');
+                    } catch (error) {
+                      toast.error(error.response?.data?.detail || 'Error al descargar ZIP');
+                    }
                   }}
                   data-testid="download-zip-button"
                 >
