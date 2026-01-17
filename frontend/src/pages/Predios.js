@@ -1472,11 +1472,29 @@ export default function Predios() {
   const handleUpdate = async () => {
     try {
       const token = localStorage.getItem('token');
+      
+      // Filtrar propietarios válidos
+      const propietariosValidos = propietarios.filter(p => p.nombre_propietario && p.numero_documento);
+      
+      if (propietariosValidos.length === 0) {
+        toast.error('Debe ingresar al menos un propietario con nombre y documento');
+        return;
+      }
+      
+      // Filtrar zonas físicas válidas
+      const zonasValidas = zonasFisicas.filter(z => 
+        z.zona_fisica !== '0' || z.area_terreno !== '0' || z.area_construida !== '0'
+      );
+      
       const updateData = {
-        nombre_propietario: formData.nombre_propietario,
-        tipo_documento: formData.tipo_documento,
-        numero_documento: formData.numero_documento,
-        estado_civil: formData.estado_civil || null,
+        // Datos del primer propietario (campos legacy para compatibilidad)
+        nombre_propietario: propietariosValidos[0].nombre_propietario,
+        tipo_documento: propietariosValidos[0].tipo_documento,
+        numero_documento: propietariosValidos[0].numero_documento,
+        estado_civil: propietariosValidos[0].estado_civil || null,
+        // Array completo de propietarios
+        propietarios: propietariosValidos,
+        // Otros campos
         direccion: formData.direccion,
         comuna: formData.comuna,
         destino_economico: formData.destino_economico,
@@ -1487,6 +1505,24 @@ export default function Predios() {
         numero_resolucion: formData.numero_resolucion || null,
         matricula_inmobiliaria: formData.matricula_inmobiliaria || null
       };
+      
+      // Agregar zonas R2 si hay datos válidos
+      if (zonasValidas.length > 0) {
+        updateData.r2 = {
+          matricula_inmobiliaria: formData.matricula_inmobiliaria || null,
+          zonas: zonasValidas.map(z => ({
+            zona_fisica: z.zona_fisica,
+            zona_economica: z.zona_economica,
+            area_terreno: parseFloat(z.area_terreno) || 0,
+            habitaciones: parseInt(z.habitaciones) || 0,
+            banos: parseInt(z.banos) || 0,
+            locales: parseInt(z.locales) || 0,
+            pisos: parseInt(z.pisos) || 1,
+            puntaje: parseFloat(z.puntaje) || 0,
+            area_construida: parseFloat(z.area_construida) || 0
+          }))
+        };
+      }
       
       // Usar sistema de aprobación
       const res = await axios.post(`${API}/predios/cambios/proponer`, {
