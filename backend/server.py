@@ -1575,6 +1575,43 @@ async def format_user_names(current_user: dict = Depends(get_current_user)):
     }
 
 
+@api_router.post("/admin/format-petition-names")
+async def format_petition_names(current_user: dict = Depends(get_current_user)):
+    """Formatea los nombres de solicitantes en peticiones existentes (solo admin)"""
+    if current_user['role'] != UserRole.ADMINISTRADOR:
+        raise HTTPException(status_code=403, detail="Solo administradores pueden ejecutar esta operación")
+    
+    # Get all petitions with nombre_completo
+    petitions = await db.petitions.find(
+        {"nombre_completo": {"$exists": True}},
+        {"_id": 0, "id": 1, "nombre_completo": 1}
+    ).to_list(None)
+    
+    updated_count = 0
+    examples = []
+    
+    for petition in petitions:
+        original_name = petition.get('nombre_completo', '')
+        if original_name:
+            formatted_name = format_nombre_propio(original_name)
+            
+            if original_name != formatted_name:
+                await db.petitions.update_one(
+                    {"id": petition['id']},
+                    {"$set": {"nombre_completo": formatted_name}}
+                )
+                updated_count += 1
+                if len(examples) < 5:
+                    examples.append({"original": original_name, "formatted": formatted_name})
+    
+    return {
+        "message": f"Formateo de nombres en peticiones completado",
+        "total_petitions": len(petitions),
+        "petitions_updated": updated_count,
+        "examples": examples
+    }
+
+
 # ===== PERMISSIONS MANAGEMENT =====
 
 @api_router.get("/permissions/available")
