@@ -6662,10 +6662,14 @@ async def get_cambios_pendientes(
     total = await db.predios_cambios.count_documents(query)
     cambios = await db.predios_cambios.find(query, {"_id": 0}).sort("fecha_propuesta", -1).skip(skip).limit(limit).to_list(limit)
     
-    # Enriquecer con datos del predio actual si existe
+    # Enriquecer con datos del predio actual si existe (para comparación)
     for cambio in cambios:
         if cambio.get("predio_id"):
-            predio = await db.predios.find_one({"id": cambio["predio_id"]}, {"_id": 0, "codigo_homologado": 1, "nombre_propietario": 1, "municipio": 1})
+            # Obtener TODOS los campos del predio actual para permitir comparación
+            predio = await db.predios.find_one(
+                {"id": cambio["predio_id"]}, 
+                {"_id": 0, "historial": 0}  # Excluir historial para reducir tamaño
+            )
             cambio["predio_actual"] = predio
     
     return {
