@@ -1906,11 +1906,13 @@ async def assign_gestor(
     
     await db.petitions.update_one({"id": petition_id}, {"$set": update_data})
     
-    # Send email to assigned gestor
-    await send_email(
-        gestor['email'],
-        f"Trámite Asignado - {petition['radicado']}",
-        get_asignacion_email(petition['radicado'], petition['tipo_tramite'], gestor['full_name'])
+    # Notificación en plataforma al gestor asignado (NO correo)
+    await crear_notificacion(
+        usuario_id=gestor['id'],
+        tipo="info",
+        titulo="Nuevo trámite asignado",
+        mensaje=f"Se te ha asignado el trámite {petition['radicado']} - {petition['tipo_tramite']}",
+        enlace=f"/dashboard/peticion/{petition_id}"
     )
     
     return {"message": "Gestor asignado exitosamente"}
