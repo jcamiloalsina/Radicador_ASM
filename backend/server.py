@@ -135,12 +135,22 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class VerifyEmailCode(BaseModel):
+    email: EmailStr
+    code: str
+
+class ResendVerificationCode(BaseModel):
+    email: EmailStr
+
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: str
     full_name: str
     role: str
+    email_verified: bool = False
+    verification_code: Optional[str] = None
+    verification_code_expires: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserRoleUpdate(BaseModel):
