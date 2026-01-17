@@ -486,7 +486,80 @@ export default function VisorPredios() {
     if (!files || files.length === 0) return;
     
     setUploadingGdb(true);
-    setUploadProgress({ status: 'iniciando', progress: 0, message: 'Preparando archivos...' });
+    setUploadProgress({ status: 'analizando', progress: 0, message: 'Analizando estructura de la GDB...' });
+    
+    const formData = new FormData();
+    
+    // Si es un solo archivo ZIP
+    if (files.length === 1 && files[0].name.endsWith('.zip')) {
+      formData.append('file', files[0]);
+    } else {
+      // Si son múltiples archivos (carpeta .gdb) - tomar el primero que sea ZIP
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].name.endsWith('.zip')) {
+          formData.append('file', files[i]);
+          break;
+        }
+      }
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      // PASO 1: Analizar la GDB antes de cargar
+      setUploadProgress({ status: 'analizando', progress: 10, message: 'Validando estructura de capas...' });
+      
+      const analisisResponse = await axios.post(`${API}/gdb/analizar`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      const analisis = analisisResponse.data;
+      
+      // Verificar si hay problemas críticos
+      const tieneCapasNoReconocidas = analisis.capas_analisis?.no_reconocidas?.length > 0;
+      const tieneErroresCodigos = analisis.codigos_con_error?.length > 0;
+      const faltanCapasEsenciales = !analisis.capas_analisis?.reconocidas?.some(c => 
+        c.tipo === 'terreno_rural' || c.tipo === 'terreno_urbano'
+      );
+      
+      if (tieneCapasNoReconocidas || tieneErroresCodigos || faltanCapasEsenciales) {
+        // Mostrar reporte de validación y pedir confirmación
+        setGdbAnalisis(analisis);
+        setGdbArchivoPendiente(files);
+        setUploadProgress(null);
+        setUploadingGdb(false);
+        return; // Esperar confirmación del usuario
+      }
+      
+      // Si todo está bien, proceder con la carga
+      await procederConCargaGdb(files);
+      
+    } catch (error) {
+      console.error('Error al analizar GDB:', error);
+      // Si falla el análisis, preguntar si desea continuar sin validación
+      const continuar = window.confirm(
+        'No se pudo validar la estructura de la GDB. ¿Desea continuar con la carga de todos modos?\n\n' +
+        'Error: ' + (error.response?.data?.detail || error.message)
+      );
+      
+      if (continuar) {
+        await procederConCargaGdb(files);
+      } else {
+        setUploadProgress(null);
+        setUploadingGdb(false);
+      }
+    }
+  };
+  
+  // Función para proceder con la carga después de validación
+  const procederConCargaGdb = async (files) => {
+    setUploadingGdb(true);
+    setGdbAnalisis(null);
+    setGdbArchivoPendiente(null);
+    setUploadProgress({ status: 'subiendo', progress: 5, message: 'Subiendo archivos al servidor...' });
     
     const formData = new FormData();
     
@@ -502,12 +575,6 @@ export default function VisorPredios() {
     
     try {
       const token = localStorage.getItem('token');
-      
-      // Iniciar subida
-      setUploadProgress({ status: 'subiendo', progress: 5, message: 'Subiendo archivos al servidor...' });
-      
-      const response = await axios.post(`${API}/gdb/upload`, formData, {
-        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         },
