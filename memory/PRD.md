@@ -214,11 +214,13 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 - [x] **Bug Construcciones 26 vs 2:** Corregido - match exacto en lugar de prefijo ✅
 - [x] **Bug "Not Found" Asignar Gestor:** Corregido - endpoint correcto ✅
 - [x] **Tiles Mapa Desaparecen:** Corregido - maxZoom=19 ✅
+- [x] **Ortoimágenes Personalizadas:** Implementado - carga y visualización de ortoimágenes propias ✅
 - [ ] **Generación de archivos XTF** según Resolución IGAC 0301/2025
   - Ver: `/app/memory/XTF_LADM_COL_SINIC.md`
 
 ### P1 - Alta Prioridad
-- [ ] **Timeout de Sesión:** Implementar cierre automático por 30 min de inactividad
+- [x] **Timeout de Sesión:** Implementar cierre automático por 30 min de inactividad ✅
+- [ ] **Integrar Logos Proporcionados:** Logos en `/app/frontend/public/logos/` pendientes de integrar en UI y PDFs
 - [ ] **Endpoint Limpieza GDB:** Crear endpoint protegido para limpiar `gdb_geometrias`, `gdb_construcciones` y campos de vinculación en `predios`
 - [ ] **UI de Validación GDB:** Interfaz para mostrar reporte de validación antes de procesar GDB
 - [ ] Mejorar funcionalidad offline del PWA (consulta de predios, R1/R2 y visor sin conexión)
