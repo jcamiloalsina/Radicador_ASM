@@ -9324,6 +9324,64 @@ async def update_user_gdb_permission(
     }
 
 
+# ===== ORTOIMÁGENES - TILES XYZ =====
+
+ORTOIMAGENES_PATH = Path("/app/ortoimagenes/tiles")
+
+# Registro de ortoimágenes disponibles
+ORTOIMAGENES_DISPONIBLES = {
+    "ocana": {
+        "nombre": "Ortoimagen Ocaña (Prueba)",
+        "municipio": "Ocaña",
+        "descripcion": "Barrio de prueba - Ortoimagen de alta resolución",
+        "zoom_min": 14,
+        "zoom_max": 20,
+        "bounds": [[-73.348, 8.237], [-73.342, 8.244]],  # SW, NE corners aproximados
+        "fecha_captura": "2024",
+        "resolucion": "~15cm"
+    }
+}
+
+@api_router.get("/ortoimagenes/disponibles")
+async def listar_ortoimagenes():
+    """Lista las ortoimágenes disponibles en el sistema"""
+    result = []
+    for key, info in ORTOIMAGENES_DISPONIBLES.items():
+        tile_path = ORTOIMAGENES_PATH / key
+        if tile_path.exists():
+            result.append({
+                "id": key,
+                "activa": True,
+                **info
+            })
+    return {"ortoimagenes": result}
+
+@api_router.get("/ortoimagenes/tiles/{orto_id}/{z}/{x}/{y}.png")
+async def servir_tile_ortoimagen(orto_id: str, z: int, x: int, y: int):
+    """Sirve un tile específico de una ortoimagen"""
+    if orto_id not in ORTOIMAGENES_DISPONIBLES:
+        raise HTTPException(status_code=404, detail="Ortoimagen no encontrada")
+    
+    # gdal2tiles genera tiles en formato TMS (y invertida)
+    # Convertir de XYZ a TMS: y_tms = 2^z - 1 - y
+    y_tms = (2 ** z) - 1 - y
+    
+    tile_path = ORTOIMAGENES_PATH / orto_id / str(z) / str(x) / f"{y_tms}.png"
+    
+    if not tile_path.exists():
+        # Retornar tile transparente si no existe
+        raise HTTPException(status_code=204)  # No content
+    
+    return FileResponse(
+        tile_path, 
+        media_type="image/png",
+        headers={
+            "Cache-Control": "public, max-age=86400",  # Cache 1 día
+            "Access-Control-Allow-Origin": "*"
+        }
+    )
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
