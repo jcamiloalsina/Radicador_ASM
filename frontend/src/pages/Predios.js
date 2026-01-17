@@ -2755,7 +2755,7 @@ export default function Predios() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-outfit">Editar Predio - {selectedPredio?.codigo_homologado}</DialogTitle>
+            <DialogTitle className="text-xl font-outfit">Editar Predio - {selectedPredio?.codigo_predial_nacional}</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
@@ -2763,6 +2763,11 @@ export default function Predios() {
               <p className="text-sm text-slate-600">
                 <strong>Código Predial Nacional:</strong> {selectedPredio?.codigo_predial_nacional}
               </p>
+              {(selectedPredio?.r2_registros?.[0]?.matricula_inmobiliaria || selectedPredio?.matricula_inmobiliaria) && (
+                <p className="text-sm text-slate-600 mt-1">
+                  <strong>Matrícula Inmobiliaria:</strong> {selectedPredio?.r2_registros?.[0]?.matricula_inmobiliaria || selectedPredio?.matricula_inmobiliaria}
+                </p>
+              )}
             </div>
             
             {/* Sección de Propietarios */}
