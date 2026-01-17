@@ -9336,7 +9336,7 @@ ORTOIMAGENES_DISPONIBLES = {
         "descripcion": "Barrio de prueba - Ortoimagen de alta resolución",
         "zoom_min": 14,
         "zoom_max": 20,
-        "bounds": [[-73.348, 8.237], [-73.342, 8.244]],  # SW, NE corners aproximados
+        "bounds": [[-73.34486140341858, 8.23718522977008], [-73.34203180495008, 8.24056119762953]],  # SW, NE corners desde tilemapresource.xml
         "fecha_captura": "2024",
         "resolucion": "~15cm"
     }
