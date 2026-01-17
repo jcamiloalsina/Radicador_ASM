@@ -11,7 +11,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 export default function DashboardLayout() {
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading, showTimeoutWarning, extendSession } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificaciones, setNotificaciones] = useState([]);
