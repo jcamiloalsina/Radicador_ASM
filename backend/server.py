@@ -141,6 +141,7 @@ class PetitionUpdate(BaseModel):
     notas: Optional[str] = None
     gestor_id: Optional[str] = None
     enviar_archivos_finalizacion: Optional[bool] = False  # Flag para adjuntar archivos al correo de finalización
+    observaciones_devolucion: Optional[str] = None  # Observaciones cuando se devuelve un trámite
 
 class GestorAssignment(BaseModel):
     petition_id: str
@@ -164,6 +165,9 @@ class Petition(BaseModel):
     gestores_asignados: List[str] = []
     archivos: List[dict] = []
     historial: List[dict] = []
+    observaciones_devolucion: str = ""  # Observaciones cuando el staff devuelve el trámite
+    devuelto_por_id: Optional[str] = None  # ID del usuario que devolvió el trámite
+    devuelto_por_nombre: Optional[str] = None  # Nombre del usuario que devolvió
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
