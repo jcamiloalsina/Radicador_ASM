@@ -1496,12 +1496,7 @@ export default function VisorPredios() {
                 style={{ height: '100%', width: '100%' }}
                 ref={mapRef}
               >
-                <TileLayer
-                  url={tileLayers[mapType].url}
-                  attribution={tileLayers[mapType].attribution}
-                  maxZoom={tileLayers[mapType]?.maxZoom || 18}
-                  maxNativeZoom={tileLayers[mapType]?.maxZoom || 18}
-                />
+                <SmartTileLayer mapType={mapType} tileLayers={tileLayers} />
                 
                 {/* Mostrar límites de municipios usando componente con acceso al mapa */}
                 <MunicipalityLimits 
