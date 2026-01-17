@@ -524,6 +524,28 @@ export default function PetitionDetail() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Campo de observaciones para devolución */}
+              {editData.estado === 'devuelto' && (
+                <div className="border border-orange-200 bg-orange-50 p-4 rounded-lg">
+                  <Label htmlFor="observaciones_devolucion" className="text-orange-800 font-medium">
+                    Observaciones de Devolución *
+                  </Label>
+                  <p className="text-xs text-orange-600 mb-2">
+                    Indique al usuario qué debe corregir para que pueda reenviar el trámite.
+                  </p>
+                  <Textarea
+                    id="observaciones_devolucion"
+                    value={editData.observaciones_devolucion}
+                    onChange={(e) => setEditData({ ...editData, observaciones_devolucion: e.target.value })}
+                    rows={4}
+                    placeholder="Ej: Falta documento de identidad del propietario. Por favor adjuntar copia legible del documento."
+                    className="border-orange-300 focus:border-orange-400"
+                    data-testid="edit-observaciones-devolucion"
+                  />
+                </div>
+              )}
+              
               <div>
                 <Label htmlFor="notas">Notas</Label>
                 <Textarea
