@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Popup, useMap, Tooltip, Marker, CircleMarker } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Popup, useMap, Tooltip, Marker, CircleMarker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -14,6 +14,45 @@ import {
   Layers, ZoomIn, ZoomOut, Home, FileText, AlertCircle, Eye, EyeOff, Navigation, Crosshair, AlertTriangle, CheckCircle, XCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+// Componente inteligente que cambia de Esri a Google cuando el zoom es alto
+const SmartTileLayer = ({ mapType, tileLayers }) => {
+  const map = useMap();
+  const [currentZoom, setCurrentZoom] = useState(map.getZoom());
+  
+  useMapEvents({
+    zoomend: () => {
+      setCurrentZoom(map.getZoom());
+    }
+  });
+  
+  // Si es satélite y zoom > 17, usar Google automáticamente
+  const effectiveLayer = (mapType === 'satellite' && currentZoom > 17) 
+    ? tileLayers.google_satellite 
+    : tileLayers[mapType];
+  
+  const showingGoogle = mapType === 'satellite' && currentZoom > 17;
+  
+  return (
+    <>
+      <TileLayer
+        key={showingGoogle ? 'google' : mapType}
+        url={effectiveLayer.url}
+        attribution={effectiveLayer.attribution}
+        maxZoom={effectiveLayer.maxZoom}
+        maxNativeZoom={effectiveLayer.maxNativeZoom || effectiveLayer.maxZoom}
+      />
+      {showingGoogle && (
+        <div className="absolute bottom-8 left-2 z-[1000] bg-black/60 text-white text-xs px-2 py-1 rounded">
+          Zoom alto → Google Satellite
+        </div>
+      )}
+    </>
+  );
+};
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
