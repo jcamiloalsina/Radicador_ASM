@@ -26,8 +26,6 @@ export default function PetitionDetail() {
   const [editData, setEditData] = useState({});
   const [files, setFiles] = useState([]);
   const [gestores, setGestores] = useState([]);
-  const [selectedGestor, setSelectedGestor] = useState('');
-  const [showGestorDialog, setShowGestorDialog] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showFinalizarDialog, setShowFinalizarDialog] = useState(false);
   const [enviarArchivosFinalizacion, setEnviarArchivosFinalizacion] = useState(false);
@@ -173,26 +171,6 @@ export default function PetitionDetail() {
       fetchPetition();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Error al subir archivos');
-    }
-  };
-
-  const handleAssignGestor = async () => {
-    if (!selectedGestor) {
-      toast.error('Selecciona un gestor');
-      return;
-    }
-
-    try {
-      await axios.post(`${API}/petitions/${id}/assign-gestor`, {
-        petition_id: id,
-        gestor_id: selectedGestor,
-        is_auxiliar: false
-      });
-      toast.success('Gestor asignado exitosamente');
-      setShowGestorDialog(false);
-      fetchPetition();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Error al asignar gestor');
     }
   };
 
