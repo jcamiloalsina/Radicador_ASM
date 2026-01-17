@@ -73,14 +73,31 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
    - formatArea() ahora redondea a 2 decimales
    - Antes: "206.43093544051322 m²" → Ahora: "206.43 m²"
 
-3. **Diagnóstico de Datos Inconsistentes:**
-   - 39,524 predios tienen `tiene_geometria=true` pero sin geometría real en BD
-   - Esto se resolverá cuando el usuario recargue los GDBs desde cero
-   - El predio `540030101000000010001000000000` no tiene construcciones porque su zona no fue cargada en el GDB
+3. **Bug Propietarios y Matrícula en Edición (CORREGIDO):**
+   - Ahora carga array completo de propietarios al editar
+   - Busca matrícula en: `r2_registros[0]`, `r2`, o raíz del predio
+   - Carga zonas R2 desde `r2_registros[0].zonas`
 
-4. **Estado de Base de Datos:**
+4. **Registro con Verificación por Correo:**
+   - Código de 6 dígitos enviado al email
+   - Expira en 30 minutos
+   - Usuarios internos y admin protegido no requieren verificación
+
+5. **Admin Protegido:**
+   - `catastro@asomunicipios.gov.co` no puede tener su rol cambiado
+   - Hardcodeado en backend
+
+6. **Asignación de Trámites Mejorada:**
+   - "Atención al Usuario" ahora aparece en lista de asignables
+   - Lista ordenada alfabéticamente
+   - Auto-asignación al pasar a "revisión" → notifica coordinadores/aprobadores
+   - Nuevos endpoints: `/auto-asignar`, `/desasignar/{user_id}`
+
+7. **Texto Corregido:**
+   - "Tu radicador catastral en línea" → "Tu radicador catastral"
+
+8. **Estado de Base de Datos:**
    - `test_database`: Base de datos activa (224,915 predios, 40 usuarios, 38,178 geometrías)
-   - `asomunicipios`: Base legacy/vacía
    - **Usuario confirmó:** Van a limpiar BD y cargar desde 0
 
 ### Sesión 17 Enero 2026 (Parte 3)
