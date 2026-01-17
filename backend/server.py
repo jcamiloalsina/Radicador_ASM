@@ -6216,8 +6216,8 @@ async def export_predios_excel(
             ws_r2.cell(row=row, column=34, value=z3.get('pisos', 0) or 0)
             ws_r2.cell(row=row, column=35, value=z3.get('tipificacion', 0) or 0)
             ws_r2.cell(row=row, column=36, value=z3.get('uso', 0) or 0)
-                ws_r2.cell(row=row, column=37, value=zonas[2].get('puntaje', 0))
-                ws_r2.cell(row=row, column=38, value=zonas[2].get('area_construida', 0))
+            ws_r2.cell(row=row, column=37, value=z3.get('puntaje', 0) or 0)
+            ws_r2.cell(row=row, column=38, value=z3.get('area_construida', 0) or 0)
             
             # Vigencia
             ws_r2.cell(row=row, column=39, value=predio.get('vigencia', datetime.now().year))
