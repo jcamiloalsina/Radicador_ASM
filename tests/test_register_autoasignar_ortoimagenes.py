@@ -174,24 +174,15 @@ class TestAutoAsignacion:
         if petitions_response.status_code != 200:
             pytest.skip("Could not fetch petitions")
         
-        petitions = petitions_response.json().get("petitions", [])
+        # API returns array directly, not object with "petitions" key
+        petitions = petitions_response.json()
+        if isinstance(petitions, dict):
+            petitions = petitions.get("petitions", [])
         
         if not petitions:
-            # Create a new petition for testing
-            create_response = self.session.post(f"{BASE_URL}/api/petitions", json={
-                "nombre_completo": "Test Auto Asignar",
-                "correo": "test_autoasignar@test.com",
-                "telefono": "3001234567",
-                "tipo_tramite": "Certificado Catastral",
-                "municipio": "Ocaña"
-            })
-            
-            if create_response.status_code not in [200, 201]:
-                pytest.skip("Could not create test petition")
-            
-            petition_id = create_response.json().get("id")
-        else:
-            petition_id = petitions[0]["id"]
+            pytest.skip("No petitions in 'radicado' state available for testing")
+        
+        petition_id = petitions[0]["id"]
         
         # Now try to auto-assign
         response = self.session.post(f"{BASE_URL}/api/petitions/{petition_id}/auto-asignar")
