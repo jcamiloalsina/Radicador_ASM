@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estándar de Capas GDB - Asomunicipios</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: white;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 12px 12px 0 0;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .content {
+            border: 2px solid #059669;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            padding: 30px;
+        }
+        .section-title {
+            color: #059669;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 20px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #d1fae5;
+        }
+        .section-title:first-child {
+            margin-top: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th {
+            background: #059669;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        tr:nth-child(even) {
+            background: #f0fdf4;
+        }
+        tr:hover {
+            background: #d1fae5;
+        }
+        .capa-nombre {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-weight: 600;
+            color: #065f46;
+        }
+        .variante {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            color: #6b7280;
+        }
+        .obligatorio {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .obligatorio.si {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .obligatorio.no {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .error-table td:first-child {
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: #dc2626;
+        }
+        .error-table td:nth-child(2) {
+            color: #6b7280;
+        }
+        .error-table td:last-child {
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: #059669;
+            font-weight: 600;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #d1fae5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #6b7280;
+            font-size: 13px;
+        }
+        .footer img {
+            height: 40px;
+        }
+        .nota {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #92400e;
+        }
+        @media print {
+            body {
+                padding: 20px;
+            }
+            .header {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📋 ESTÁNDAR DE CAPAS GDB</h1>
+        <p>Asomunicipios - Gestión Catastral 2026</p>
+    </div>
+    
+    <div class="content">
+        <div class="section-title">✅ CAPAS PERMITIDAS</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Capa Estándar</th>
+                    <th>Variantes Aceptadas</th>
+                    <th>Descripción</th>
+                    <th>Obligatoria</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td class="capa-nombre">R_TERRENO</td>
+                    <td class="variante">R_TERRENO, r_terreno, R_Terreno</td>
+                    <td>Polígonos de terrenos rurales</td>
+                    <td><span class="obligatorio si">✓ SÍ</span></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td class="capa-nombre">U_TERRENO</td>
+                    <td class="variante">U_TERRENO, u_terreno, U_Terreno</td>
+                    <td>Polígonos de terrenos urbanos</td>
+                    <td><span class="obligatorio si">✓ SÍ</span></td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td class="capa-nombre">R_CONSTRUCCION</td>
+                    <td class="variante">R_CONSTRUCCION, r_construccion</td>
+                    <td>Construcciones rurales</td>
+                    <td><span class="obligatorio no">⚠ Opcional</span></td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td class="capa-nombre">U_CONSTRUCCION</td>
+                    <td class="variante">U_CONSTRUCCION, u_construccion</td>
+                    <td>Construcciones urbanas</td>
+                    <td><span class="obligatorio no">⚠ Opcional</span></td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td class="capa-nombre">R_VEREDA</td>
+                    <td class="variante">R_VEREDA, r_vereda, R_Vereda</td>
+                    <td>Límites de veredas</td>
+                    <td><span class="obligatorio no">⚠ Opcional</span></td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td class="capa-nombre">U_MANZANA</td>
+                    <td class="variante">U_MANZANA, u_manzana</td>
+                    <td>Límites de manzanas urbanas</td>
+                    <td><span class="obligatorio no">⚠ Opcional</span></td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td class="capa-nombre">U_BARRIO</td>
+                    <td class="variante">U_BARRIO, u_barrio, U_Barrio</td>
+                    <td>Límites de barrios</td>
+                    <td><span class="obligatorio no">⚠ Opcional</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-title">❌ NOMBRES NO PERMITIDOS</div>
+        <table class="error-table">
+            <thead>
+                <tr>
+                    <th>Nombre Incorrecto</th>
+                    <th>¿Por qué no es válido?</th>
+                    <th>Corrección</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>R_TERRENO_1</td>
+                    <td>Sufijo numérico (_1, _2) no permitido</td>
+                    <td>R_TERRENO</td>
+                </tr>
+                <tr>
+                    <td>R TERRENO</td>
+                    <td>Espacios no permitidos</td>
+                    <td>R_TERRENO</td>
+                </tr>
+                <tr>
+                    <td>Terreno_Rural</td>
+                    <td>Falta prefijo R_ o U_</td>
+                    <td>R_TERRENO</td>
+                </tr>
+                <tr>
+                    <td>TERRENO</td>
+                    <td>Sin prefijo de zona (R/U)</td>
+                    <td>R_TERRENO o U_TERRENO</td>
+                </tr>
+                <tr>
+                    <td>R_Terrenos</td>
+                    <td>Plural no permitido</td>
+                    <td>R_TERRENO</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="nota">
+            <strong>⚠️ IMPORTANTE:</strong> Las capas que no cumplan con el estándar NO serán cargadas al sistema. 
+            Asegúrese de renombrar las capas en ArcGIS/QGIS antes de generar el archivo GDB.
+        </div>
+
+        <div class="section-title">📝 CAMPO OBLIGATORIO</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Campo</th>
+                    <th>Tipo</th>
+                    <th>Longitud</th>
+                    <th>Ejemplo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="capa-nombre">codigo</td>
+                    <td>Texto</td>
+                    <td>30 caracteres</td>
+                    <td class="variante">540030008000000010027000000000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <span>Documento generado: Enero 2026</span>
+            <span>Versión 1.0 | Gestión Catastral</span>
+        </div>
+    </div>
+</body>
+</html>
