@@ -199,7 +199,7 @@ class TestAutoAsignacion:
     def test_auto_asignar_updates_petition_state(self):
         """POST /api/petitions/{id}/auto-asignar should update petition state to 'asignado'"""
         # Get a petition in radicado state
-        petitions_response = self.session.get(f"{BASE_URL}/api/petitions?estado=radicado&limit=10")
+        petitions_response = self.session.get(f"{BASE_URL}/api/petitions?estado=radicado&limit=50")
         
         if petitions_response.status_code != 200:
             pytest.skip("Could not fetch petitions")
@@ -208,20 +208,21 @@ class TestAutoAsignacion:
         if isinstance(petitions, dict):
             petitions = petitions.get("petitions", [])
         
-        # Find a petition that is not already assigned to current user
+        # Find a petition that is not already assigned to current user AND is in radicado state
         petition_id = None
         for p in petitions:
-            if self.user["id"] not in p.get("gestores_asignados", []):
+            if (self.user["id"] not in p.get("gestores_asignados", []) and 
+                p.get("estado") == "radicado"):
                 petition_id = p["id"]
                 break
         
         if not petition_id:
-            pytest.skip("No unassigned petitions available for testing")
+            pytest.skip("No unassigned petitions in 'radicado' state available for testing")
         
         # Auto-assign
         assign_response = self.session.post(f"{BASE_URL}/api/petitions/{petition_id}/auto-asignar")
         
-        assert assign_response.status_code == 200, f"Expected 200, got {assign_response.status_code}"
+        assert assign_response.status_code == 200, f"Expected 200, got {assign_response.status_code}. Response: {assign_response.text}"
         
         # Verify petition state changed
         get_response = self.session.get(f"{BASE_URL}/api/petitions/{petition_id}")
