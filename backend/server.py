@@ -549,19 +549,39 @@ def get_email_template(titulo: str, contenido: str, radicado: str = None, tipo_n
     </head>
     <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <!-- Header con gradiente y mapa de fondo -->
-            <div style="background: linear-gradient(135deg, {color["bg"]}ee 0%, #064e3bee 100%), 
-                        url('https://images.unsplash.com/photo-1662140246046-fc44f41e4362?q=80&w=800') center/cover; 
-                        border-radius: 16px 16px 0 0; padding: 30px; text-align: center;">
-                <!-- Logo -->
-                <img src="{logo_url}" alt="Asomunicipios" style="height: 70px; margin-bottom: 15px; border-radius: 10px; background: white; padding: 8px;">
-                <h1 style="color: white; margin: 0; font-size: 22px; font-weight: 600;">
-                    Asociación de Municipios del Catatumbo
-                </h1>
-                <p style="color: #a7f3d0; margin: 8px 0 0 0; font-size: 14px;">
-                    Provincia de Ocaña y Sur del Cesar
-                </p>
-            </div>
+            <!-- Header con imagen de mapa y gradiente -->
+            <!--[if gte mso 9]>
+            <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:180px;">
+            <v:fill type="frame" src="https://images.unsplash.com/photo-1662140246046-fc44f41e4362?q=80&w=800" color="{color["bg"]}" />
+            <v:textbox inset="0,0,0,0">
+            <![endif]-->
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-radius: 16px 16px 0 0; overflow: hidden;">
+                <tr>
+                    <td background="https://images.unsplash.com/photo-1662140246046-fc44f41e4362?q=80&w=800" 
+                        bgcolor="{color["bg"]}" 
+                        style="background-color: {color["bg"]}; background-image: url('https://images.unsplash.com/photo-1662140246046-fc44f41e4362?q=80&w=800'); background-size: cover; background-position: center; border-radius: 16px 16px 0 0; padding: 30px; text-align: center;">
+                        <!--[if gte mso 9]>
+                        <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="padding: 30px; text-align: center;">
+                        <![endif]-->
+                        <div style="background: rgba(4, 120, 87, 0.85); padding: 25px; border-radius: 12px;">
+                            <img src="{logo_url}" alt="Asomunicipios" style="height: 60px; margin-bottom: 12px; border-radius: 8px; background: white; padding: 6px;">
+                            <h1 style="color: white; margin: 0; font-size: 20px; font-weight: 600;">
+                                Asociación de Municipios del Catatumbo
+                            </h1>
+                            <p style="color: #a7f3d0; margin: 6px 0 0 0; font-size: 13px;">
+                                Provincia de Ocaña y Sur del Cesar
+                            </p>
+                        </div>
+                        <!--[if gte mso 9]>
+                        </td></tr></table>
+                        <![endif]-->
+                    </td>
+                </tr>
+            </table>
+            <!--[if gte mso 9]>
+            </v:textbox>
+            </v:rect>
+            <![endif]-->
             
             <!-- Contenido principal -->
             <div style="background: white; padding: 35px; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
