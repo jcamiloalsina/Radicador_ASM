@@ -108,7 +108,7 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 
 ### P1 - Alta Prioridad
 - [ ] Mejorar funcionalidad offline del PWA (consulta de predios, R1/R2 y visor sin conexión)
-- [ ] Flujo de rechazo de peticiones con observaciones editables
+- [x] Flujo de devolución de peticiones con observaciones editables ✅
 - [ ] Mejorar vinculación GDB-Predios (~82% actualmente, issue recurrente)
 - [ ] Configurar SMTP Office 365 (requiere desactivar Security Defaults)
 
