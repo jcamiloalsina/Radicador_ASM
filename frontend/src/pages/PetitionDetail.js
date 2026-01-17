@@ -229,6 +229,80 @@ export default function PetitionDetail() {
         </CardHeader>
       </Card>
 
+      {/* Alert for DEVUELTO petitions - User can resubmit */}
+      {petition.estado === 'devuelto' && petition.user_id === user?.id && (
+        <Card className="border-orange-300 bg-orange-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <Send className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-orange-900 mb-2">Trámite Devuelto - Requiere Correcciones</h3>
+                <p className="text-sm text-orange-800 mb-3">
+                  Su trámite ha sido devuelto por <strong>{petition.devuelto_por_nombre || 'el gestor'}</strong> para realizar correcciones. 
+                  Por favor, revise las observaciones, realice los ajustes necesarios y reenvíe para revisión.
+                </p>
+                {petition.observaciones_devolucion && (
+                  <div className="bg-white p-4 rounded-md border border-orange-200 mb-4">
+                    <p className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                      <Paperclip className="w-4 h-4" />
+                      Observaciones del Gestor:
+                    </p>
+                    <p className="text-sm text-slate-900 whitespace-pre-line">{petition.observaciones_devolucion}</p>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-3">
+                  <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="border-orange-400 text-orange-700 hover:bg-orange-100" data-testid="upload-correccion-button">
+                        <Upload className="w-4 h-4 mr-2" />
+                        Cargar Documentos
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Subir Documentos de Corrección</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <p className="text-sm text-slate-600">
+                          Sube los documentos corregidos o adicionales solicitados.
+                        </p>
+                        <Input
+                          type="file"
+                          multiple
+                          onChange={(e) => setFiles(Array.from(e.target.files))}
+                          data-testid="upload-files-input"
+                        />
+                        {files.length > 0 && (
+                          <div className="space-y-2">
+                            {files.map((file, idx) => (
+                              <div key={idx} className="text-sm text-slate-700 flex items-center gap-2">
+                                <FileText className="w-4 h-4" />
+                                {file.name}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <Button onClick={handleFileUpload} className="w-full bg-emerald-700 hover:bg-emerald-800" data-testid="confirm-upload-button">
+                          Subir Archivos
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  <Button 
+                    onClick={handleReenviar}
+                    className="bg-orange-600 hover:bg-orange-700 text-white" 
+                    data-testid="reenviar-button"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Reenviar para Revisión
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Alert for rejected petitions - Citizens can upload files */}
       {petition.estado === 'rechazado' && petition.user_id === user?.id && (
         <Card className="border-red-300 bg-red-50">
