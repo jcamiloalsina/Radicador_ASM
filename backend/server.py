@@ -1494,6 +1494,33 @@ async def login(credentials: UserLogin):
     if not verify_password(credentials.password, user['password']):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales inválidas")
     
+    # Verificar si el email está verificado (excepto admin protegido y usuarios internos)
+    is_protected_admin = user.get('email', '').lower() == PROTECTED_ADMIN_EMAIL.lower()
+    is_internal_user = user.get('role') in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.GESTOR, UserRole.ATENCION_USUARIO, UserRole.COMUNICACIONES]
+    
+    if not user.get('email_verified', True) and not is_protected_admin and not is_internal_user:
+        # Reenviar código automáticamente
+        verification_code = str(random.randint(100000, 999999))
+        expires_at = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
+        
+        await db.users.update_one(
+            {"id": user['id']},
+            {"$set": {
+                "verification_code": verification_code,
+                "verification_code_expires": expires_at
+            }}
+        )
+        
+        try:
+            await enviar_codigo_verificacion(user['email'], verification_code, user['full_name'])
+        except:
+            pass
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="email_not_verified"
+        )
+    
     token = create_token(user['id'], user['email'], user['role'])
     
     return {
