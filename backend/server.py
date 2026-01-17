@@ -2574,7 +2574,12 @@ async def export_listado_tramites_pdf(
     fecha_fin: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
-    """Export petition list as PDF (Listado de Trámites)"""
+    """Export petition list as PDF with statistics charts"""
+    from reportlab.graphics.shapes import Drawing, String
+    from reportlab.graphics.charts.piecharts import Pie
+    from reportlab.graphics.charts.barcharts import VerticalBarChart
+    from reportlab.graphics import renderPDF
+    
     if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.ATENCION_USUARIO, UserRole.GESTOR]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
     
@@ -2599,43 +2604,11 @@ async def export_listado_tramites_pdf(
     users = await db.users.find({}, {"_id": 0, "id": 1, "full_name": 1}).to_list(1000)
     user_map = {u['id']: u['full_name'] for u in users}
     
-    # Generate PDF
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), leftMargin=0.5*inch, rightMargin=0.5*inch)
-    story = []
-    styles = getSampleStyleSheet()
-    
-    # Header with logo
-    logo_path = Path("/app/frontend/public/logo-asomunicipios.png")
-    if logo_path.exists():
-        img = RLImage(str(logo_path), width=2*inch, height=0.8*inch)
-        story.append(img)
-        story.append(Spacer(1, 0.2*inch))
-    
-    # Title
-    title_style = ParagraphStyle(
-        'Title',
-        parent=styles['Heading1'],
-        fontSize=14,
-        alignment=TA_CENTER,
-        textColor=colors.HexColor('#047857'),
-        spaceAfter=10
-    )
-    story.append(Paragraph("LISTADO DE TRÁMITES CATASTRALES", title_style))
-    
-    # Filter info
-    filter_text = f"Fecha de generación: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
-    if municipio:
-        filter_text += f" | Municipio: {municipio}"
-    if estado:
-        filter_text += f" | Estado: {estado}"
-    story.append(Paragraph(filter_text, styles['Normal']))
-    story.append(Spacer(1, 0.2*inch))
-    
-    # Table data
-    table_data = [
-        ['No.', 'RADICADO', 'FECHA', 'SOLICITANTE', 'TIPO TRÁMITE', 'MUNICIPIO', 'ESTADO', 'GESTOR']
-    ]
+    # Calculate statistics
+    total = len(petitions)
+    stats_estado = {}
+    stats_municipio = {}
+    stats_tipo = {}
     
     estado_labels = {
         'radicado': 'Radicado',
@@ -2646,36 +2619,186 @@ async def export_listado_tramites_pdf(
         'finalizado': 'Finalizado'
     }
     
-    for idx, pet in enumerate(petitions, 1):
+    for pet in petitions:
+        # Por estado
+        est = pet.get('estado', 'radicado')
+        stats_estado[est] = stats_estado.get(est, 0) + 1
+        # Por municipio
+        mun = pet.get('municipio', 'Sin municipio')
+        stats_municipio[mun] = stats_municipio.get(mun, 0) + 1
+        # Por tipo
+        tipo = pet.get('tipo_tramite', 'Otro')
+        stats_tipo[tipo] = stats_tipo.get(tipo, 0) + 1
+    
+    # Generate PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), leftMargin=0.4*inch, rightMargin=0.4*inch, topMargin=0.4*inch, bottomMargin=0.4*inch)
+    story = []
+    styles = getSampleStyleSheet()
+    
+    # ===================== HEADER =====================
+    header_data = [['', '', '']]
+    logo_path = Path("/app/frontend/public/logo-asomunicipios.png")
+    if logo_path.exists():
+        logo_img = RLImage(str(logo_path), width=1.2*inch, height=0.5*inch)
+        header_data[0][0] = logo_img
+    
+    header_data[0][1] = Paragraph(
+        '<font size="14" color="#047857"><b>ASOMUNICIPIOS</b></font><br/>'
+        '<font size="8" color="#64748b">Asociación de Municipios del Catatumbo</font>',
+        ParagraphStyle('Header', alignment=TA_CENTER)
+    )
+    header_data[0][2] = Paragraph(
+        f'<font size="8" color="#64748b">Fecha: {datetime.now().strftime("%d/%m/%Y")}<br/>Hora: {datetime.now().strftime("%H:%M")}</font>',
+        ParagraphStyle('HeaderRight', alignment=TA_LEFT)
+    )
+    
+    header_table = Table(header_data, colWidths=[1.5*inch, 6*inch, 1.5*inch])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+    ]))
+    story.append(header_table)
+    story.append(Spacer(1, 0.15*inch))
+    
+    # Title
+    title_style = ParagraphStyle('Title', fontSize=16, alignment=TA_CENTER, textColor=colors.HexColor('#047857'), spaceAfter=5, fontName='Helvetica-Bold')
+    story.append(Paragraph("INFORME DE TRÁMITES CATASTRALES", title_style))
+    
+    # Filter info
+    filter_parts = []
+    if municipio:
+        filter_parts.append(f"Municipio: {municipio}")
+    if estado:
+        filter_parts.append(f"Estado: {estado_labels.get(estado, estado)}")
+    filter_text = " | ".join(filter_parts) if filter_parts else "Todos los trámites"
+    story.append(Paragraph(f'<font size="9" color="#64748b">{filter_text}</font>', ParagraphStyle('Filter', alignment=TA_CENTER)))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # ===================== ESTADÍSTICAS =====================
+    story.append(Paragraph('<font size="12" color="#047857"><b>📊 ESTADÍSTICAS GENERALES</b></font>', styles['Normal']))
+    story.append(Spacer(1, 0.1*inch))
+    
+    # Stats cards
+    finalizados = stats_estado.get('finalizado', 0)
+    en_proceso = stats_estado.get('asignado', 0) + stats_estado.get('revision', 0) + stats_estado.get('devuelto', 0)
+    radicados = stats_estado.get('radicado', 0)
+    rechazados = stats_estado.get('rechazado', 0)
+    
+    stats_data = [[
+        Paragraph(f'<font size="20" color="#047857"><b>{total}</b></font><br/><font size="8">Total Trámites</font>', ParagraphStyle('Stat', alignment=TA_CENTER)),
+        Paragraph(f'<font size="20" color="#22c55e"><b>{finalizados}</b></font><br/><font size="8">Finalizados</font>', ParagraphStyle('Stat', alignment=TA_CENTER)),
+        Paragraph(f'<font size="20" color="#f59e0b"><b>{en_proceso}</b></font><br/><font size="8">En Proceso</font>', ParagraphStyle('Stat', alignment=TA_CENTER)),
+        Paragraph(f'<font size="20" color="#3b82f6"><b>{radicados}</b></font><br/><font size="8">Radicados</font>', ParagraphStyle('Stat', alignment=TA_CENTER)),
+        Paragraph(f'<font size="20" color="#ef4444"><b>{rechazados}</b></font><br/><font size="8">Rechazados</font>', ParagraphStyle('Stat', alignment=TA_CENTER)),
+    ]]
+    
+    stats_table = Table(stats_data, colWidths=[1.8*inch]*5)
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
+        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+        ('INNERGRID', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+    ]))
+    story.append(stats_table)
+    story.append(Spacer(1, 0.2*inch))
+    
+    # ===================== GRÁFICOS =====================
+    # Pie chart for estado distribution
+    if stats_estado:
+        story.append(Paragraph('<font size="11" color="#047857"><b>📈 Distribución por Estado</b></font>', styles['Normal']))
+        story.append(Spacer(1, 0.1*inch))
+        
+        drawing = Drawing(500, 150)
+        pie = Pie()
+        pie.x = 80
+        pie.y = 10
+        pie.width = 120
+        pie.height = 120
+        
+        pie_data = []
+        pie_labels = []
+        pie_colors = [
+            colors.HexColor('#3b82f6'),  # radicado - blue
+            colors.HexColor('#8b5cf6'),  # asignado - purple
+            colors.HexColor('#f59e0b'),  # revision - amber
+            colors.HexColor('#f97316'),  # devuelto - orange
+            colors.HexColor('#ef4444'),  # rechazado - red
+            colors.HexColor('#22c55e'),  # finalizado - green
+        ]
+        
+        estado_order = ['radicado', 'asignado', 'revision', 'devuelto', 'rechazado', 'finalizado']
+        color_idx = 0
+        for est in estado_order:
+            if est in stats_estado:
+                pie_data.append(stats_estado[est])
+                pie_labels.append(f"{estado_labels.get(est, est)}: {stats_estado[est]}")
+                color_idx += 1
+        
+        if pie_data:
+            pie.data = pie_data
+            pie.labels = pie_labels
+            pie.slices.strokeWidth = 0.5
+            for i, est in enumerate([e for e in estado_order if e in stats_estado]):
+                idx = estado_order.index(est)
+                pie.slices[i].fillColor = pie_colors[idx]
+            
+            drawing.add(pie)
+            
+            # Legend on the right
+            legend_y = 130
+            for i, label in enumerate(pie_labels):
+                color_box = Drawing(10, 10)
+                idx = estado_order.index([e for e in estado_order if e in stats_estado][i])
+                from reportlab.graphics.shapes import Rect
+                rect = Rect(0, 0, 10, 10, fillColor=pie_colors[idx], strokeWidth=0)
+                color_box.add(rect)
+                drawing.add(String(250, legend_y - i*18, label, fontSize=9, fillColor=colors.HexColor('#374151')))
+            
+            story.append(drawing)
+    
+    story.append(Spacer(1, 0.15*inch))
+    
+    # ===================== TABLA DE TRÁMITES =====================
+    from reportlab.platypus import PageBreak
+    story.append(PageBreak())
+    
+    story.append(Paragraph('<font size="12" color="#047857"><b>📋 LISTADO DETALLADO DE TRÁMITES</b></font>', styles['Normal']))
+    story.append(Spacer(1, 0.1*inch))
+    story.append(Paragraph(f'<font size="9" color="#64748b">Mostrando {min(len(petitions), 200)} de {len(petitions)} registros</font>', styles['Normal']))
+    story.append(Spacer(1, 0.1*inch))
+    
+    # Table data - limit to 200 for performance
+    table_data = [['#', 'RADICADO', 'FECHA', 'SOLICITANTE', 'TIPO', 'MUNICIPIO', 'ESTADO']]
+    
+    for idx, pet in enumerate(petitions[:200], 1):
         created_at = pet.get('created_at', '')
         if isinstance(created_at, str):
             try:
                 created_at = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-                fecha_str = created_at.strftime('%d/%m/%Y')
+                fecha_str = created_at.strftime('%d/%m/%y')
             except:
-                fecha_str = str(created_at)[:10]
+                fecha_str = str(created_at)[:8]
         else:
-            fecha_str = created_at.strftime('%d/%m/%Y') if created_at else ''
+            fecha_str = created_at.strftime('%d/%m/%y') if created_at else ''
         
-        gestor_names = []
-        for g_id in pet.get('gestores_asignados', []):
-            if g_id in user_map:
-                gestor_names.append(user_map[g_id])
-        gestor_str = ', '.join(gestor_names) if gestor_names else 'Sin asignar'
+        solicitante = pet.get('nombre_completo', '')[:25]
+        tipo = pet.get('tipo_tramite', '')[:20]
         
         table_data.append([
             str(idx),
-            pet.get('radicado', ''),
+            pet.get('radicado', '')[:22],
             fecha_str,
-            pet.get('nombre_completo', ''),
-            pet.get('tipo_tramite', ''),
-            pet.get('municipio', ''),
-            estado_labels.get(pet.get('estado', ''), pet.get('estado', '')),
-            gestor_str[:30]  # Truncate long names
+            solicitante,
+            tipo,
+            pet.get('municipio', '')[:15],
+            estado_labels.get(pet.get('estado', ''), pet.get('estado', ''))[:12]
         ])
     
-    # Create table
-    col_widths = [0.4*inch, 1.3*inch, 0.8*inch, 1.8*inch, 1.5*inch, 1.2*inch, 0.9*inch, 1.5*inch]
+    # Create table with better proportions
+    col_widths = [0.35*inch, 1.6*inch, 0.65*inch, 2*inch, 1.6*inch, 1.1*inch, 0.9*inch]
     table = Table(table_data, colWidths=col_widths, repeatRows=1)
     
     table.setStyle(TableStyle([
@@ -2684,40 +2807,27 @@ async def export_listado_tramites_pdf(
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 8),
         ('FONTSIZE', (0, 1), (-1, -1), 7),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+        ('ALIGN', (2, 0), (2, -1), 'CENTER'),
+        ('ALIGN', (6, 0), (6, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f9f4')]),
-        ('LEFTPADDING', (0, 0), (-1, -1), 3),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0fdf4')]),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
     ]))
     
     story.append(table)
-    story.append(Spacer(1, 0.3*inch))
-    
-    # Summary
-    total = len(petitions)
-    finalizados = sum(1 for p in petitions if p.get('estado') == 'finalizado')
-    en_proceso = sum(1 for p in petitions if p.get('estado') in ['asignado', 'revision', 'devuelto'])
-    radicados = sum(1 for p in petitions if p.get('estado') == 'radicado')
-    
-    summary_text = f"<b>Resumen:</b> Total: {total} | Finalizados: {finalizados} | En Proceso: {en_proceso} | Radicados: {radicados}"
-    story.append(Paragraph(summary_text, styles['Normal']))
     
     # Footer
-    footer_style = ParagraphStyle(
-        'Footer',
-        parent=styles['Normal'],
-        fontSize=7,
-        textColor=colors.grey,
-        alignment=TA_CENTER
-    )
     story.append(Spacer(1, 0.2*inch))
+    footer_style = ParagraphStyle('Footer', fontSize=7, textColor=colors.grey, alignment=TA_CENTER)
     story.append(Paragraph(
-        "ASOMUNICIPIOS - Asociación de Municipios del Catatumbo, Provincia de Ocaña y Sur del Cesar",
+        f"Documento generado el {datetime.now().strftime('%d/%m/%Y a las %H:%M')} | ASOMUNICIPIOS - Sistema de Gestión Catastral",
         footer_style
+    ))
     ))
     
     doc.build(story)
