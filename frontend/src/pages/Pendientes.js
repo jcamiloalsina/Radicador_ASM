@@ -233,8 +233,8 @@ export default function Pendientes() {
                 <h4 className="font-medium text-slate-700 mb-3">Datos del Predio</h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="text-slate-500">Código Predial:</span>
-                    <p className="font-mono">{selectedCambio.datos_propuestos?.codigo_predial_nacional || selectedCambio.predio_actual?.codigo_homologado || 'Nuevo'}</p>
+                    <span className="text-slate-500">Código Predial Nacional:</span>
+                    <p className="font-mono break-all">{selectedCambio.datos_propuestos?.codigo_predial_nacional || selectedCambio.predio_actual?.codigo_predial_nacional || 'Nuevo'}</p>
                   </div>
                   <div>
                     <span className="text-slate-500">Municipio:</span>
