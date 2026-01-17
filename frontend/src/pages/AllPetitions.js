@@ -457,15 +457,15 @@ export default function AllPetitions() {
             <table className="w-full min-w-[700px]">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="text-left py-4 px-4 font-semibold text-slate-700">Radicado</th>
-                  <th className="text-left py-4 px-4 font-semibold text-slate-700">Solicitante</th>
-                  <th className="text-left py-4 px-4 font-semibold text-slate-700">Municipio</th>
-                  <th className="text-left py-4 px-4 font-semibold text-slate-700">Estado</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700 w-36">Radicado</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700 w-48">Solicitante</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700 w-32">Municipio</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700 w-28">Estado</th>
                   {isCoordinatorOrAdmin && (
-                    <th className="text-left py-4 px-4 font-semibold text-slate-700">Gestor</th>
+                    <th className="text-left py-4 px-4 font-semibold text-slate-700 w-36">Gestor</th>
                   )}
-                  <th className="text-left py-4 px-4 font-semibold text-slate-700">Fecha</th>
-                  <th className="text-center py-4 px-4 font-semibold text-slate-700">Acción</th>
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700 w-28">Fecha</th>
+                  <th className="text-center py-4 px-4 font-semibold text-slate-700 w-24">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
