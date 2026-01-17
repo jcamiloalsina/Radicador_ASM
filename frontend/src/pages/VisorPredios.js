@@ -216,6 +216,8 @@ export default function VisorPredios() {
   const [marcadorCoordenadas, setMarcadorCoordenadas] = useState(null); // [lat, lng] del marcador
   const [resumenCargasMensuales, setResumenCargasMensuales] = useState(null); // Resumen de cargas GDB del mes
   const [construcciones, setConstrucciones] = useState(null); // Construcciones del predio seleccionado
+  const [ortoimagenes, setOrtoimagenes] = useState([]); // Lista de ortoimágenes disponibles
+  const [ortoimagenActiva, setOrtoimagenActiva] = useState(null); // Ortoimagen seleccionada para mostrar
   const mapRef = useRef(null);
 
   // Default center: Norte de Santander, Colombia
