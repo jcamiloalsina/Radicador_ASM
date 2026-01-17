@@ -2744,7 +2744,7 @@ export default function Predios() {
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-outfit">Editar Predio - {selectedPredio?.codigo_homologado}</DialogTitle>
           </DialogHeader>
@@ -2752,61 +2752,190 @@ export default function Predios() {
           <div className="space-y-4">
             <div className="bg-slate-50 p-4 rounded-lg">
               <p className="text-sm text-slate-600">
-                <strong>Código Predial:</strong> {selectedPredio?.codigo_predial_nacional}
+                <strong>Código Predial Nacional:</strong> {selectedPredio?.codigo_predial_nacional}
               </p>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <Label>Nombre del Propietario *</Label>
-                <Input value={formData.nombre_propietario} onChange={(e) => setFormData({...formData, nombre_propietario: e.target.value.toUpperCase()})} />
+            {/* Sección de Propietarios */}
+            <div className="border border-slate-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-semibold text-slate-800">Propietarios</h4>
+                <Button type="button" variant="outline" size="sm" onClick={agregarPropietario} className="text-emerald-700">
+                  <Plus className="w-4 h-4 mr-1" /> Agregar Propietario
+                </Button>
               </div>
-              <div>
-                <Label>Tipo de Documento *</Label>
-                <Select value={formData.tipo_documento} onValueChange={(v) => setFormData({...formData, tipo_documento: v})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {catalogos?.tipo_documento && Object.entries(catalogos.tipo_documento).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{k} - {v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              
+              {propietarios.map((prop, index) => (
+                <div key={index} className="border border-slate-200 rounded-lg p-4 bg-slate-50 mb-3">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm font-medium text-slate-700">Propietario {index + 1}</span>
+                    {propietarios.length > 1 && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => eliminarPropietario(index)} className="text-red-600 hover:text-red-700">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <Label className="text-xs">Nombre Completo *</Label>
+                      <Input 
+                        value={prop.nombre_propietario} 
+                        onChange={(e) => actualizarPropietario(index, 'nombre_propietario', e.target.value.toUpperCase())}
+                        placeholder="NOMBRE COMPLETO DEL PROPIETARIO"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Tipo Documento *</Label>
+                      <Select value={prop.tipo_documento} onValueChange={(v) => actualizarPropietario(index, 'tipo_documento', v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {catalogos?.tipo_documento && Object.entries(catalogos.tipo_documento).map(([k, v]) => (
+                            <SelectItem key={k} value={k}>{k} - {v}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Número Documento *</Label>
+                      <Input 
+                        value={prop.numero_documento} 
+                        onChange={(e) => actualizarPropietario(index, 'numero_documento', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Estado Civil</Label>
+                      <Select value={prop.estado_civil || "none"} onValueChange={(v) => actualizarPropietario(index, 'estado_civil', v === "none" ? "" : v)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sin especificar</SelectItem>
+                          {catalogos?.estado_civil && Object.entries(catalogos.estado_civil).map(([k, v]) => (
+                            <SelectItem key={k} value={k}>{k} - {v}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Información del Predio */}
+            <div className="border border-slate-200 rounded-lg p-4">
+              <h4 className="font-semibold text-slate-800 mb-3">Información del Predio</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label>Dirección *</Label>
+                  <Input value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value.toUpperCase()})} />
+                </div>
+                <div>
+                  <Label>Destino Económico *</Label>
+                  <Select value={formData.destino_economico} onValueChange={(v) => setFormData({...formData, destino_economico: v})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {catalogos?.destino_economico && Object.entries(catalogos.destino_economico).map(([k, v]) => (
+                        <SelectItem key={k} value={k}>{k} - {v}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Avalúo (COP) *</Label>
+                  <Input type="number" value={formData.avaluo} onChange={(e) => setFormData({...formData, avaluo: e.target.value})} />
+                </div>
+                <div>
+                  <Label>Área Terreno (m²)</Label>
+                  <Input type="number" value={formData.area_terreno} onChange={(e) => setFormData({...formData, area_terreno: e.target.value})} />
+                </div>
+                <div>
+                  <Label>Área Construida (m²)</Label>
+                  <Input type="number" value={formData.area_construida} onChange={(e) => setFormData({...formData, area_construida: e.target.value})} />
+                </div>
+                <div>
+                  <Label>Matrícula Inmobiliaria</Label>
+                  <Input value={formData.matricula_inmobiliaria} onChange={(e) => setFormData({...formData, matricula_inmobiliaria: e.target.value})} />
+                </div>
               </div>
-              <div>
-                <Label>Número de Documento *</Label>
-                <Input value={formData.numero_documento} onChange={(e) => setFormData({...formData, numero_documento: e.target.value})} />
+            </div>
+            
+            {/* Zonas Físicas R2 */}
+            <div className="border border-slate-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-semibold text-slate-800">Zonas Físicas (R2)</h4>
+                <Button type="button" variant="outline" size="sm" onClick={agregarZonaFisica} className="text-emerald-700">
+                  <Plus className="w-4 h-4 mr-1" /> Agregar Zona
+                </Button>
               </div>
-              <div className="col-span-2">
-                <Label>Dirección *</Label>
-                <Input value={formData.direccion} onChange={(e) => setFormData({...formData, direccion: e.target.value.toUpperCase()})} />
-              </div>
-              <div>
-                <Label>Destino Económico *</Label>
-                <Select value={formData.destino_economico} onValueChange={(v) => setFormData({...formData, destino_economico: v})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {catalogos?.destino_economico && Object.entries(catalogos.destino_economico).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{k} - {v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Avalúo (COP) *</Label>
-                <Input type="number" value={formData.avaluo} onChange={(e) => setFormData({...formData, avaluo: e.target.value})} />
-              </div>
-              <div>
-                <Label>Área Terreno (m²)</Label>
-                <Input type="number" value={formData.area_terreno} onChange={(e) => setFormData({...formData, area_terreno: e.target.value})} />
-              </div>
-              <div>
-                <Label>Área Construida (m²)</Label>
-                <Input type="number" value={formData.area_construida} onChange={(e) => setFormData({...formData, area_construida: e.target.value})} />
-              </div>
+              
+              {zonasFisicas.map((zona, index) => (
+                <div key={index} className="border border-slate-200 rounded-lg p-3 bg-slate-50 mb-3">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-slate-700">Zona {index + 1}</span>
+                    {zonasFisicas.length > 1 && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => eliminarZonaFisica(index)} className="text-red-600 hover:text-red-700">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <Label className="text-xs">Zona Física</Label>
+                      <Select value={zona.zona_fisica} onValueChange={(v) => actualizarZonaFisica(index, 'zona_fisica', v)}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {catalogos?.zona_fisica && Object.entries(catalogos.zona_fisica).map(([k, v]) => (
+                            <SelectItem key={k} value={k}>{k} - {v}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Zona Económica</Label>
+                      <Select value={zona.zona_economica} onValueChange={(v) => actualizarZonaFisica(index, 'zona_economica', v)}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {catalogos?.zona_economica && Object.entries(catalogos.zona_economica).map(([k, v]) => (
+                            <SelectItem key={k} value={k}>{k}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Área Terreno</Label>
+                      <Input type="number" className="h-8 text-xs" value={zona.area_terreno} onChange={(e) => actualizarZonaFisica(index, 'area_terreno', e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Habitaciones</Label>
+                      <Input type="number" className="h-8 text-xs" value={zona.habitaciones} onChange={(e) => actualizarZonaFisica(index, 'habitaciones', e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Baños</Label>
+                      <Input type="number" className="h-8 text-xs" value={zona.banos} onChange={(e) => actualizarZonaFisica(index, 'banos', e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Pisos</Label>
+                      <Input type="number" className="h-8 text-xs" value={zona.pisos} onChange={(e) => actualizarZonaFisica(index, 'pisos', e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Área Construida</Label>
+                      <Input type="number" className="h-8 text-xs" value={zona.area_construida} onChange={(e) => actualizarZonaFisica(index, 'area_construida', e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Puntaje</Label>
+                      <Input type="number" className="h-8 text-xs" value={zona.puntaje} onChange={(e) => actualizarZonaFisica(index, 'puntaje', e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
           
