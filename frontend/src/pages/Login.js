@@ -234,6 +234,14 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-6" data-testid="login-form">
+            {/* Mensaje de sesión expirada */}
+            {sessionExpiredMsg && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                <p className="text-sm">{sessionExpiredMsg}</p>
+              </div>
+            )}
+            
             <div className="space-y-4">
               <div>
                 <Label htmlFor="email" className="text-slate-700">Correo Electrónico</Label>
