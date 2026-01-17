@@ -63,6 +63,26 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 
 ## Cambios Recientes
 
+### Sesión 17 Enero 2026 (Parte 5) - Fork
+1. **Bug "Not Found" al Asignar Gestor (CORREGIDO):**
+   - ✅ CORREGIDO: El modal de edición ahora llama correctamente a `/api/petitions/{id}/assign-gestor`
+   - Antes: Llamaba a `/api/petitions/{id}/asignar` que no existía
+   - Ahora: Usa el endpoint correcto con el payload adecuado
+
+2. **UI Redundante de "Asignar Gestor" Eliminada:**
+   - ✅ ELIMINADO: Botón externo "Asignar Gestor" junto al botón "Editar"
+   - Ahora: Solo aparece el botón "Editar" en el detalle de petición
+   - La asignación se hace dentro del modal de edición al seleccionar estado "Asignado"
+
+3. **Tiles del Mapa Desaparecen al Zoom Alto (CORREGIDO):**
+   - ✅ CORREGIDO: `maxZoom` reducido de 22 a 19 en VisorPredios.js
+   - Antes: Al hacer zoom > 19, los tiles base desaparecían (fondo gris)
+   - Ahora: El zoom máximo está alineado con los tiles disponibles de OpenStreetMap
+
+4. **Logos Integrados:**
+   - 10 variantes de logos descargadas a `/app/frontend/public/logos/` y `/app/backend/logos/`
+   - Incluye variantes: VerticalBlancoCorto, VerticalBlancoLargo, VerticalNegroCorto, VerticalNegroLargo
+
 ### Sesión 17 Enero 2026 (Parte 4) - Fork
 1. **Corrección Bug Construcciones - Match Exacto:**
    - ✅ CORREGIDO: El endpoint `/gdb/construcciones/{codigo}` ahora usa match EXACTO
