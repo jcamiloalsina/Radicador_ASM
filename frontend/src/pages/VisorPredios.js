@@ -1063,6 +1063,15 @@ export default function VisorPredios() {
                         if (orto) {
                           setOrtoimagenActiva(orto);
                           toast.success(`Ortoimagen "${orto.nombre}" activada. Zoom: ${orto.zoom_min}-${orto.zoom_max}`);
+                          // Centrar mapa en la ortoimagen si tiene bounds
+                          if (orto.bounds && mapRef.current) {
+                            const map = mapRef.current;
+                            const sw = orto.bounds[0]; // [lng, lat]
+                            const ne = orto.bounds[1]; // [lng, lat]
+                            // Convertir a formato Leaflet [lat, lng]
+                            const bounds = [[sw[1], sw[0]], [ne[1], ne[0]]];
+                            map.fitBounds(bounds, { padding: [50, 50] });
+                          }
                         }
                       }
                     }}
