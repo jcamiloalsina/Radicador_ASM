@@ -247,6 +247,11 @@ export default function VisorPredios() {
   const [construcciones, setConstrucciones] = useState(null); // Construcciones del predio seleccionado
   const [ortoimagenes, setOrtoimagenes] = useState([]); // Lista de ortoimágenes disponibles
   const [ortoimagenActiva, setOrtoimagenActiva] = useState(null); // Ortoimagen seleccionada para mostrar
+  const [showUploadOrtoDialog, setShowUploadOrtoDialog] = useState(false); // Modal de subida de ortoimagen
+  const [uploadingOrto, setUploadingOrto] = useState(false);
+  const [ortoFormData, setOrtoFormData] = useState({ nombre: '', municipio: '', descripcion: '' });
+  const [ortoFile, setOrtoFile] = useState(null);
+  const [ortoUploadProgress, setOrtoUploadProgress] = useState(null);
   const mapRef = useRef(null);
 
   // Default center: Norte de Santander, Colombia
