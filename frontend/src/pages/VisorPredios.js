@@ -1246,7 +1246,7 @@ export default function VisorPredios() {
               <MapContainer
                 center={defaultCenter}
                 zoom={defaultZoom}
-                maxZoom={17}
+                maxZoom={15}
                 minZoom={5}
                 style={{ height: '100%', width: '100%' }}
                 ref={mapRef}
@@ -1254,8 +1254,8 @@ export default function VisorPredios() {
                 <TileLayer
                   url={tileLayers[mapType].url}
                   attribution={tileLayers[mapType].attribution}
-                  maxZoom={17}
-                  maxNativeZoom={17}
+                  maxZoom={15}
+                  maxNativeZoom={15}
                 />
                 
                 {/* Mostrar límites de municipios usando componente con acceso al mapa */}
