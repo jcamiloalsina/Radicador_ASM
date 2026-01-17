@@ -651,6 +651,122 @@ export default function VisorPredios() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Diálogo de Análisis de GDB */}
+      <Dialog open={gdbAnalisis !== null} onOpenChange={(open) => !open && setGdbAnalisis(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <AlertTriangle className="w-5 h-5" />
+              Reporte de Validación de GDB
+            </DialogTitle>
+            <DialogDescription>
+              Se encontraron observaciones en la estructura de la GDB que requieren su atención.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {gdbAnalisis && (
+            <div className="space-y-4">
+              {/* Capas Reconocidas */}
+              {gdbAnalisis.capas_analisis?.reconocidas?.length > 0 && (
+                <div className="border border-emerald-200 bg-emerald-50 rounded-lg p-3">
+                  <h4 className="font-medium text-emerald-800 flex items-center gap-2 mb-2">
+                    <CheckCircle className="w-4 h-4" />
+                    Capas Reconocidas ({gdbAnalisis.capas_analisis.reconocidas.length})
+                  </h4>
+                  <ul className="text-sm text-emerald-700 space-y-1">
+                    {gdbAnalisis.capas_analisis.reconocidas.map((capa, idx) => (
+                      <li key={idx}>✓ {capa.tipo}: <strong>{capa.capa_encontrada}</strong></li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {/* Capas No Reconocidas */}
+              {gdbAnalisis.capas_analisis?.no_reconocidas?.length > 0 && (
+                <div className="border border-amber-200 bg-amber-50 rounded-lg p-3">
+                  <h4 className="font-medium text-amber-800 flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    Capas No Estándar ({gdbAnalisis.capas_analisis.no_reconocidas.length})
+                  </h4>
+                  <p className="text-xs text-amber-600 mb-2">
+                    Estas capas no siguen la nomenclatura estándar y podrían no ser procesadas correctamente:
+                  </p>
+                  <ul className="text-sm text-amber-700 space-y-2">
+                    {gdbAnalisis.capas_analisis.no_reconocidas.map((capa, idx) => (
+                      <li key={idx} className="bg-white p-2 rounded border border-amber-200">
+                        <div className="font-medium">"{capa.capa}"</div>
+                        <div className="text-xs text-slate-600">
+                          Tipo detectado: {capa.tipo_detectado}
+                        </div>
+                        <div className="text-xs text-amber-600 font-medium">
+                          💡 {capa.sugerencia}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {/* Errores de Códigos Prediales */}
+              {gdbAnalisis.codigos_con_error?.length > 0 && (
+                <div className="border border-red-200 bg-red-50 rounded-lg p-3">
+                  <h4 className="font-medium text-red-800 flex items-center gap-2 mb-2">
+                    <XCircle className="w-4 h-4" />
+                    Errores en Códigos Prediales ({gdbAnalisis.codigos_con_error.length})
+                  </h4>
+                  <p className="text-xs text-red-600 mb-2">
+                    Estos códigos no cumplen con el formato esperado (30 dígitos):
+                  </p>
+                  <div className="max-h-32 overflow-y-auto bg-white rounded p-2 border border-red-200">
+                    <ul className="text-xs text-red-700 space-y-1 font-mono">
+                      {gdbAnalisis.codigos_con_error.slice(0, 20).map((codigo, idx) => (
+                        <li key={idx}>• {codigo}</li>
+                      ))}
+                      {gdbAnalisis.codigos_con_error.length > 20 && (
+                        <li className="text-slate-500">... y {gdbAnalisis.codigos_con_error.length - 20} más</li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              )}
+              
+              {/* Estadísticas */}
+              {gdbAnalisis.codigos_validos !== undefined && (
+                <div className="border border-slate-200 bg-slate-50 rounded-lg p-3">
+                  <h4 className="font-medium text-slate-700 mb-2">Resumen</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="text-emerald-700">Códigos válidos: <strong>{gdbAnalisis.codigos_validos}</strong></div>
+                    <div className="text-red-700">Códigos con error: <strong>{gdbAnalisis.codigos_con_error?.length || 0}</strong></div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter className="flex gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setGdbAnalisis(null);
+                setGdbArchivoPendiente(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-amber-600 hover:bg-amber-700"
+              onClick={() => {
+                if (gdbArchivoPendiente) {
+                  procederConCargaGdb(gdbArchivoPendiente);
+                }
+              }}
+            >
+              Continuar de Todos Modos
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
