@@ -206,9 +206,6 @@ export default function Login() {
           <p className="text-emerald-100 text-lg font-semibold">
             Tu radicador catastral
           </p>
-          <p className="text-emerald-200 text-sm mt-1">
-            Tu radicador catastral
-          </p>
         </div>
       </div>
 
