@@ -50,7 +50,8 @@ export default function PetitionDetail() {
         tipo_tramite: response.data.tipo_tramite,
         municipio: response.data.municipio,
         observaciones_devolucion: response.data.observaciones_devolucion || '',
-        gestor_id: response.data.gestores_asignados?.[0] || ''
+        gestor_id: '',
+        comentario_asignacion: ''  // Comentario al asignar gestor
       });
     } catch (error) {
       toast.error('Error al cargar la petición');
