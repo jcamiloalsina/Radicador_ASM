@@ -370,6 +370,111 @@ export default function VisorPredios() {
     }
   };
 
+  // Subir nueva ortoimagen
+  const handleUploadOrtoimagen = async () => {
+    if (!ortoFile || !ortoFormData.nombre || !ortoFormData.municipio) {
+      toast.error('Complete todos los campos requeridos');
+      return;
+    }
+
+    setUploadingOrto(true);
+    setOrtoUploadProgress({ status: 'subiendo', progress: 0, message: 'Subiendo archivo...' });
+
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', ortoFile);
+      formData.append('nombre', ortoFormData.nombre);
+      formData.append('municipio', ortoFormData.municipio);
+      formData.append('descripcion', ortoFormData.descripcion || '');
+
+      const response = await axios.post(`${API}/ortoimagenes/subir`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setOrtoUploadProgress({ 
+            status: 'subiendo', 
+            progress: percent, 
+            message: `Subiendo: ${percent}%` 
+          });
+        }
+      });
+
+      const ortoId = response.data.id;
+      toast.success('Archivo recibido. Procesando tiles...');
+      setOrtoUploadProgress({ status: 'procesando', progress: 50, message: 'Generando tiles XYZ (puede tardar varios minutos)...' });
+
+      // Polling para verificar progreso
+      let checkCount = 0;
+      const maxChecks = 360; // 30 minutos máximo
+      const checkProgress = async () => {
+        if (checkCount >= maxChecks) {
+          setOrtoUploadProgress({ status: 'timeout', progress: 0, message: 'Tiempo de espera excedido. Verifique más tarde.' });
+          return;
+        }
+
+        try {
+          const progressRes = await axios.get(`${API}/ortoimagenes/progreso/${ortoId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          setOrtoUploadProgress(progressRes.data);
+
+          if (progressRes.data.status === 'completado') {
+            toast.success(`¡Ortoimagen "${ortoFormData.nombre}" lista!`);
+            fetchOrtoimagenes();
+            setShowUploadOrtoDialog(false);
+            setOrtoFile(null);
+            setOrtoFormData({ nombre: '', municipio: '', descripcion: '' });
+            setOrtoUploadProgress(null);
+          } else if (progressRes.data.status === 'error') {
+            toast.error(`Error: ${progressRes.data.message}`);
+            setOrtoUploadProgress(null);
+          } else {
+            checkCount++;
+            setTimeout(checkProgress, 5000); // Check cada 5 segundos
+          }
+        } catch (err) {
+          console.error('Error checking progress:', err);
+          checkCount++;
+          setTimeout(checkProgress, 5000);
+        }
+      };
+
+      setTimeout(checkProgress, 3000);
+
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al subir ortoimagen');
+      setOrtoUploadProgress(null);
+    } finally {
+      setUploadingOrto(false);
+    }
+  };
+
+  // Eliminar ortoimagen
+  const handleDeleteOrtoimagen = async (ortoId, ortoNombre) => {
+    if (!window.confirm(`¿Está seguro de eliminar la ortoimagen "${ortoNombre}"?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/ortoimagenes/${ortoId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Ortoimagen eliminada');
+      if (ortoimagenActiva?.id === ortoId) {
+        setOrtoimagenActiva(null);
+      }
+      fetchOrtoimagenes();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al eliminar ortoimagen');
+    }
+  };
+
   // Cargar geometrías cuando cambian los filtros Y el usuario quiere ver predios
   useEffect(() => {
     if (filterMunicipio && mostrarPredios) {
