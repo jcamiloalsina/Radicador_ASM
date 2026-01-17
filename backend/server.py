@@ -1791,7 +1791,7 @@ async def upload_petition_files(
                     await send_email(
                         gestor['email'],
                         f"Nuevos archivos - {petition['radicado']}",
-                        f"<h3>El usuario ha cargado nuevos archivos</h3><p>Radicado: {petition['radicado']}</p>"
+                        get_nuevos_archivos_email(petition['radicado'], es_staff=True)
                     )
         else:
             atencion_users = await db.users.find({"role": UserRole.ATENCION_USUARIO}, {"_id": 0}).to_list(100)
@@ -1799,7 +1799,7 @@ async def upload_petition_files(
                 await send_email(
                     user['email'],
                     f"Nuevos archivos - {petition['radicado']}",
-                    f"<h3>El usuario ha cargado nuevos archivos</h3><p>Radicado: {petition['radicado']}</p>"
+                    get_nuevos_archivos_email(petition['radicado'], es_staff=True)
                 )
     else:
         # Notify citizen if staff uploaded
@@ -1808,7 +1808,7 @@ async def upload_petition_files(
             await send_email(
                 citizen['email'],
                 f"Nuevos documentos disponibles - {petition['radicado']}",
-                f"<h3>Se han agregado nuevos documentos a su trámite</h3><p>Radicado: {petition['radicado']}</p><p>Puede descargarlos desde el sistema.</p>"
+                get_nuevos_archivos_email(petition['radicado'], es_staff=False)
             )
     
     return {"message": "Archivos subidos exitosamente", "files": saved_files}
