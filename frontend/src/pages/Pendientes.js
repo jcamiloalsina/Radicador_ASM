@@ -154,8 +154,8 @@ export default function Pendientes() {
                       <div className="flex items-center gap-2">
                         <Building className="w-4 h-4 text-slate-400" />
                         <div>
-                          <p className="text-xs text-slate-500">Código Predial</p>
-                          <p className="font-mono text-sm">{cambio.datos_propuestos?.codigo_predial_nacional || cambio.predio_actual?.codigo_homologado || 'Nuevo'}</p>
+                          <p className="text-xs text-slate-500">Código Predial Nacional</p>
+                          <p className="font-mono text-sm break-all">{cambio.datos_propuestos?.codigo_predial_nacional || cambio.predio_actual?.codigo_predial_nacional || 'Nuevo'}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
