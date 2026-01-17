@@ -838,14 +838,17 @@ export default function VisorPredios() {
               Cancelar
             </Button>
             <Button 
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className={gdbAnalisis?.puede_procesar === false 
+                ? "bg-slate-400 cursor-not-allowed" 
+                : "bg-emerald-600 hover:bg-emerald-700"}
+              disabled={gdbAnalisis?.puede_procesar === false}
               onClick={() => {
-                if (gdbArchivoPendiente) {
+                if (gdbArchivoPendiente && gdbAnalisis?.puede_procesar !== false) {
                   procederConCargaGdb(gdbArchivoPendiente);
                 }
               }}
             >
-              Proceder con la Carga
+              {gdbAnalisis?.puede_procesar === false ? 'No cumple estándar' : 'Proceder con la Carga'}
             </Button>
           </DialogFooter>
         </DialogContent>
