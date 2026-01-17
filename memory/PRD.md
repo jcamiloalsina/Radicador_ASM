@@ -63,6 +63,31 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 
 ## Cambios Recientes
 
+### Sesión 17 Enero 2026 (Parte 3)
+1. **Cambios Pendientes - Tabla Comparativa:**
+   - Nueva vista que muestra "Valor Actual" vs "Valor Propuesto" en columnas
+   - Campos modificados se resaltan en amarillo con indicador ⚠
+
+2. **Modal de Rechazo con Motivo:**
+   - Al rechazar cambio, se requiere motivo obligatorio
+   - Se notifica al gestor que propuso el cambio (solo plataforma)
+
+3. **Corrección de Vigencia en Excel:**
+   - El export de Excel ahora incluye la vigencia seleccionada
+   - El nombre del archivo incluye la vigencia exportada
+
+4. **Análisis de GDB antes de Cargar:**
+   - Nuevo endpoint `POST /api/gdb/analizar` para validar GDBs
+   - Detecta capas estándar vs no estándar
+   - Valida formato de códigos prediales (30 dígitos)
+   - Da recomendaciones de estandarización
+
+5. **Soporte para Construcciones en GDB:**
+   - Nuevas capas: R_CONSTRUCCION, U_CONSTRUCCION
+   - Nueva colección MongoDB `gdb_construcciones`
+   - Visualización en mapa como polígonos rojos semitransparentes
+   - Panel lateral muestra lista de construcciones con área y pisos
+
 ### Sesión 17 Enero 2026 (Parte 2)
 1. **Flujo de Devolución de Peticiones IMPLEMENTADO:**
    - Nuevo estado "Devuelto" con campo `observaciones_devolucion`
