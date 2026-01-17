@@ -2164,6 +2164,73 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "finalizado": finalizado
     }
 
+@api_router.post("/petitions/{petition_id}/reenviar")
+async def reenviar_petition(petition_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Permite al usuario reenviar una petición devuelta para revisión.
+    Notifica al miembro del staff que la devolvió.
+    """
+    petition = await db.petitions.find_one({"id": petition_id}, {"_id": 0})
+    
+    if not petition:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Petición no encontrada")
+    
+    # Solo el propietario puede reenviar
+    if petition['user_id'] != current_user['id']:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para reenviar esta petición")
+    
+    # Solo se puede reenviar si está devuelta
+    if petition['estado'] != PetitionStatus.DEVUELTO:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Solo puede reenviar peticiones devueltas")
+    
+    # Cambiar estado a revisión
+    historial_entry = {
+        "accion": "Petición reenviada para revisión por el usuario",
+        "usuario": current_user['full_name'],
+        "usuario_rol": current_user['role'],
+        "estado_anterior": PetitionStatus.DEVUELTO,
+        "estado_nuevo": PetitionStatus.REVISION,
+        "notas": "El usuario ha realizado las correcciones solicitadas y reenvía el trámite para revisión.",
+        "fecha": datetime.now(timezone.utc).isoformat()
+    }
+    
+    current_historial = petition.get('historial', [])
+    current_historial.append(historial_entry)
+    
+    await db.petitions.update_one(
+        {"id": petition_id},
+        {"$set": {
+            "estado": PetitionStatus.REVISION,
+            "historial": current_historial,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Notificar al staff que devolvió el trámite
+    devuelto_por_id = petition.get('devuelto_por_id')
+    if devuelto_por_id:
+        await crear_notificacion(
+            usuario_id=devuelto_por_id,
+            titulo="Trámite Reenviado para Revisión",
+            mensaje=f"El usuario {current_user['full_name']} ha reenviado el trámite {petition['radicado']} para revisión después de realizar las correcciones solicitadas.",
+            tipo="info",
+            enlace=f"/dashboard/peticion/{petition_id}",
+            enviar_email=True
+        )
+    else:
+        # Si no hay registro de quién devolvió, notificar a los gestores asignados
+        for gestor_id in petition.get('gestores_asignados', []):
+            await crear_notificacion(
+                usuario_id=gestor_id,
+                titulo="Trámite Reenviado para Revisión",
+                mensaje=f"El usuario ha reenviado el trámite {petition['radicado']} para revisión.",
+                tipo="info",
+                enlace=f"/dashboard/peticion/{petition_id}",
+                enviar_email=True
+            )
+    
+    return {"message": "Petición reenviada exitosamente para revisión"}
+
 @api_router.get("/gestores")
 async def get_gestores(current_user: dict = Depends(get_current_user)):
     # Get all gestores and auxiliares
