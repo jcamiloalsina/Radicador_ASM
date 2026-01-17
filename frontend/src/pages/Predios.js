@@ -1605,9 +1605,13 @@ export default function Predios() {
       }]);
     }
     
-    // Cargar zonas físicas del predio (si existen en r2)
-    if (predio.r2?.zonas && predio.r2.zonas.length > 0) {
-      setZonasFisicas(predio.r2.zonas.map(z => ({
+    // Obtener datos R2 (puede estar en r2 o r2_registros)
+    const r2Data = predio.r2 || (predio.r2_registros && predio.r2_registros[0]) || {};
+    const zonasData = r2Data.zonas || [];
+    
+    // Cargar zonas físicas del predio
+    if (zonasData.length > 0) {
+      setZonasFisicas(zonasData.map(z => ({
         zona_fisica: z.zona_fisica?.toString() || '0',
         zona_economica: z.zona_economica?.toString() || '0',
         area_terreno: z.area_terreno?.toString() || '0',
@@ -1632,6 +1636,11 @@ export default function Predios() {
       }]);
     }
     
+    // Obtener matrícula inmobiliaria (puede estar en r2, r2_registros, o raíz)
+    const matricula = r2Data.matricula_inmobiliaria || 
+                      predio.matricula_inmobiliaria || 
+                      '';
+    
     setFormData({
       ...formData,
       municipio: predio.municipio,
@@ -1642,15 +1651,15 @@ export default function Predios() {
       tipo_documento: predio.propietarios?.[0]?.tipo_documento || predio.tipo_documento || 'C',
       numero_documento: predio.propietarios?.[0]?.numero_documento || predio.numero_documento || '',
       estado_civil: predio.propietarios?.[0]?.estado_civil || predio.estado_civil || '',
-      direccion: predio.direccion,
+      direccion: predio.direccion || '',
       comuna: predio.comuna || '0',
-      destino_economico: predio.destino_economico,
+      destino_economico: predio.destino_economico || 'A',
       area_terreno: predio.area_terreno?.toString() || '0',
       area_construida: predio.area_construida?.toString() || '0',
       avaluo: predio.avaluo?.toString() || '0',
       tipo_mutacion: predio.tipo_mutacion || '',
       numero_resolucion: predio.numero_resolucion || '',
-      matricula_inmobiliaria: predio.r2?.matricula_inmobiliaria || ''
+      matricula_inmobiliaria: matricula
     });
     setShowEditDialog(true);
   };
