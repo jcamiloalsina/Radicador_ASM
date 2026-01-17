@@ -549,17 +549,11 @@ def get_email_template(titulo: str, contenido: str, radicado: str = None, tipo_n
     </head>
     <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <!-- Header con patrón de fondo -->
+            <!-- Header con gradiente -->
             <div style="background: linear-gradient(135deg, {color["bg"]} 0%, #064e3b 100%); 
-                        border-radius: 16px 16px 0 0; padding: 30px; text-align: center;
-                        position: relative; overflow: hidden;">
-                <!-- Patrón de calles/mapa de fondo -->
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.1;
-                            background-image: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><path d=\"M0 50h100M50 0v100M25 0v100M75 0v100M0 25h100M0 75h100\" stroke=\"white\" stroke-width=\"0.5\" fill=\"none\"/><circle cx=\"25\" cy=\"25\" r=\"3\" fill=\"white\"/><circle cx=\"75\" cy=\"75\" r=\"3\" fill=\"white\"/><circle cx=\"50\" cy=\"50\" r=\"4\" fill=\"white\"/></svg>');
-                            background-size: 60px 60px;">
-                </div>
+                        border-radius: 16px 16px 0 0; padding: 30px; text-align: center;">
                 <!-- Logo -->
-                <div style="position: relative; z-index: 1;">
+                <div>
                     <img src="{logo_url}" alt="Asomunicipios" style="height: 70px; margin-bottom: 15px; border-radius: 10px; background: white; padding: 8px;">
                     <h1 style="color: white; margin: 0; font-size: 22px; font-weight: 600;">
                         Asociación de Municipios del Catatumbo
