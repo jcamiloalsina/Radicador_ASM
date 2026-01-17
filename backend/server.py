@@ -2574,11 +2574,13 @@ async def export_listado_tramites_pdf(
     fecha_fin: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
-    """Export petition list as PDF with statistics charts"""
-    from reportlab.graphics.shapes import Drawing, String
+    """Export petition list as PDF with professional statistics"""
+    from reportlab.graphics.shapes import Drawing, String, Rect, Circle, Line
     from reportlab.graphics.charts.piecharts import Pie
     from reportlab.graphics.charts.barcharts import VerticalBarChart
-    from reportlab.graphics import renderPDF
+    from reportlab.lib.colors import HexColor
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
     
     if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.ATENCION_USUARIO, UserRole.GESTOR]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso")
