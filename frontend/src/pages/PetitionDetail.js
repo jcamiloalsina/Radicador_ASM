@@ -449,7 +449,7 @@ export default function PetitionDetail() {
               </div>
               <div className="flex gap-3">
                 <Button
-                  onClick={handleUpdate}
+                  onClick={handleSaveClick}
                   className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white"
                   data-testid="save-button"
                 >
