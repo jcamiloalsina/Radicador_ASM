@@ -3452,13 +3452,13 @@ export default function Predios() {
                                   <tbody>
                                     {r2.zonas.map((zona, zIdx) => (
                                       <tr key={zIdx} className="border-b last:border-b-0 hover:bg-slate-50">
-                                        <td className="py-2 px-3 font-medium">{zona.zona_numero}</td>
-                                        <td className="py-2 px-3 text-center">{zona.habitaciones}</td>
-                                        <td className="py-2 px-3 text-center">{zona.banos}</td>
-                                        <td className="py-2 px-3 text-center">{zona.locales}</td>
-                                        <td className="py-2 px-3 text-center">{zona.pisos}</td>
+                                        <td className="py-2 px-3 font-medium">{zIdx + 1}</td>
+                                        <td className="py-2 px-3 text-center">{zona.habitaciones || '0'}</td>
+                                        <td className="py-2 px-3 text-center">{zona.banos || '0'}</td>
+                                        <td className="py-2 px-3 text-center">{zona.locales || '0'}</td>
+                                        <td className="py-2 px-3 text-center">{zona.pisos || '1'}</td>
                                         <td className="py-2 px-3 text-center">{zona.uso || '-'}</td>
-                                        <td className="py-2 px-3 text-center">{zona.puntaje}</td>
+                                        <td className="py-2 px-3 text-center">{zona.puntaje || '0'}</td>
                                         <td className="py-2 px-3 text-right font-medium">
                                           {formatAreaHectareas(zona.area_construida)}
                                         </td>
