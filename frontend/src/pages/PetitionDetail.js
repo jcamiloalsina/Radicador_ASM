@@ -163,6 +163,16 @@ export default function PetitionDetail() {
     }
   };
 
+  const handleReenviar = async () => {
+    try {
+      await axios.post(`${API}/petitions/${id}/reenviar`);
+      toast.success('¡Petición reenviada para revisión! El gestor será notificado.');
+      fetchPetition();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error al reenviar la petición');
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       radicado: { label: 'Radicado', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
