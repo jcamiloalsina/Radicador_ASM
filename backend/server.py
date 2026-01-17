@@ -549,8 +549,9 @@ def get_email_template(titulo: str, contenido: str, radicado: str = None, tipo_n
     </head>
     <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9;">
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <!-- Header con gradiente -->
-            <div style="background: linear-gradient(135deg, {color["bg"]} 0%, #064e3b 100%); 
+            <!-- Header con gradiente y mapa de fondo -->
+            <div style="background: linear-gradient(135deg, {color["bg"]}ee 0%, #064e3bee 100%), 
+                        url('https://images.unsplash.com/photo-1662140246046-fc44f41e4362?q=80&w=800') center/cover; 
                         border-radius: 16px 16px 0 0; padding: 30px; text-align: center;">
                 <!-- Logo -->
                 <img src="{logo_url}" alt="Asomunicipios" style="height: 70px; margin-bottom: 15px; border-radius: 10px; background: white; padding: 8px;">
