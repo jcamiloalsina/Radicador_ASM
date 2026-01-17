@@ -2012,7 +2012,7 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
                                 attachments.append(str(archivo_path))
                     
                     await send_email(
-                        citizen['email'],
+                        citizen_email,
                         f"¡Trámite Finalizado! - {petition['radicado']}",
                         email_body,
                         attachments=attachments if attachments else None
@@ -2025,7 +2025,7 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
                     )
                     
                     await send_email(
-                        citizen['email'],
+                        citizen_email,
                         f"Actualización de Trámite - {petition['radicado']}",
                         email_body
                     )
