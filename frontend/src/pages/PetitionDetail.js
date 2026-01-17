@@ -416,38 +416,6 @@ export default function PetitionDetail() {
           >
             Editar
           </Button>
-          {canAssignGestor && (
-            <Dialog open={showGestorDialog} onOpenChange={setShowGestorDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" data-testid="assign-gestor-button">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Asignar Gestor
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Asignar Gestor</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <Select value={selectedGestor} onValueChange={setSelectedGestor}>
-                    <SelectTrigger data-testid="gestor-select">
-                      <SelectValue placeholder="Selecciona un gestor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {gestores.map((gestor) => (
-                        <SelectItem key={gestor.id} value={gestor.id}>
-                          {gestor.full_name} ({gestor.role === 'gestor' ? 'Gestor' : 'Gestor Auxiliar'})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={handleAssignGestor} className="w-full" data-testid="confirm-assign-button">
-                    Asignar
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
         </div>
       )}
 
