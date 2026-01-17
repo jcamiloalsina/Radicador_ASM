@@ -8424,11 +8424,11 @@ async def upload_gdb_file(
                 'TERRENO_RURAL', 'terreno_rural', 'Terreno_Rural'
             ]
             
-            # Buscar dinámicamente capas con TERRENO en el nombre (excluyendo ZONA_HOMOGENEA)
+            # Buscar dinámicamente capas con TERRENO en el nombre (excluyendo ZONA_HOMOGENEA y anotaciones Anno)
             for layer_name in available_layers:
                 layer_upper = layer_name.upper()
-                # Solo agregar si tiene TERRENO y NO es zona homogénea
-                if 'TERRENO' in layer_upper and 'ZONA' not in layer_upper and 'HOMOGENEA' not in layer_upper:
+                # Solo agregar si tiene TERRENO y NO es zona homogénea y NO es anotación
+                if 'TERRENO' in layer_upper and 'ZONA' not in layer_upper and 'HOMOGENEA' not in layer_upper and not layer_upper.endswith('ANNO'):
                     if layer_name not in rural_layers:
                         rural_layers.insert(0, layer_name)
             
