@@ -148,7 +148,7 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 ## Próximas Tareas (Backlog)
 
 ### P0 - Crítico
-- [ ] **Consolidación de Base de Datos**: Decidir entre mantener `test_database` o migrar a `asomunicipios`
+- [x] **Bug Construcciones 26 vs 2:** Corregido - match exacto en lugar de prefijo ✅
 - [ ] **Generación de archivos XTF** según Resolución IGAC 0301/2025
   - Ver: `/app/memory/XTF_LADM_COL_SINIC.md`
 
