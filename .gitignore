@@ -168,3 +168,7 @@ frontend/node_modules/.cache/default-development/15.pack
 *.env
 *.env.*
 exports/db_backup_20260117_161006/test_database/predios.bson
+-e 
+# Environment files
+*.env
+*.env.*
