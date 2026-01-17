@@ -1592,7 +1592,7 @@ export default function VisorPredios() {
                 style={{ height: '100%', width: '100%' }}
                 ref={mapRef}
               >
-                <SmartTileLayer mapType={mapType} tileLayers={tileLayers} />
+                <SmartTileLayer mapType={mapType} tileLayers={tileLayers} ortoimagenActiva={ortoimagenActiva} />
                 
                 {/* Mostrar límites de municipios usando componente con acceso al mapa */}
                 <MunicipalityLimits 
