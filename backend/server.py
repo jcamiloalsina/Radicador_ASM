@@ -1539,12 +1539,19 @@ async def login(credentials: UserLogin):
 async def get_me(current_user: dict = Depends(get_current_user)):
     # Get additional user data from database
     user_db = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
+    
+    # Obtener permisos del usuario
+    permissions = user_db.get('permissions', []) if user_db else []
+    
     return {
         "id": current_user['id'],
         "email": current_user['email'],
         "full_name": current_user['full_name'],
         "role": current_user['role'],
-        "puede_actualizar_gdb": user_db.get('puede_actualizar_gdb', False) if user_db else False
+        "permissions": permissions,
+        "puede_actualizar_gdb": 'upload_gdb' in permissions,
+        "puede_cargar_excel": 'import_r1r2' in permissions,
+        "puede_aprobar_cambios": 'approve_changes' in permissions
     }
 
 
