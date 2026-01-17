@@ -140,6 +140,7 @@ class PetitionUpdate(BaseModel):
     estado: Optional[str] = None
     notas: Optional[str] = None
     gestor_id: Optional[str] = None
+    enviar_archivos_finalizacion: Optional[bool] = False  # Flag para adjuntar archivos al correo de finalización
 
 class GestorAssignment(BaseModel):
     petition_id: str
