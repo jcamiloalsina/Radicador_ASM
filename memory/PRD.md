@@ -63,6 +63,32 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 
 ## Cambios Recientes
 
+### Sesión 17 Enero 2026 (Parte 6) - Fork
+1. **Ortoimágenes Personalizadas (IMPLEMENTADO):**
+   - ✅ Nuevo sistema para cargar ortoimágenes de alta resolución (GeoTIFF)
+   - ✅ Backend convierte TIFF a tiles XYZ usando gdal2tiles
+   - ✅ Endpoints: `GET /api/ortoimagenes/disponibles`, `GET /api/ortoimagenes/tiles/{id}/{z}/{x}/{y}.png`
+   - ✅ Selector de ortoimágenes en Visor de Predios
+   - ✅ Al seleccionar ortoimagen, el mapa se centra automáticamente en su área
+   - ✅ Ortoimagen de prueba "Ocaña" disponible (zoom 14-20)
+
+2. **Timeout de Sesión por Inactividad (IMPLEMENTADO):**
+   - ✅ Cierre automático de sesión después de 30 minutos de inactividad
+   - ✅ Advertencia 2 minutos antes del cierre (diálogo modal)
+   - ✅ Botones: "Cerrar sesión ahora" y "Continuar trabajando"
+   - ✅ Mensaje en login cuando sesión expiró por inactividad
+   - ✅ Eventos de actividad: mousedown, keydown, scroll, touchstart, click
+
+3. **Solución Global de Z-Index (IMPLEMENTADO):**
+   - ✅ Estilos CSS globales en `/app/frontend/src/index.css`
+   - ✅ Dialogs, dropdowns, toasts aparecen sobre mapas Leaflet (z-index 9999/99999)
+   - ✅ Clases utilitarias: `.map-overlay-top`
+
+4. **Respuesta P3 - Conexión a GDB Local:**
+   - ❌ NO es posible conectar directamente a un archivo .gdb en la PC del usuario
+   - Los navegadores web no pueden acceder al sistema de archivos local por seguridad
+   - Alternativa: Subir archivo ZIP con la carpeta .gdb al servidor
+
 ### Sesión 17 Enero 2026 (Parte 5) - Fork
 1. **Bug "Not Found" al Asignar Gestor (CORREGIDO):**
    - ✅ CORREGIDO: El modal de edición ahora llama correctamente a `/api/petitions/{id}/assign-gestor`
