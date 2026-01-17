@@ -118,7 +118,23 @@ export default function PetitionDetail() {
           'Content-Type': 'multipart/form-data',
         },
       });
-      toast.success('Archivos subidos exitosamente');
+      
+      // Si es staff interno (no usuario), automáticamente finalizar el trámite
+      if (user?.role !== 'usuario') {
+        try {
+          await axios.patch(`${API}/petitions/${id}`, {
+            estado: 'finalizado',
+            enviar_archivos_finalizacion: true  // Enviar archivos adjuntos en el correo
+          });
+          toast.success('¡Documento subido y trámite finalizado! Se envió notificación con el archivo adjunto.');
+        } catch (finalizarError) {
+          toast.success('Archivos subidos exitosamente');
+          toast.error('No se pudo finalizar automáticamente. Por favor cambie el estado manualmente.');
+        }
+      } else {
+        toast.success('Archivos subidos exitosamente');
+      }
+      
       setFiles([]);
       setShowUploadDialog(false);
       fetchPetition();
