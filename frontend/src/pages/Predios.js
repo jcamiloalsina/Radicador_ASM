@@ -1543,16 +1543,69 @@ export default function Predios() {
 
   const openEditDialog = (predio) => {
     setSelectedPredio(predio);
+    
+    // Cargar propietarios del predio (si existen)
+    if (predio.propietarios && predio.propietarios.length > 0) {
+      setPropietarios(predio.propietarios.map(p => ({
+        nombre_propietario: p.nombre_propietario || '',
+        tipo_documento: p.tipo_documento || 'C',
+        numero_documento: p.numero_documento || '',
+        estado_civil: p.estado_civil || ''
+      })));
+    } else if (predio.nombre_propietario) {
+      // Fallback a campos legacy si no hay array de propietarios
+      setPropietarios([{
+        nombre_propietario: predio.nombre_propietario || '',
+        tipo_documento: predio.tipo_documento || 'C',
+        numero_documento: predio.numero_documento || '',
+        estado_civil: predio.estado_civil || ''
+      }]);
+    } else {
+      setPropietarios([{
+        nombre_propietario: '',
+        tipo_documento: 'C',
+        numero_documento: '',
+        estado_civil: ''
+      }]);
+    }
+    
+    // Cargar zonas físicas del predio (si existen en r2)
+    if (predio.r2?.zonas && predio.r2.zonas.length > 0) {
+      setZonasFisicas(predio.r2.zonas.map(z => ({
+        zona_fisica: z.zona_fisica?.toString() || '0',
+        zona_economica: z.zona_economica?.toString() || '0',
+        area_terreno: z.area_terreno?.toString() || '0',
+        habitaciones: z.habitaciones?.toString() || '0',
+        banos: z.banos?.toString() || '0',
+        locales: z.locales?.toString() || '0',
+        pisos: z.pisos?.toString() || '1',
+        puntaje: z.puntaje?.toString() || '0',
+        area_construida: z.area_construida?.toString() || '0'
+      })));
+    } else {
+      setZonasFisicas([{
+        zona_fisica: '0',
+        zona_economica: '0',
+        area_terreno: '0',
+        habitaciones: '0',
+        banos: '0',
+        locales: '0',
+        pisos: '1',
+        puntaje: '0',
+        area_construida: '0'
+      }]);
+    }
+    
     setFormData({
       ...formData,
       municipio: predio.municipio,
       zona: predio.zona,
       sector: predio.sector,
       manzana_vereda: predio.manzana_vereda,
-      nombre_propietario: predio.nombre_propietario,
-      tipo_documento: predio.tipo_documento,
-      numero_documento: predio.numero_documento,
-      estado_civil: predio.estado_civil || '',
+      nombre_propietario: predio.propietarios?.[0]?.nombre_propietario || predio.nombre_propietario || '',
+      tipo_documento: predio.propietarios?.[0]?.tipo_documento || predio.tipo_documento || 'C',
+      numero_documento: predio.propietarios?.[0]?.numero_documento || predio.numero_documento || '',
+      estado_civil: predio.propietarios?.[0]?.estado_civil || predio.estado_civil || '',
       direccion: predio.direccion,
       comuna: predio.comuna || '0',
       destino_economico: predio.destino_economico,
