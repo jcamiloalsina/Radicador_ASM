@@ -2606,9 +2606,9 @@ async def export_listado_tramites_pdf(
     styles = getSampleStyleSheet()
     
     # Header with logo
-    logo_path = Path("/app/backend/logo_asomunicipios.png")
+    logo_path = Path("/app/frontend/public/logo-asomunicipios.png")
     if logo_path.exists():
-        img = Image(str(logo_path), width=6*inch, height=1*inch)
+        img = RLImage(str(logo_path), width=2*inch, height=0.8*inch)
         story.append(img)
         story.append(Spacer(1, 0.2*inch))
     
