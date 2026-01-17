@@ -648,23 +648,39 @@ export default function VisorPredios() {
       <Dialog open={gdbAnalisis !== null} onOpenChange={(open) => !open && setGdbAnalisis(null)}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-700">
-              <AlertTriangle className="w-5 h-5" />
+            <DialogTitle className="flex items-center gap-2 text-emerald-700">
+              <FileText className="w-5 h-5" />
               Reporte de Validación de GDB
             </DialogTitle>
             <DialogDescription>
-              Se encontraron observaciones en la estructura de la GDB que requieren su atención.
+              Revise la estructura de la GDB antes de proceder con la carga.
             </DialogDescription>
           </DialogHeader>
           
           {gdbAnalisis && (
             <div className="space-y-4">
+              {/* Todas las capas encontradas */}
+              {gdbAnalisis.capas_encontradas && (
+                <div className="border border-slate-200 bg-slate-50 rounded-lg p-3">
+                  <h4 className="font-medium text-slate-700 mb-2">
+                    📁 Capas encontradas en el archivo ({gdbAnalisis.capas_encontradas.length})
+                  </h4>
+                  <div className="flex flex-wrap gap-1">
+                    {gdbAnalisis.capas_encontradas.map((capa, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs">
+                        {capa.nombre}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               {/* Capas Reconocidas */}
               {gdbAnalisis.capas_analisis?.reconocidas?.length > 0 && (
                 <div className="border border-emerald-200 bg-emerald-50 rounded-lg p-3">
                   <h4 className="font-medium text-emerald-800 flex items-center gap-2 mb-2">
                     <CheckCircle className="w-4 h-4" />
-                    Capas Reconocidas ({gdbAnalisis.capas_analisis.reconocidas.length})
+                    Capas Estándar Reconocidas ({gdbAnalisis.capas_analisis.reconocidas.length})
                   </h4>
                   <ul className="text-sm text-emerald-700 space-y-1">
                     {gdbAnalisis.capas_analisis.reconocidas.map((capa, idx) => (
