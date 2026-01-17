@@ -157,7 +157,7 @@ export default function VisorPredios() {
   const [selectedPredio, setSelectedPredio] = useState(null);
   const [geometry, setGeometry] = useState(null);
   const [gdbStats, setGdbStats] = useState(null);
-  const [mapType, setMapType] = useState('satellite'); // satélite por defecto
+  const [mapType, setMapType] = useState('street'); // OpenStreetMap por defecto (mejor cobertura)
   const [showUploadGdb, setShowUploadGdb] = useState(false);
   const [uploadingGdb, setUploadingGdb] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null); // Estado del progreso de carga
@@ -465,19 +465,23 @@ export default function VisorPredios() {
   const tileLayers = {
     street: {
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      attribution: '&copy; OpenStreetMap contributors'
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19
     },
     satellite: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      attribution: '&copy; Esri'
+      attribution: '&copy; Esri',
+      maxZoom: 18  // Esri puede no tener cobertura en algunas áreas
     },
     topographic: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-      attribution: '&copy; Esri, HERE, Garmin'
+      attribution: '&copy; Esri, HERE, Garmin',
+      maxZoom: 18
     },
-    terrain: {
-      url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
-      attribution: 'Map tiles by Stamen Design'
+    cartodb: {
+      url: 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+      attribution: '&copy; CartoDB',
+      maxZoom: 18
     }
   };
 
