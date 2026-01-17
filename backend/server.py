@@ -2025,6 +2025,13 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
                 PetitionStatus.FINALIZADO: "Finalizado"
             }
             
+            # Si se está devolviendo, guardar info del que devuelve y observaciones
+            if estado_nuevo == PetitionStatus.DEVUELTO:
+                update_dict['devuelto_por_id'] = current_user['id']
+                update_dict['devuelto_por_nombre'] = current_user['full_name']
+                if update_data.observaciones_devolucion:
+                    update_dict['observaciones_devolucion'] = update_data.observaciones_devolucion
+            
             historial_entry = {
                 "accion": f"Estado cambiado de {status_names.get(estado_anterior, estado_anterior)} a {status_names.get(estado_nuevo, estado_nuevo)}",
                 "usuario": current_user['full_name'],
@@ -2032,6 +2039,7 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
                 "estado_anterior": estado_anterior,
                 "estado_nuevo": estado_nuevo,
                 "notas": update_dict.get('notas', ''),
+                "observaciones_devolucion": update_data.observaciones_devolucion if estado_nuevo == PetitionStatus.DEVUELTO else None,
                 "fecha": datetime.now(timezone.utc).isoformat()
             }
             
@@ -2090,7 +2098,8 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
                     email_body = get_actualizacion_email(
                         radicado=petition['radicado'],
                         estado_nuevo=estado_nuevo,
-                        nombre_solicitante=nombre_solicitante
+                        nombre_solicitante=nombre_solicitante,
+                        observaciones=update_data.observaciones_devolucion if estado_nuevo == PetitionStatus.DEVUELTO else None
                     )
                     
                     await send_email(
