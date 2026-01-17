@@ -1911,7 +1911,7 @@ async def assign_gestor(
     await send_email(
         gestor['email'],
         f"Trámite Asignado - {petition['radicado']}",
-        f"<h3>Se te ha asignado un trámite</h3><p>Radicado: {petition['radicado']}</p><p>Tipo: {petition['tipo_tramite']}</p>"
+        get_asignacion_email(petition['radicado'], petition['tipo_tramite'], gestor['full_name'])
     )
     
     return {"message": "Gestor asignado exitosamente"}
