@@ -2341,6 +2341,51 @@ async def update_petition(petition_id: str, update_data: PetitionUpdate, current
             current_historial = petition.get('historial', [])
             current_historial.append(historial_entry)
             update_dict['historial'] = current_historial
+            
+            # AUTO-ASIGNACIÓN: Cuando pasa a "revisión", asignar automáticamente 
+            # al coordinador y gestores con permiso de aprobar cambios
+            if estado_nuevo == PetitionStatus.REVISION:
+                # Buscar coordinadores y gestores con permiso de aprobar
+                aprobadores = await db.users.find({
+                    "$or": [
+                        {"role": UserRole.COORDINADOR},
+                        {"role": UserRole.ADMINISTRADOR},
+                        {"permissions": Permission.APPROVE_CHANGES}
+                    ]
+                }, {"_id": 0, "id": 1, "full_name": 1, "role": 1}).to_list(100)
+                
+                gestores_asignados = petition.get('gestores_asignados', [])
+                nuevos_asignados = []
+                
+                for aprobador in aprobadores:
+                    if aprobador['id'] not in gestores_asignados:
+                        gestores_asignados.append(aprobador['id'])
+                        nuevos_asignados.append(aprobador)
+                
+                if nuevos_asignados:
+                    update_dict['gestores_asignados'] = gestores_asignados
+                    
+                    # Agregar entrada al historial
+                    nombres_asignados = [a['full_name'] for a in nuevos_asignados]
+                    auto_historial = {
+                        "accion": f"Auto-asignado a revisores: {', '.join(nombres_asignados)}",
+                        "usuario": "Sistema",
+                        "usuario_rol": "sistema",
+                        "notas": "Asignación automática al pasar a revisión",
+                        "fecha": datetime.now(timezone.utc).isoformat()
+                    }
+                    update_dict['historial'].append(auto_historial)
+                    
+                    # Notificar a los aprobadores
+                    for aprobador in nuevos_asignados:
+                        await crear_notificacion(
+                            usuario_id=aprobador['id'],
+                            tipo="info",
+                            titulo="Trámite en Revisión",
+                            mensaje=f"El trámite {petition['radicado']} está listo para su revisión y aprobación.",
+                            enlace=f"/dashboard/peticion/{petition_id}",
+                            enviar_email=False
+                        )
         
         await db.petitions.update_one({"id": petition_id}, {"$set": update_dict})
         
