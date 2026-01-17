@@ -767,6 +767,83 @@ export default function PetitionDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Diálogo de confirmación de finalización */}
+      <Dialog open={showFinalizarDialog} onOpenChange={setShowFinalizarDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-700">
+              <CheckCircle className="w-5 h-5" />
+              Finalizar Trámite
+            </DialogTitle>
+            <DialogDescription>
+              El trámite será marcado como finalizado y se notificará al solicitante por correo electrónico.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {petition?.archivos_staff?.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 my-4">
+              <div className="flex items-start gap-3">
+                <Paperclip className="w-5 h-5 text-amber-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-amber-800">
+                    Archivos disponibles para enviar
+                  </p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Has cargado {petition.archivos_staff.length} archivo(s) de respuesta. 
+                    ¿Deseas enviarlos adjuntos en el correo de finalización?
+                  </p>
+                  <ul className="mt-2 text-xs text-amber-600 space-y-1">
+                    {petition.archivos_staff.slice(0, 3).map((archivo, idx) => (
+                      <li key={idx} className="truncate">📎 {archivo.filename}</li>
+                    ))}
+                    {petition.archivos_staff.length > 3 && (
+                      <li>... y {petition.archivos_staff.length - 3} más</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowFinalizarDialog(false)}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            {petition?.archivos_staff?.length > 0 ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => handleUpdate(false)}
+                  className="flex-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Solo Notificar
+                </Button>
+                <Button
+                  onClick={() => handleUpdate(true)}
+                  className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white"
+                >
+                  <Paperclip className="w-4 h-4 mr-2" />
+                  Notificar + Archivos
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={() => handleUpdate(false)}
+                className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Finalizar y Notificar
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
