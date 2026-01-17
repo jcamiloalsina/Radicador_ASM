@@ -119,8 +119,10 @@ export default function PetitionDetail() {
       // Mensaje específico para devolución
       if (editData.estado === 'devuelto') {
         toast.success('Trámite devuelto. El usuario será notificado por correo con las observaciones.');
+      } else if (editData.estado === 'asignado' && editData.gestor_id) {
+        toast.success('Gestor agregado exitosamente al trámite.');
       } else if (editData.estado === 'asignado') {
-        toast.success('Trámite asignado exitosamente.');
+        toast.success('Trámite actualizado.');
       } else {
         toast.success('¡Petición actualizada exitosamente!');
       }
