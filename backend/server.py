@@ -7795,12 +7795,12 @@ async def get_gdb_layers(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Error listando capas: {str(e)}")
 
 
-# Capas estándar según normativa IGAC
+# Capas estándar según normativa IGAC - SOLO estos nombres son válidos
 CAPAS_ESTANDAR = {
-    "terreno_rural": ["R_TERRENO", "R_TERRENO_1"],
-    "terreno_urbano": ["U_TERRENO", "U_TERRENO_1"],
-    "construccion_rural": ["R_CONSTRUCCION", "R_CONSTRUCCION_1"],
-    "construccion_urbana": ["U_CONSTRUCCION", "U_CONSTRUCCION_1"],
+    "terreno_rural": ["R_TERRENO"],
+    "terreno_urbano": ["U_TERRENO"],
+    "construccion_rural": ["R_CONSTRUCCION"],
+    "construccion_urbana": ["U_CONSTRUCCION"],
     "limite_municipal": ["LIMITEMUNICIPIO", "LimiteMunicipio", "LIMITE_MUNICIPIO"]
 }
 
