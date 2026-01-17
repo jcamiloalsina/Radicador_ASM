@@ -54,9 +54,6 @@ const SmartTileLayer = ({ mapType, tileLayers }) => {
   );
 };
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
 // Helper function para obtener la zona del código predial y formatear texto
 const getZonaFromCodigo = (codigoPredial) => {
   if (!codigoPredial || codigoPredial.length < 7) return { codigo: '', texto: 'N/A' };
