@@ -104,7 +104,8 @@ export default function Register() {
             <p className="text-emerald-100 mt-1 text-lg leading-relaxed">Provincia de Ocaña y Sur del Cesar</p>
           </div>
           <div className="relative z-10 text-center">
-            <p className="text-emerald-100 text-lg font-semibold">Tu radicador catastral</p>
+            <p className="text-emerald-100 text-lg font-semibold">Asomunicipios en Línea</p>
+            <p className="text-emerald-200 text-sm mt-1">Tu radicador catastral</p>
           </div>
         </div>
 
