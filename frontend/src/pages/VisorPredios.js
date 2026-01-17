@@ -1038,7 +1038,7 @@ export default function VisorPredios() {
                 </Button>
               </div>
               
-              <Select value={mapType} onValueChange={setMapType}>
+              <Select value={mapType} onValueChange={(v) => { setMapType(v); setOrtoimagenActiva(null); }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tipo de mapa" />
                 </SelectTrigger>
@@ -1049,6 +1049,44 @@ export default function VisorPredios() {
                   <SelectItem value="topographic">Topográfico Esri</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {/* Selector de Ortoimágenes Personalizadas */}
+              {ortoimagenes.length > 0 && (
+                <div className="pt-2 border-t mt-2">
+                  <label className="text-xs text-slate-500 mb-1 block">🛰️ Ortoimágenes Propias</label>
+                  <Select 
+                    value={ortoimagenActiva?.id || "none"} 
+                    onValueChange={(v) => {
+                      if (v === "none") {
+                        setOrtoimagenActiva(null);
+                      } else {
+                        const orto = ortoimagenes.find(o => o.id === v);
+                        if (orto) {
+                          setOrtoimagenActiva(orto);
+                          toast.success(`Ortoimagen "${orto.nombre}" activada. Zoom: ${orto.zoom_min}-${orto.zoom_max}`);
+                        }
+                      }
+                    }}
+                  >
+                    <SelectTrigger className={ortoimagenActiva ? "border-emerald-500 bg-emerald-50" : ""}>
+                      <SelectValue placeholder="Seleccionar ortoimagen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin ortoimagen propia</SelectItem>
+                      {ortoimagenes.map(orto => (
+                        <SelectItem key={orto.id} value={orto.id}>
+                          {orto.nombre} ({orto.municipio})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {ortoimagenActiva && (
+                    <p className="text-xs text-emerald-600 mt-1">
+                      ✓ Mostrando ortoimagen de alta resolución
+                    </p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
