@@ -63,6 +63,22 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 
 ## Cambios Recientes
 
+### Sesión 17 Enero 2026 (Parte 4) - Fork
+1. **Verificación Bug Construcciones:**
+   - ✅ El problema de coordenadas de construcciones (-106 vs -73) NO existe actualmente
+   - ✅ Las coordenadas en BD están correctas (lon ~-73, lat ~8 para Colombia)
+   - ✅ Las construcciones se visualizan correctamente en el mapa (polígonos rojos)
+   - ✅ 779 construcciones cargadas para Ábrego
+
+2. **Corrección de Formato de Áreas:**
+   - formatArea() ahora redondea a 2 decimales
+   - Antes: "206.43093544051322 m²" → Ahora: "206.43 m²"
+
+3. **Estado de Base de Datos:**
+   - `test_database`: Base de datos principal (224,915 predios, 40 usuarios, 38,178 geometrías)
+   - `asomunicipios`: Base antigua/vacía (solo 11,267 predios legacy)
+   - **Pendiente:** Decisión del usuario sobre consolidación/renombramiento
+
 ### Sesión 17 Enero 2026 (Parte 3)
 1. **Cambios Pendientes - Tabla Comparativa:**
    - Nueva vista que muestra "Valor Actual" vs "Valor Propuesto" en columnas
