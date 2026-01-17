@@ -371,6 +371,20 @@ export default function VisorPredios() {
     }
   };
 
+  // Cancelar subida de ortoimagen
+  const cancelOrtoUpload = () => {
+    if (ortoAbortControllerRef.current) {
+      ortoAbortControllerRef.current.abort();
+      ortoAbortControllerRef.current = null;
+    }
+    setUploadingOrto(false);
+    setOrtoUploadProgress(null);
+    setShowUploadOrtoDialog(false);
+    setOrtoFile(null);
+    setOrtoFormData({ nombre: '', municipio: '', descripcion: '' });
+    toast.info('Subida cancelada');
+  };
+
   // Subir nueva ortoimagen
   const handleUploadOrtoimagen = async () => {
     if (!ortoFile || !ortoFormData.nombre || !ortoFormData.municipio) {
@@ -378,6 +392,9 @@ export default function VisorPredios() {
       return;
     }
 
+    // Crear AbortController para poder cancelar
+    ortoAbortControllerRef.current = new AbortController();
+    
     setUploadingOrto(true);
     setOrtoUploadProgress({ status: 'subiendo', progress: 0, message: 'Subiendo archivo...' });
 
@@ -394,6 +411,7 @@ export default function VisorPredios() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         },
+        signal: ortoAbortControllerRef.current.signal,
         onUploadProgress: (progressEvent) => {
           const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setOrtoUploadProgress({ 
@@ -412,6 +430,11 @@ export default function VisorPredios() {
       let checkCount = 0;
       const maxChecks = 360; // 30 minutos máximo
       const checkProgress = async () => {
+        // Verificar si se canceló
+        if (!ortoAbortControllerRef.current || ortoAbortControllerRef.current.signal.aborted) {
+          return;
+        }
+        
         if (checkCount >= maxChecks) {
           setOrtoUploadProgress({ status: 'timeout', progress: 0, message: 'Tiempo de espera excedido. Verifique más tarde.' });
           return;
@@ -431,14 +454,19 @@ export default function VisorPredios() {
             setOrtoFile(null);
             setOrtoFormData({ nombre: '', municipio: '', descripcion: '' });
             setOrtoUploadProgress(null);
+            ortoAbortControllerRef.current = null;
           } else if (progressRes.data.status === 'error') {
             toast.error(`Error: ${progressRes.data.message}`);
             setOrtoUploadProgress(null);
+            ortoAbortControllerRef.current = null;
           } else {
             checkCount++;
             setTimeout(checkProgress, 5000); // Check cada 5 segundos
           }
         } catch (err) {
+          if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
+            return; // Fue cancelado, no hacer nada
+          }
           console.error('Error checking progress:', err);
           checkCount++;
           setTimeout(checkProgress, 5000);
