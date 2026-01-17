@@ -8179,6 +8179,80 @@ async def upload_gdb_file(
         except Exception as e:
             logger.warning(f"Error guardando geometrías: {e}")
         
+        # ===== PROCESAR CONSTRUCCIONES =====
+        update_progress("leyendo_construcciones", 70, "Buscando capas de construcciones...")
+        
+        construcciones_guardadas = 0
+        construcciones_layers = [
+            'R_CONSTRUCCION', 'R_CONSTRUCCION_1', 'R_Construccion', 'r_construccion',
+            'U_CONSTRUCCION', 'U_CONSTRUCCION_1', 'U_Construccion', 'u_construccion',
+            'CONSTRUCCION', 'Construccion', 'construccion'
+        ]
+        
+        # Buscar dinámicamente capas de construcciones
+        for layer_name in available_layers:
+            layer_upper = layer_name.upper()
+            if 'CONSTRUCCION' in layer_upper or 'CONSTRUCC' in layer_upper:
+                if layer_name not in construcciones_layers:
+                    construcciones_layers.insert(0, layer_name)
+        
+        try:
+            # Limpiar construcciones anteriores del municipio
+            await db.gdb_construcciones.delete_many({"municipio": municipio_nombre})
+            
+            for const_layer in construcciones_layers:
+                try:
+                    gdf_const = gpd.read_file(str(gdb_found), layer=const_layer)
+                    if len(gdf_const) == 0:
+                        continue
+                    
+                    # Determinar tipo (rural/urbano) basado en nombre de capa
+                    tipo_construccion = "rural" if const_layer.upper().startswith('R') else "urbano"
+                    
+                    project = get_transformer_for_gdf(gdf_const)
+                    logger.info(f"GDB {municipio_nombre}: Capa construcciones ({const_layer}): {len(gdf_const)} registros")
+                    update_progress("guardando_construcciones", 72, f"Procesando {len(gdf_const)} construcciones ({const_layer})...")
+                    
+                    for idx, row in gdf_const.iterrows():
+                        codigo = None
+                        for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED', 'CODIGO_TERRENO']:
+                            if col in gdf_const.columns and pd.notna(row.get(col)):
+                                codigo = str(row[col])
+                                break
+                        
+                        if codigo and row.geometry:
+                            try:
+                                geom_wgs84 = transform(project, row.geometry) if project else row.geometry
+                                area_m2 = round(geom_wgs84.area * (111320 ** 2), 2) if geom_wgs84.area else 0
+                                
+                                # Extraer atributos de construcción si existen
+                                pisos = row.get('PISOS', row.get('pisos', row.get('NUM_PISOS', 1)))
+                                tipo_const = row.get('TIPO_CONSTRUCCION', row.get('tipo_construccion', row.get('TIPO', '')))
+                                
+                                await db.gdb_construcciones.insert_one({
+                                    "codigo_predio": codigo,
+                                    "tipo_zona": tipo_construccion,
+                                    "gdb_source": gdb_name,
+                                    "municipio": municipio_nombre,
+                                    "area_m2": area_m2,
+                                    "pisos": int(pisos) if pisos and str(pisos).isdigit() else 1,
+                                    "tipo_construccion": str(tipo_const) if tipo_const else "",
+                                    "geometry": geom_wgs84.__geo_interface__
+                                })
+                                construcciones_guardadas += 1
+                            except Exception as ce:
+                                pass
+                    
+                    logger.info(f"GDB {municipio_nombre}: Guardadas {construcciones_guardadas} construcciones desde {const_layer}")
+                except Exception as layer_err:
+                    continue
+            
+            stats["construcciones"] = construcciones_guardadas
+            if construcciones_guardadas > 0:
+                update_progress("construcciones_ok", 74, f"Guardadas {construcciones_guardadas} construcciones")
+        except Exception as e:
+            logger.warning(f"Error procesando construcciones: {e}")
+        
         update_progress("relacionando", 75, f"Relacionando {len(codigos_gdb)} códigos GDB con predios...")
         
         # Relacionar con predios existentes - matching mejorado
