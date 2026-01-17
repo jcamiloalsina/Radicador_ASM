@@ -1652,14 +1652,16 @@ async def create_petition(
     
     await db.petitions.insert_one(doc)
     
-    # Send email notification to atencion usuarios only if created by citizen
+    # Notificación en plataforma a atención al usuario (NO correo) si la crea un ciudadano
     if current_user['role'] == UserRole.USUARIO:
         atencion_users = await db.users.find({"role": UserRole.ATENCION_USUARIO}, {"_id": 0}).to_list(100)
         for user in atencion_users:
-            await send_email(
-                user['email'],
-                f"Nueva Petición - {radicado}",
-                get_nueva_peticion_email(radicado, nombre_completo, tipo_tramite, municipio)
+            await crear_notificacion(
+                usuario_id=user['id'],
+                tipo="info",
+                titulo="Nueva petición radicada",
+                mensaje=f"Nueva petición {radicado} de {nombre_completo} - {tipo_tramite}",
+                enlace=f"/dashboard/peticion/{petition.id}"
             )
     
     return petition
