@@ -8159,6 +8159,12 @@ async def upload_gdb_file(
                         if codigo and row.geometry:
                             try:
                                 geom_wgs84 = transform(project, row.geometry) if project else row.geometry
+                                
+                                # Validar que las coordenadas estén en Colombia
+                                if not validate_colombia_coordinates(geom_wgs84):
+                                    logger.warning(f"Geometría fuera de Colombia descartada: {codigo}")
+                                    continue
+                                
                                 # Calcular área en m2
                                 area_m2 = 0
                                 try:
