@@ -1178,12 +1178,14 @@ export default function VisorPredios() {
             <Button 
               variant="outline" 
               onClick={() => {
-                setShowUploadOrtoDialog(false);
-                setOrtoFile(null);
-                setOrtoFormData({ nombre: '', municipio: '', descripcion: '' });
-                setOrtoUploadProgress(null);
+                if (uploadingOrto || ortoUploadProgress) {
+                  cancelOrtoUpload();
+                } else {
+                  setShowUploadOrtoDialog(false);
+                  setOrtoFile(null);
+                  setOrtoFormData({ nombre: '', municipio: '', descripcion: '' });
+                }
               }}
-              disabled={uploadingOrto && ortoUploadProgress?.status !== 'error'}
             >
               {ortoUploadProgress?.status === 'completado' ? 'Cerrar' : 'Cancelar'}
             </Button>
