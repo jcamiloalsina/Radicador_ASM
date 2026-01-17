@@ -48,7 +48,6 @@ const SmartTileLayer = ({ mapType, tileLayers, ortoimagenActiva }) => {
           attribution={`© Ortoimagen ${ortoimagenActiva.nombre}`}
           maxZoom={ortoimagenActiva.zoom_max || 20}
           minZoom={ortoimagenActiva.zoom_min || 14}
-          tms={true}
           errorTileUrl=""
         />
         <div className="absolute bottom-8 left-2 z-[1000] bg-emerald-600/90 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
