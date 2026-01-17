@@ -2645,9 +2645,9 @@ async def export_listado_tramites_pdf(
         
         table_data.append([
             str(idx),
-            pet.get('radicado_id', ''),
+            pet.get('radicado', ''),
             fecha_str,
-            pet.get('creator_name', ''),
+            pet.get('nombre_completo', ''),
             pet.get('tipo_tramite', ''),
             pet.get('municipio', ''),
             estado_labels.get(pet.get('estado', ''), pet.get('estado', '')),
