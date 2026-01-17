@@ -6410,6 +6410,56 @@ async def get_predio(predio_id: str, current_user: dict = Depends(get_current_us
     
     return predio
 
+
+@api_router.get("/predios/{predio_id}/construcciones")
+async def get_construcciones_predio(predio_id: str, current_user: dict = Depends(get_current_user)):
+    """Obtiene las construcciones asociadas a un predio"""
+    if current_user['role'] == UserRole.USUARIO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    # Obtener el predio para conocer su código
+    predio = await db.predios.find_one({"id": predio_id, "deleted": {"$ne": True}}, {"_id": 0, "codigo_predial_nacional": 1, "codigo_gdb": 1})
+    if not predio:
+        raise HTTPException(status_code=404, detail="Predio no encontrado")
+    
+    codigo = predio.get("codigo_gdb") or predio.get("codigo_predial_nacional")
+    if not codigo:
+        return {"construcciones": [], "total": 0}
+    
+    # Buscar construcciones con match flexible
+    construcciones = await db.gdb_construcciones.find({
+        "$or": [
+            {"codigo_predio": codigo},
+            {"codigo_predio": {"$regex": f"^{codigo[:20]}"}}  # Match por prefijo (20 dígitos)
+        ]
+    }, {"_id": 0}).to_list(100)
+    
+    return {
+        "construcciones": construcciones,
+        "total": len(construcciones)
+    }
+
+
+@api_router.get("/gdb/construcciones/{codigo_predio}")
+async def get_construcciones_by_codigo(codigo_predio: str, current_user: dict = Depends(get_current_user)):
+    """Obtiene las construcciones por código de predio"""
+    if current_user['role'] == UserRole.USUARIO:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    # Buscar con match flexible
+    construcciones = await db.gdb_construcciones.find({
+        "$or": [
+            {"codigo_predio": codigo_predio},
+            {"codigo_predio": {"$regex": f"^{codigo_predio[:20]}"}}
+        ]
+    }, {"_id": 0}).to_list(100)
+    
+    return {
+        "construcciones": construcciones,
+        "total": len(construcciones)
+    }
+
+
 @api_router.post("/predios")
 async def create_predio(predio_data: PredioCreate, current_user: dict = Depends(get_current_user)):
     """Crea un nuevo predio"""
