@@ -606,9 +606,11 @@ export default function PetitionDetail() {
                       <DialogTitle>Subir Documento Final</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                      <p className="text-sm text-slate-600">
-                        Los archivos que subas estarán disponibles para que el ciudadano los descargue.
-                      </p>
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                        <p className="text-sm text-emerald-800 font-medium">
+                          ⚠️ Al subir el documento, el trámite se finalizará automáticamente y se enviará una notificación por correo al solicitante con el archivo adjunto.
+                        </p>
+                      </div>
                       <Input
                         type="file"
                         multiple
@@ -626,7 +628,7 @@ export default function PetitionDetail() {
                         </div>
                       )}
                       <Button onClick={handleFileUpload} className="w-full bg-emerald-700 hover:bg-emerald-800" data-testid="confirm-staff-upload">
-                        Subir Archivos
+                        Subir y Finalizar Trámite
                       </Button>
                     </div>
                   </DialogContent>
