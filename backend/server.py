@@ -6442,16 +6442,14 @@ async def get_construcciones_predio(predio_id: str, current_user: dict = Depends
 
 @api_router.get("/gdb/construcciones/{codigo_predio}")
 async def get_construcciones_by_codigo(codigo_predio: str, current_user: dict = Depends(get_current_user)):
-    """Obtiene las construcciones por código de predio"""
+    """Obtiene las construcciones por código de predio - match EXACTO"""
     if current_user['role'] == UserRole.USUARIO:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
-    # Buscar con match flexible
+    # Buscar con match EXACTO solamente
+    # El código de la construcción debe coincidir exactamente con el código del predio
     construcciones = await db.gdb_construcciones.find({
-        "$or": [
-            {"codigo_predio": codigo_predio},
-            {"codigo_predio": {"$regex": f"^{codigo_predio[:20]}"}}
-        ]
+        "codigo_predio": codigo_predio
     }, {"_id": 0}).to_list(100)
     
     return {
