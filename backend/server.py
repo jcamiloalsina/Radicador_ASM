@@ -8445,17 +8445,7 @@ async def upload_gdb_file(
             
             update_progress("leyendo_urbano", 40, "Leyendo capa urbana...")
             gdf_urban = None
-            # Lista ordenada por prioridad - TERRENO primero
-            urban_layers = ['U_TERRENO_1', 'U_TERRENO', 'U_Terreno', 'u_terreno', 'u_terreno_1']
-            
-            # Buscar dinámicamente capas urbanas con TERRENO (excluyendo ZONA_HOMOGENEA y anotaciones Anno)
-            for layer_name in available_layers:
-                layer_upper = layer_name.upper()
-                if layer_upper.startswith('U_') and 'TERRENO' in layer_upper:
-                    # Excluir zonas homogéneas y capas de anotaciones (Anno)
-                    if 'ZONA' not in layer_upper and 'HOMOGENEA' not in layer_upper and not layer_upper.endswith('ANNO'):
-                        if layer_name not in urban_layers:
-                            urban_layers.insert(0, layer_name)
+            urban_layers = ['U_TERRENO']  # SOLO nombre estándar
             
             urban_layer_found = None
             for urban_layer in urban_layers:
