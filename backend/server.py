@@ -8930,6 +8930,211 @@ async def upload_gdb_file(
         raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {str(e)}")
 
 
+# ===== FUNCIÓN PARA GENERAR REPORTE PDF DE CALIDAD GDB =====
+async def generar_reporte_calidad_gdb(
+    municipio: str,
+    fecha_carga: str,
+    usuario: str,
+    stats: dict,
+    errores: dict
+) -> str:
+    """
+    Genera un PDF con el reporte de calidad de la carga GDB.
+    Retorna el path del archivo generado.
+    """
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    
+    # Crear directorio si no existe
+    reports_dir = Path("/app/reports/gdb_calidad")
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Nombre del archivo
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"calidad_gdb_{municipio.replace(' ', '_')}_{timestamp}.pdf"
+    filepath = reports_dir / filename
+    
+    # Crear documento
+    doc = SimpleDocTemplate(str(filepath), pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    styles = getSampleStyleSheet()
+    elements = []
+    
+    # Título
+    title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.HexColor('#1e3a5f'), spaceAfter=20)
+    elements.append(Paragraph(f"Reporte de Calidad GDB - {municipio}", title_style))
+    elements.append(Paragraph(f"Fecha de carga: {fecha_carga}", styles['Normal']))
+    elements.append(Paragraph(f"Usuario: {usuario}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Resumen estadístico
+    elements.append(Paragraph("📊 Resumen de Carga", styles['Heading2']))
+    
+    resumen_data = [
+        ["Concepto", "Rural", "Urbano", "Total"],
+        ["Geometrías en archivo GDB", str(stats.get('rurales_archivo', 0)), str(stats.get('urbanos_archivo', 0)), str(stats.get('rurales_archivo', 0) + stats.get('urbanos_archivo', 0))],
+        ["Geometrías cargadas", str(stats.get('rurales', 0)), str(stats.get('urbanos', 0)), str(stats.get('rurales', 0) + stats.get('urbanos', 0))],
+        ["Geometrías rechazadas", str(errores.get('rurales_rechazados', 0)), str(errores.get('urbanos_rechazados', 0)), str(errores.get('rurales_rechazados', 0) + errores.get('urbanos_rechazados', 0))],
+        ["Construcciones cargadas", str(stats.get('construcciones_rurales', 0)), str(stats.get('construcciones_urbanas', 0)), str(stats.get('construcciones', 0))],
+        ["Predios vinculados", "-", "-", str(stats.get('relacionados', 0))],
+    ]
+    
+    resumen_table = Table(resumen_data, colWidths=[2.5*inch, 1.2*inch, 1.2*inch, 1.2*inch])
+    resumen_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e3a5f')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8f9fa')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f0f0')]),
+    ]))
+    elements.append(resumen_table)
+    elements.append(Spacer(1, 20))
+    
+    # Indicador de calidad
+    total_archivo = stats.get('rurales_archivo', 0) + stats.get('urbanos_archivo', 0)
+    total_cargadas = stats.get('rurales', 0) + stats.get('urbanos', 0)
+    calidad_pct = (total_cargadas / total_archivo * 100) if total_archivo > 0 else 0
+    
+    if calidad_pct >= 95:
+        calidad_color = colors.HexColor('#28a745')
+        calidad_texto = "EXCELENTE"
+    elif calidad_pct >= 80:
+        calidad_color = colors.HexColor('#17a2b8')
+        calidad_texto = "BUENA"
+    elif calidad_pct >= 60:
+        calidad_color = colors.HexColor('#ffc107')
+        calidad_texto = "REGULAR"
+    else:
+        calidad_color = colors.HexColor('#dc3545')
+        calidad_texto = "DEFICIENTE"
+    
+    calidad_style = ParagraphStyle('Calidad', parent=styles['Normal'], fontSize=12, textColor=calidad_color, fontName='Helvetica-Bold')
+    elements.append(Paragraph(f"📈 Calidad de la carga: {calidad_pct:.1f}% - {calidad_texto}", calidad_style))
+    elements.append(Spacer(1, 20))
+    
+    # Errores de códigos (no 30 dígitos)
+    codigos_invalidos = errores.get('codigos_invalidos', [])
+    if codigos_invalidos:
+        elements.append(Paragraph("⚠️ Códigos con formato incorrecto (no son 30 dígitos)", styles['Heading2']))
+        elements.append(Paragraph(f"Total: {len(codigos_invalidos)} códigos requieren revisión del equipo SIG", styles['Normal']))
+        elements.append(Spacer(1, 10))
+        
+        # Tabla de códigos inválidos (máximo 50)
+        codigo_data = [["Código", "Longitud", "Capa"]]
+        for item in codigos_invalidos[:50]:
+            codigo_data.append([item.get('codigo', ''), str(item.get('longitud', '')), item.get('capa', '')])
+        
+        if len(codigos_invalidos) > 50:
+            codigo_data.append([f"... y {len(codigos_invalidos) - 50} más", "", ""])
+        
+        codigo_table = Table(codigo_data, colWidths=[3*inch, 1*inch, 1.5*inch])
+        codigo_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#dc3545')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        elements.append(codigo_table)
+        elements.append(Spacer(1, 20))
+    
+    # Geometrías rechazadas (fuera de Colombia)
+    geom_rechazadas = errores.get('geometrias_rechazadas', [])
+    if geom_rechazadas:
+        elements.append(Paragraph("🌍 Geometrías rechazadas (coordenadas fuera de Colombia)", styles['Heading2']))
+        elements.append(Paragraph(f"Total: {len(geom_rechazadas)} geometrías", styles['Normal']))
+        elements.append(Spacer(1, 10))
+        
+        geom_data = [["Código", "Razón", "Capa"]]
+        for item in geom_rechazadas[:30]:
+            geom_data.append([item.get('codigo', ''), item.get('razon', ''), item.get('capa', '')])
+        
+        if len(geom_rechazadas) > 30:
+            geom_data.append([f"... y {len(geom_rechazadas) - 30} más", "", ""])
+        
+        geom_table = Table(geom_data, colWidths=[3*inch, 2*inch, 1.5*inch])
+        geom_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#ffc107')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        elements.append(geom_table)
+        elements.append(Spacer(1, 20))
+    
+    # Construcciones huérfanas
+    const_huerfanas = errores.get('construcciones_huerfanas', [])
+    if const_huerfanas:
+        elements.append(Paragraph("🏗️ Construcciones sin predio padre", styles['Heading2']))
+        elements.append(Paragraph(f"Total: {len(const_huerfanas)} construcciones no pudieron vincularse a un predio", styles['Normal']))
+        elements.append(Spacer(1, 10))
+        
+        const_data = [["Código Construcción", "Capa"]]
+        for item in const_huerfanas[:30]:
+            const_data.append([item.get('codigo', ''), item.get('capa', '')])
+        
+        if len(const_huerfanas) > 30:
+            const_data.append([f"... y {len(const_huerfanas) - 30} más", ""])
+        
+        const_table = Table(const_data, colWidths=[4*inch, 2*inch])
+        const_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#17a2b8')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        elements.append(const_table)
+    
+    # Generar PDF
+    doc.build(elements)
+    
+    return str(filepath)
+
+
+@api_router.get("/gdb/reportes-calidad")
+async def listar_reportes_calidad_gdb(current_user: dict = Depends(get_current_user)):
+    """Lista los reportes de calidad GDB disponibles"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    reports_dir = Path("/app/reports/gdb_calidad")
+    if not reports_dir.exists():
+        return {"reportes": []}
+    
+    reportes = []
+    for f in sorted(reports_dir.glob("*.pdf"), reverse=True):
+        reportes.append({
+            "nombre": f.name,
+            "fecha": datetime.fromtimestamp(f.stat().st_mtime).isoformat(),
+            "tamaño": f.stat().st_size,
+            "url": f"/api/gdb/reportes-calidad/{f.name}"
+        })
+    
+    return {"reportes": reportes[:50]}  # Últimos 50
+
+
+@api_router.get("/gdb/reportes-calidad/{filename}")
+async def descargar_reporte_calidad_gdb(filename: str, current_user: dict = Depends(get_current_user)):
+    """Descarga un reporte de calidad GDB"""
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.GESTOR]:
+        raise HTTPException(status_code=403, detail="No tiene permiso")
+    
+    filepath = Path("/app/reports/gdb_calidad") / filename
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="Reporte no encontrado")
+    
+    return FileResponse(filepath, filename=filename, media_type="application/pdf")
+
+
 @api_router.get("/gdb/cargas-mensuales")
 async def get_cargas_mensuales_gdb(
     mes: Optional[str] = None,
