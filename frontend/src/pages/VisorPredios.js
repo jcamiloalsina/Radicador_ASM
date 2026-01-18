@@ -626,8 +626,9 @@ export default function VisorPredios() {
       
       // Verificar si el predio tiene construcciones (sin cargarlas)
       try {
+        const authToken = localStorage.getItem('token');
         const constResponse = await axios.get(`${API}/gdb/construcciones/${predio.codigo_gdb || predio.codigo_predial_nacional}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${authToken}` }
         });
         if (constResponse.data.construcciones?.length > 0) {
           setTieneConstrucciones(true);
@@ -639,6 +640,7 @@ export default function VisorPredios() {
           setConstrucciones(null);
         }
       } catch (constError) {
+        console.error('Error verificando construcciones:', constError);
         setTieneConstrucciones(false);
         setConstrucciones(null);
       }
