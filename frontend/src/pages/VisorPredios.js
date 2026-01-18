@@ -245,6 +245,9 @@ export default function VisorPredios() {
   const [marcadorCoordenadas, setMarcadorCoordenadas] = useState(null); // [lat, lng] del marcador
   const [resumenCargasMensuales, setResumenCargasMensuales] = useState(null); // Resumen de cargas GDB del mes
   const [construcciones, setConstrucciones] = useState(null); // Construcciones del predio seleccionado
+  const [mostrarConstrucciones, setMostrarConstrucciones] = useState(false); // Toggle para mostrar/ocultar construcciones
+  const [tieneConstrucciones, setTieneConstrucciones] = useState(false); // Si el predio tiene construcciones disponibles
+  const [cargandoConstrucciones, setCargandoConstrucciones] = useState(false); // Estado de carga
   const [ortoimagenes, setOrtoimagenes] = useState([]); // Lista de ortoimágenes disponibles
   const [ortoimagenActiva, setOrtoimagenActiva] = useState(null); // Ortoimagen seleccionada para mostrar
   const [showUploadOrtoDialog, setShowUploadOrtoDialog] = useState(false); // Modal de subida de ortoimagen
