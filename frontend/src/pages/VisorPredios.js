@@ -1496,6 +1496,47 @@ export default function VisorPredios() {
                   <p className="font-mono text-xs font-medium text-slate-800">{selectedPredio.codigo_predial_nacional}</p>
                 </div>
 
+                {/* TOGGLE CONSTRUCCIONES - Muy visible al inicio */}
+                {tieneConstrucciones && (
+                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-5 h-5 text-red-600" />
+                        <span className="font-semibold text-red-800">Construcciones</span>
+                      </div>
+                      <Button
+                        variant={mostrarConstrucciones ? "default" : "outline"}
+                        size="sm"
+                        className={`${mostrarConstrucciones ? 'bg-red-600 hover:bg-red-700 text-white' : 'border-red-400 text-red-600 hover:bg-red-100'}`}
+                        onClick={toggleConstrucciones}
+                        disabled={cargandoConstrucciones}
+                        data-testid="toggle-construcciones-btn"
+                      >
+                        {cargandoConstrucciones ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                        ) : mostrarConstrucciones ? (
+                          <Eye className="w-4 h-4 mr-1" />
+                        ) : (
+                          <EyeOff className="w-4 h-4 mr-1" />
+                        )}
+                        {mostrarConstrucciones ? 'Ocultar en mapa' : 'Ver en mapa'}
+                      </Button>
+                    </div>
+                    
+                    {/* Lista de construcciones si están visibles */}
+                    {mostrarConstrucciones && construcciones && construcciones.length > 0 && (
+                      <div className="mt-2 space-y-1 max-h-24 overflow-y-auto">
+                        {construcciones.map((const_item, idx) => (
+                          <div key={idx} className="bg-white rounded p-2 text-xs flex justify-between items-center">
+                            <span className="text-red-800">🏠 Construcción {idx + 1}</span>
+                            <span className="text-red-600 font-medium">{formatArea(const_item.area_m2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Municipio y Zona */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
