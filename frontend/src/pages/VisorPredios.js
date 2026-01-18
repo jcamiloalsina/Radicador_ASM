@@ -673,14 +673,19 @@ export default function VisorPredios() {
     
     setCargandoConstrucciones(true);
     try {
+      const authToken = localStorage.getItem('token');
       const constResponse = await axios.get(`${API}/gdb/construcciones/${selectedPredio.codigo_gdb || selectedPredio.codigo_predial_nacional}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${authToken}` }
       });
       if (constResponse.data.construcciones?.length > 0) {
         setConstrucciones(constResponse.data.construcciones);
         setMostrarConstrucciones(true);
+        toast.success(`${constResponse.data.construcciones.length} construcciones cargadas`);
+      } else {
+        toast.info('No hay construcciones disponibles para este predio');
       }
     } catch (error) {
+      console.error('Error loading constructions:', error);
       toast.error('Error al cargar construcciones');
     } finally {
       setCargandoConstrucciones(false);
