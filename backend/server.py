@@ -8447,18 +8447,19 @@ async def upload_gdb_file(
                         if len(gdf_limite) > 0:
                             # Get transformer based on GDF's CRS
                             project = get_transformer_for_gdf(gdf_limite)
-                            logger.info(f"GDB {municipio_nombre}: CRS del límite: {gdf_limite.crs}")
+                            logger.info(f"GDB {gdb_name}: CRS del límite: {gdf_limite.crs}")
                             
-                            # Guardar límite municipal
+                            # Guardar límite municipal (usar nombre temporal hasta detectar desde códigos)
+                            temp_municipio_name = municipio_nombre_inicial or gdb_name
                             for idx, row in gdf_limite.iterrows():
                                 if row.geometry:
                                     geom_wgs84 = transform(project, row.geometry) if project else row.geometry
                                     limite_municipal = geom_wgs84.__geo_interface__
                                     # Guardar en colección de límites
                                     await db.limites_municipales.update_one(
-                                        {"municipio": municipio_nombre},
+                                        {"codigo": gdb_name},
                                         {"$set": {
-                                            "municipio": municipio_nombre,
+                                            "municipio": temp_municipio_name,
                                             "codigo": gdb_name,
                                             "geometry": limite_municipal,
                                             "fuente": "gdb",
@@ -8466,7 +8467,7 @@ async def upload_gdb_file(
                                         }},
                                         upsert=True
                                     )
-                                    logger.info(f"GDB {municipio_nombre}: Límite municipal guardado desde capa {limite_layer}")
+                                    logger.info(f"GDB {gdb_name}: Límite municipal guardado desde capa {limite_layer}")
                                     break
                             break
                     except Exception as e:
