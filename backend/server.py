@@ -8524,7 +8524,7 @@ async def upload_gdb_file(
                     continue
             
             if not urban_layer_found:
-                logger.warning(f"GDB {municipio_nombre}: No se encontró capa urbana con TERRENO")
+                logger.warning(f"GDB {gdb_name}: No se encontró capa urbana con TERRENO")
         except Exception as e:
             logger.warning(f"Error leyendo capas GDB: {e}")
         
