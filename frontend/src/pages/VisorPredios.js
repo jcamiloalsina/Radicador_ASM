@@ -911,14 +911,26 @@ export default function VisorPredios() {
                     <div className="flex flex-col gap-1">
                       <span>📄 Reporte de calidad disponible</span>
                       <button 
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = `${API}/gdb/reportes-calidad/${calidad.reporte_pdf}`;
-                          link.download = calidad.reporte_pdf;
-                          link.target = '_blank';
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
+                        onClick={async () => {
+                          try {
+                            const authToken = localStorage.getItem('token');
+                            const response = await fetch(`${API}/gdb/reportes-calidad/${calidad.reporte_pdf}`, {
+                              headers: { 'Authorization': `Bearer ${authToken}` }
+                            });
+                            if (!response.ok) throw new Error('Error al descargar');
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = calidad.reporte_pdf;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                            toast.success('PDF descargado');
+                          } catch (err) {
+                            toast.error('Error al descargar el reporte');
+                          }
                         }}
                         className="text-blue-600 underline text-sm hover:text-blue-800"
                       >
