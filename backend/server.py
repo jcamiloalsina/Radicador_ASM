@@ -9097,29 +9097,27 @@ async def upload_gdb_file(
                 errores=errores_calidad
             )
             logger.info(f"Reporte de calidad generado: {reporte_path}")
-                )
-                logger.info(f"Reporte de calidad generado: {reporte_path}")
+            
+            # Notificar a coordinadores si hay errores significativos
+            if calidad_pct < 80 or len(errores_calidad['codigos_invalidos']) > 10:
+                coordinadores = await db.users.find(
+                    {"role": {"$in": [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]}},
+                    {"_id": 0, "id": 1, "full_name": 1}
+                ).to_list(100)
                 
-                # Notificar a coordinadores si hay errores significativos
-                if calidad_pct < 80 or len(errores_calidad['codigos_invalidos']) > 10:
-                    coordinadores = await db.users.find(
-                        {"role": {"$in": [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]}},
-                        {"_id": 0, "id": 1, "full_name": 1}
-                    ).to_list(100)
-                    
-                    for coord in coordinadores:
-                        await crear_notificacion(
-                            usuario_id=coord['id'],
-                            titulo=f"⚠️ Reporte de Calidad GDB - {municipio_nombre}",
-                            mensaje=f"La carga de GDB de {municipio_nombre} tiene problemas de calidad ({calidad_pct:.1f}%). "
-                                   f"Códigos inválidos: {len(errores_calidad['codigos_invalidos'])}, "
-                                   f"Geometrías rechazadas: {len(errores_calidad['geometrias_rechazadas'])}. "
-                                   f"Revisar reporte PDF.",
-                            tipo="warning",
-                            enviar_email=False
-                        )
-            except Exception as report_err:
-                logger.error(f"Error generando reporte de calidad: {report_err}")
+                for coord in coordinadores:
+                    await crear_notificacion(
+                        usuario_id=coord['id'],
+                        titulo=f"⚠️ Reporte de Calidad GDB - {municipio_nombre}",
+                        mensaje=f"La carga de GDB de {municipio_nombre} tiene problemas de calidad ({calidad_pct:.1f}%). "
+                               f"Códigos inválidos: {len(errores_calidad['codigos_invalidos'])}, "
+                               f"Geometrías rechazadas: {len(errores_calidad['geometrias_rechazadas'])}. "
+                               f"Revisar reporte PDF.",
+                        tipo="warning",
+                        enviar_email=False
+                    )
+        except Exception as report_err:
+            logger.error(f"Error generando reporte de calidad: {report_err}")
         
         return {
             "message": f"Base gráfica de {municipio_nombre} actualizada exitosamente",
