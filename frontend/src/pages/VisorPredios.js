@@ -1550,7 +1550,7 @@ export default function VisorPredios() {
                 </div>
 
                 {/* Construcciones del GDB - Toggle para mostrar/ocultar */}
-                {tieneConstrucciones && (
+                {tieneConstrucciones ? (
                   <div className="border-t pt-2">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs text-slate-500 flex items-center gap-1">
@@ -1563,6 +1563,7 @@ export default function VisorPredios() {
                         className={`h-7 text-xs ${mostrarConstrucciones ? 'bg-red-600 hover:bg-red-700' : 'border-red-300 text-red-600 hover:bg-red-50'}`}
                         onClick={toggleConstrucciones}
                         disabled={cargandoConstrucciones}
+                        data-testid="toggle-construcciones-btn"
                       >
                         {cargandoConstrucciones ? (
                           <Loader2 className="w-3 h-3 animate-spin mr-1" />
