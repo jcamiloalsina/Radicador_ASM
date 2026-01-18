@@ -2147,8 +2147,8 @@ export default function VisorPredios() {
                       </Popup>
                     </GeoJSON>
                     
-                    {/* Renderizar construcciones del predio (polígonos rojos) */}
-                    {construcciones && construcciones.map((const_item, idx) => (
+                    {/* Renderizar construcciones del predio (polígonos rojos) - SOLO si el toggle está activo */}
+                    {mostrarConstrucciones && construcciones && construcciones.map((const_item, idx) => (
                       const_item.geometry && (
                         <GeoJSON
                           key={`construccion-${idx}`}
