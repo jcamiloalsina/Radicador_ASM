@@ -8784,43 +8784,70 @@ async def upload_gdb_file(
                         codigo = None
                         for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED', 'CODIGO_TERRENO']:
                             if col in gdf_const.columns and pd.notna(row.get(col)):
-                                codigo = str(row[col])
+                                codigo = str(row[col]).strip()
                                 break
                         
-                        if codigo and row.geometry:
-                            try:
-                                geom_wgs84 = transform(project, row.geometry) if project else row.geometry
+                        if not codigo:
+                            continue
+                        
+                        if not row.geometry:
+                            errores_calidad['construcciones_huerfanas'].append({
+                                'codigo': codigo,
+                                'capa': const_layer,
+                                'razon': 'Sin geometría'
+                            })
+                            continue
+                        
+                        try:
+                            geom_wgs84 = transform(project, row.geometry) if project else row.geometry
+                            
+                            # Validar que las coordenadas estén en Colombia
+                            if not validate_colombia_coordinates(geom_wgs84):
+                                logger.warning(f"Construcción fuera de Colombia descartada: {codigo}")
+                                continue
+                            
+                            area_m2 = round(geom_wgs84.area * (111320 ** 2), 2) if geom_wgs84.area else 0
+                            
+                            # Extraer atributos de construcción si existen
+                            pisos = row.get('PISOS', row.get('pisos', row.get('NUM_PISOS', 1)))
+                            tipo_const = row.get('TIPO_CONSTRUCCION', row.get('tipo_construccion', row.get('TIPO', '')))
+                            
+                            # El código del predio padre son los primeros 25 dígitos (sin la parte de construcción)
+                            codigo_predio_padre = codigo[:25] + "00000" if len(codigo) >= 25 else codigo
+                            
+                            await db.gdb_construcciones.insert_one({
+                                "codigo_construccion": codigo,  # Código completo de la construcción
+                                "codigo_predio": codigo_predio_padre,  # Código del predio padre (25 dígitos + 00000)
+                                "tipo_zona": tipo_construccion,
+                                "gdb_source": gdb_name,
+                                "municipio": municipio_nombre,
+                                "area_m2": area_m2,
+                                "pisos": int(pisos) if pisos and str(pisos).isdigit() else 1,
+                                "tipo_construccion": str(tipo_const) if tipo_const else "",
+                                "geometry": geom_wgs84.__geo_interface__
+                            })
+                            construcciones_guardadas += 1
+                            
+                            if tipo_construccion == "rural":
+                                construcciones_rurales += 1
+                            else:
+                                construcciones_urbanas += 1
                                 
-                                # Validar que las coordenadas estén en Colombia
-                                if not validate_colombia_coordinates(geom_wgs84):
-                                    logger.warning(f"Construcción fuera de Colombia descartada: {codigo}")
-                                    continue
-                                
-                                area_m2 = round(geom_wgs84.area * (111320 ** 2), 2) if geom_wgs84.area else 0
-                                
-                                # Extraer atributos de construcción si existen
-                                pisos = row.get('PISOS', row.get('pisos', row.get('NUM_PISOS', 1)))
-                                tipo_const = row.get('TIPO_CONSTRUCCION', row.get('tipo_construccion', row.get('TIPO', '')))
-                                
-                                await db.gdb_construcciones.insert_one({
-                                    "codigo_predio": codigo,
-                                    "tipo_zona": tipo_construccion,
-                                    "gdb_source": gdb_name,
-                                    "municipio": municipio_nombre,
-                                    "area_m2": area_m2,
-                                    "pisos": int(pisos) if pisos and str(pisos).isdigit() else 1,
-                                    "tipo_construccion": str(tipo_const) if tipo_const else "",
-                                    "geometry": geom_wgs84.__geo_interface__
-                                })
-                                construcciones_guardadas += 1
-                            except Exception as ce:
-                                pass
+                        except Exception as ce:
+                            errores_calidad['construcciones_huerfanas'].append({
+                                'codigo': codigo,
+                                'capa': const_layer,
+                                'razon': str(ce)[:30]
+                            })
                     
                     logger.info(f"GDB {municipio_nombre}: Guardadas {construcciones_guardadas} construcciones desde {const_layer}")
                 except Exception as layer_err:
+                    logger.warning(f"Error leyendo capa {const_layer}: {layer_err}")
                     continue
             
             stats["construcciones"] = construcciones_guardadas
+            stats["construcciones_rurales"] = construcciones_rurales
+            stats["construcciones_urbanas"] = construcciones_urbanas
             if construcciones_guardadas > 0:
                 update_progress("construcciones_ok", 74, f"Guardadas {construcciones_guardadas} construcciones")
         except Exception as e:
