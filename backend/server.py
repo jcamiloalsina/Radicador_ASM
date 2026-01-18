@@ -9060,7 +9060,17 @@ async def upload_gdb_file(
         # Limpiar progreso después de 5 minutos
         # (en producción esto se haría con un scheduler)
         
-        # Generar reporte de calidad si hay errores
+        # Calcular calidad - basado en geometrías guardadas vs leídas
+        total_archivo = rurales_en_archivo + urbanos_en_archivo
+        total_cargadas = rural_guardadas + urban_guardadas
+        
+        # La calidad es el porcentaje de geometrías que se guardaron exitosamente
+        # NO puede superar 100%
+        calidad_pct = min(100.0, (total_cargadas / total_archivo * 100)) if total_archivo > 0 else 100.0
+        
+        logger.info(f"GDB {municipio_nombre}: Calidad={calidad_pct:.1f}% (archivo:{total_archivo}, guardadas:{total_cargadas})")
+        
+        # Siempre generar reporte PDF para tener registro de la carga
         reporte_path = None
         tiene_errores = (
             len(errores_calidad['codigos_invalidos']) > 0 or
