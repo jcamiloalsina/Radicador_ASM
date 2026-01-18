@@ -8499,7 +8499,7 @@ async def upload_gdb_file(
                     continue
             
             if not rural_layer_found:
-                logger.warning(f"GDB {municipio_nombre}: No se encontró capa rural. Capas disponibles: {available_layers}")
+                logger.warning(f"GDB {gdb_name}: No se encontró capa rural. Capas disponibles: {available_layers}")
                 update_progress("leyendo_rural", 35, "No se encontró capa rural en el GDB")
             
             update_progress("leyendo_urbano", 40, "Leyendo capa urbana...")
