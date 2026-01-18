@@ -2133,9 +2133,9 @@ export default function VisorPredios() {
                           <p className="font-mono text-xs bg-slate-100 p-1 rounded mb-2">
                             {selectedPredio?.codigo_predial_nacional}
                           </p>
-                          <p className="text-xs text-slate-500">Código Homologado:</p>
+                          <p className="text-xs text-slate-500">Matrícula:</p>
                           <p className="text-xs font-medium mb-2">
-                            {selectedPredio?.codigo_homologado}
+                            {selectedPredio?.matricula || 'Sin matrícula'}
                           </p>
                           <p className="text-xs text-slate-600">
                             {selectedPredio?.municipio} - {getZonaFromCodigo(selectedPredio?.codigo_predial_nacional || selectedPredio?.codigo_homologado).texto}
