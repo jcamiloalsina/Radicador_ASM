@@ -8296,24 +8296,58 @@ async def upload_gdb_file(
             
             update_progress("extrayendo", 15, "Extrayendo archivo ZIP...")
             
+            # PRIMERO: Identificar el nombre de la carpeta .gdb dentro del ZIP
+            gdb_name_in_zip = None
             with zipfile.ZipFile(temp_zip, 'r') as zip_ref:
+                # Buscar la carpeta .gdb en el contenido del ZIP
+                for name in zip_ref.namelist():
+                    if '.gdb/' in name or '.gdb\\' in name:
+                        # Extraer nombre de carpeta GDB
+                        parts = name.replace('\\', '/').split('/')
+                        for part in parts:
+                            if part.endswith('.gdb'):
+                                gdb_name_in_zip = part
+                                break
+                        if gdb_name_in_zip:
+                            break
+                
+                logger.info(f"GDB en ZIP detectado: {gdb_name_in_zip}")
                 zip_ref.extractall(gdb_data_dir)
             
             temp_zip.unlink()
             
-            # Buscar carpeta .gdb
-            for item in gdb_data_dir.iterdir():
-                if item.suffix == '.gdb' and item.is_dir():
-                    gdb_found = item
-                    break
-            
-            if not gdb_found:
-                for item in gdb_data_dir.iterdir():
-                    if item.is_dir():
-                        for subitem in item.iterdir():
-                            if subitem.suffix == '.gdb' and subitem.is_dir():
-                                gdb_found = subitem
+            # Buscar ESPECÍFICAMENTE la carpeta .gdb que estaba en el ZIP
+            if gdb_name_in_zip:
+                # Buscar directamente la carpeta con ese nombre
+                potential_path = gdb_data_dir / gdb_name_in_zip
+                if potential_path.exists() and potential_path.is_dir():
+                    gdb_found = potential_path
+                    logger.info(f"GDB encontrado directamente: {gdb_found}")
+                else:
+                    # Buscar en subdirectorios (el ZIP podría tener carpeta contenedora)
+                    for item in gdb_data_dir.iterdir():
+                        if item.is_dir():
+                            subpath = item / gdb_name_in_zip
+                            if subpath.exists() and subpath.is_dir():
+                                gdb_found = subpath
+                                logger.info(f"GDB encontrado en subdirectorio: {gdb_found}")
                                 break
+            
+            # Fallback: buscar cualquier .gdb si no se pudo identificar del ZIP
+            if not gdb_found:
+                logger.warning("No se pudo identificar GDB del ZIP, buscando cualquier .gdb...")
+                for item in gdb_data_dir.iterdir():
+                    if item.suffix == '.gdb' and item.is_dir():
+                        gdb_found = item
+                        break
+                
+                if not gdb_found:
+                    for item in gdb_data_dir.iterdir():
+                        if item.is_dir():
+                            for subitem in item.iterdir():
+                                if subitem.suffix == '.gdb' and subitem.is_dir():
+                                    gdb_found = subitem
+                                    break
         else:
             # Proceso para archivos de carpeta GDB (múltiples archivos)
             # Determinar el nombre de la carpeta .gdb desde los archivos
