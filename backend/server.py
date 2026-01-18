@@ -8569,11 +8569,15 @@ async def upload_gdb_file(
             'urbanos_rechazados': 0
         }
         
+        # Inicializar contadores ANTES de los try/except
+        rurales_en_archivo = 0
+        urbanos_en_archivo = 0
+        rural_guardadas = 0
+        urban_guardadas = 0
+        
         try:
             # Rural - usar lista de capas específicas (SIN buscar dinámicamente para evitar ZONA_HOMOGENEA)
             
-            rural_guardadas = 0
-            rurales_en_archivo = 0
             # Usar la misma capa que se usó para leer, si se encontró
             rural_layers_to_save = ['R_TERRENO_1', 'R_TERRENO', 'TERRENO', 'R_Terreno', 'r_terreno', 'r_terreno_1', 'Terreno', 'terreno']
             
