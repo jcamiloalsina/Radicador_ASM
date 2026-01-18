@@ -9354,7 +9354,7 @@ async def listar_reportes_calidad_gdb(current_user: dict = Depends(get_current_u
 @api_router.get("/gdb/reportes-calidad/{filename}")
 async def descargar_reporte_calidad_gdb(filename: str, current_user: dict = Depends(get_current_user)):
     """Descarga un reporte de calidad GDB"""
-    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.GESTOR]:
+    if current_user['role'] not in [UserRole.ADMINISTRADOR, UserRole.COORDINADOR, UserRole.GESTOR, UserRole.ATENCION_USUARIO]:
         raise HTTPException(status_code=403, detail="No tiene permiso")
     
     filepath = Path("/app/reports/gdb_calidad") / filename
