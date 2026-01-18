@@ -1596,6 +1596,13 @@ export default function VisorPredios() {
                       </div>
                     )}
                   </div>
+                ) : geometry && (
+                  <div className="border-t pt-2">
+                    <p className="text-xs text-slate-400 flex items-center gap-1">
+                      <Building className="w-3 h-3" /> 
+                      Sin construcciones en GDB
+                    </p>
+                  </div>
                 )}
 
                 {/* Botón Certificado */}
