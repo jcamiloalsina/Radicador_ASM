@@ -9080,19 +9080,23 @@ async def upload_gdb_file(
             errores_calidad['urbanos_rechazados'] > 0
         )
         
-        # Calcular calidad
-        total_archivo = stats.get('rurales_archivo', 0) + stats.get('urbanos_archivo', 0)
-        total_cargadas = stats.get('rurales', 0) + stats.get('urbanos', 0)
-        calidad_pct = (total_cargadas / total_archivo * 100) if total_archivo > 0 else 100
-        
-        if tiene_errores or calidad_pct < 95:
-            try:
-                reporte_path = await generar_reporte_calidad_gdb(
-                    municipio=municipio_nombre,
-                    fecha_carga=datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    usuario=current_user['full_name'],
-                    stats=stats,
-                    errores=errores_calidad
+        # Siempre generar reporte PDF para tener registro de la carga
+        try:
+            reporte_path = await generar_reporte_calidad_gdb(
+                municipio=municipio_nombre,
+                fecha_carga=datetime.now().strftime("%Y-%m-%d %H:%M"),
+                usuario=current_user['full_name'],
+                stats={
+                    **stats,
+                    'rurales_archivo': rurales_en_archivo,
+                    'urbanos_archivo': urbanos_en_archivo,
+                    'rurales_guardadas': rural_guardadas,
+                    'urbanos_guardadas': urban_guardadas,
+                    'calidad_pct': calidad_pct
+                },
+                errores=errores_calidad
+            )
+            logger.info(f"Reporte de calidad generado: {reporte_path}")
                 )
                 logger.info(f"Reporte de calidad generado: {reporte_path}")
                 
