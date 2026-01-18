@@ -181,3 +181,11 @@ exports/db_backup_20260117_161006/test_database/predios.bson
 *.env
 *.env.*
 ortoimagenes/originales/Orto.tif
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment files
+*.env
+*.env.*
