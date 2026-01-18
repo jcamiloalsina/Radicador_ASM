@@ -8737,9 +8737,23 @@ async def upload_gdb_file(
         if codigos_gdb:
             logger.info(f"GDB tiene {len(codigos_gdb)} códigos únicos. Intentando relacionar...")
             
-            # Los códigos en GDB pueden ser de diferentes longitudes (20, 22, 30 dígitos)
+            # Los códigos en GDB pueden ser de diferentes longitudes (17, 20, 22, 30 dígitos)
             # Necesitamos hacer matching flexible
             relacionados_total = 0
+            
+            # Crear un índice de códigos GDB por zona+sector (primeros 9 dígitos)
+            codigos_gdb_por_zona = {}
+            for codigo_gdb in codigos_gdb:
+                if not codigo_gdb:
+                    continue
+                codigo_limpio = codigo_gdb.strip()
+                if len(codigo_limpio) >= 9:
+                    zona_key = codigo_limpio[:9]
+                    if zona_key not in codigos_gdb_por_zona:
+                        codigos_gdb_por_zona[zona_key] = []
+                    codigos_gdb_por_zona[zona_key].append(codigo_limpio)
+            
+            logger.info(f"GDB tiene {len(codigos_gdb)} códigos únicos en {len(codigos_gdb_por_zona)} zonas")
             
             for codigo_gdb in codigos_gdb:
                 if not codigo_gdb:
@@ -8771,50 +8785,81 @@ async def upload_gdb_file(
             
             stats["relacionados"] = relacionados_total
             
-            # Si no hubo matches, intentar con los primeros N dígitos
-            if relacionados_total == 0:
-                update_progress("matching_avanzado", 80, "Match directo falló. Intentando match por prefijo...")
-                logger.warning("No se encontraron matches directos. Intentando match por prefijo...")
-                # Obtener todos los predios del municipio y hacer match manual
-                predios_municipio = await db.predios.find(
-                    {"municipio": municipio_nombre},
-                    {"_id": 0, "codigo_predial_nacional": 1, "id": 1}
-                ).to_list(50000)
+            # Si no hubo matches suficientes, intentar matching avanzado
+            # Esto es especialmente importante para códigos de 17 dígitos que no coinciden directamente
+            if relacionados_total < len(codigos_gdb) * 0.5:  # Si menos del 50% coincidió
+                update_progress("matching_avanzado", 80, f"Matches directos: {relacionados_total}. Intentando match avanzado...")
+                logger.info(f"Solo {relacionados_total} matches directos. Iniciando matching avanzado por zona...")
                 
-                total_predios = len(predios_municipio)
-                matches_por_prefijo = 0
-                for i, predio in enumerate(predios_municipio):
-                    if i % 1000 == 0:
-                        pct = 80 + int((i / total_predios) * 15)
-                        update_progress("matching_avanzado", pct, f"Buscando coincidencias: {i}/{total_predios} predios ({matches_por_prefijo} encontrados)")
+                # Obtener todos los predios del municipio sin geometría
+                predios_sin_geo = await db.predios.find(
+                    {"municipio": municipio_nombre, "tiene_geometria": {"$ne": True}},
+                    {"_id": 0, "codigo_predial_nacional": 1, "id": 1}
+                ).to_list(100000)
+                
+                logger.info(f"Encontrados {len(predios_sin_geo)} predios sin geometría en {municipio_nombre}")
+                
+                matches_avanzados = 0
+                predios_procesados = 0
+                
+                for predio in predios_sin_geo:
+                    predios_procesados += 1
+                    if predios_procesados % 5000 == 0:
+                        pct = 80 + int((predios_procesados / len(predios_sin_geo)) * 15)
+                        update_progress("matching_avanzado", pct, 
+                            f"Match avanzado: {predios_procesados}/{len(predios_sin_geo)} ({matches_avanzados} encontrados)")
                     
                     codigo_bd = predio.get("codigo_predial_nacional", "")
-                    if not codigo_bd:
+                    if not codigo_bd or len(codigo_bd) < 9:
                         continue
                     
-                    # Extraer diferentes prefijos del código de BD para comparar
-                    prefijos_bd = [
-                        codigo_bd[:20],  # Primeros 20 dígitos
-                        codigo_bd[:22],  # Primeros 22 dígitos
-                        codigo_bd[:5] + codigo_bd[5:].lstrip('0')[:15],  # Quitar ceros intermedios
-                    ]
+                    # Extraer zona+sector del predio
+                    zona_predio = codigo_bd[:9]
                     
-                    for codigo_gdb in codigos_gdb:
-                        if codigo_gdb in prefijos_bd or any(p.startswith(codigo_gdb) for p in prefijos_bd):
+                    # Buscar si hay geometrías GDB para esta zona
+                    if zona_predio in codigos_gdb_por_zona:
+                        # Hay geometrías para esta zona - asignar la primera disponible
+                        # TODO: Mejorar la lógica de match para ser más preciso
+                        codigo_gdb_match = codigos_gdb_por_zona[zona_predio][0]
+                        
+                        # Verificar si este predio específico tiene su geometría
+                        # Comparar los últimos dígitos del número de predio
+                        mejor_match = None
+                        for gdb_cod in codigos_gdb_por_zona[zona_predio]:
+                            # Para códigos de 17 dígitos: los últimos 8 dígitos son el número de predio
+                            # Para códigos de 30 dígitos: los dígitos 9-25 son vereda+predio
+                            if len(gdb_cod) == 17:
+                                # El número de predio en formato 17 dígitos (últimos 8)
+                                num_gdb = gdb_cod[9:].lstrip('0') or '0'
+                                # El número de predio en formato 30 dígitos (parte del campo vereda)
+                                # Extraer solo el número de predio sin ceros leading
+                                num_bd = codigo_bd[9:25].lstrip('0')[:len(num_gdb)] if len(codigo_bd) >= 25 else ''
+                                
+                                if num_gdb == num_bd:
+                                    mejor_match = gdb_cod
+                                    break
+                            elif len(gdb_cod) == 30:
+                                # Match directo de códigos de 30 dígitos
+                                if gdb_cod == codigo_bd:
+                                    mejor_match = gdb_cod
+                                    break
+                        
+                        if mejor_match:
                             await db.predios.update_one(
                                 {"id": predio["id"]},
                                 {"$set": {
                                     "tiene_geometria": True,
                                     "gdb_source": gdb_name,
-                                    "codigo_gdb": codigo_gdb,
+                                    "codigo_gdb": mejor_match,
                                     "gdb_updated": datetime.now(timezone.utc).isoformat()
                                 }}
                             )
-                            matches_por_prefijo += 1
-                            break
+                            matches_avanzados += 1
                 
-                stats["relacionados"] = matches_por_prefijo
-                stats["metodo_match"] = "prefijo"
+                stats["relacionados"] = relacionados_total + matches_avanzados
+                stats["matches_directos"] = relacionados_total
+                stats["matches_avanzados"] = matches_avanzados
+                logger.info(f"Matching avanzado completado: {matches_avanzados} adicionales")
         
         update_progress("finalizando", 95, f"Registrando carga... {stats['relacionados']} predios relacionados")
         
