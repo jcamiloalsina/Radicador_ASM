@@ -8525,10 +8525,20 @@ async def upload_gdb_file(
         update_progress("limpiando", 52, f"Reemplazando geometrías anteriores ({deleted.deleted_count} eliminadas)")
         
         # Guardar las geometrías con sus códigos
+        # Inicializar diccionario de errores para el reporte de calidad
+        errores_calidad = {
+            'codigos_invalidos': [],
+            'geometrias_rechazadas': [],
+            'construcciones_huerfanas': [],
+            'rurales_rechazados': 0,
+            'urbanos_rechazados': 0
+        }
+        
         try:
             # Rural - usar lista de capas específicas (SIN buscar dinámicamente para evitar ZONA_HOMOGENEA)
             
             rural_guardadas = 0
+            rurales_en_archivo = 0
             # Usar la misma capa que se usó para leer, si se encontró
             rural_layers_to_save = ['R_TERRENO_1', 'R_TERRENO', 'TERRENO', 'R_Terreno', 'r_terreno', 'r_terreno_1', 'Terreno', 'terreno']
             
@@ -8540,55 +8550,93 @@ async def upload_gdb_file(
                     if len(gdf_rural) == 0:
                         continue
                     
+                    rurales_en_archivo = len(gdf_rural)
+                    
                     # Get transformer based on this layer's CRS
                     project = get_transformer_for_gdf(gdf_rural)
-                    logger.info(f"GDB {municipio_nombre}: CRS rural ({rural_layer}): {gdf_rural.crs}")
+                    logger.info(f"GDB {municipio_nombre}: CRS rural ({rural_layer}): {gdf_rural.crs}, Total registros: {len(gdf_rural)}")
                     
                     total_rural = len(gdf_rural)
                     for idx, row in gdf_rural.iterrows():
                         if idx % 500 == 0:
                             pct = 50 + int((idx / total_rural) * 15)
                             update_progress("guardando_rural", pct, f"Procesando geometrías rurales: {idx}/{total_rural}")
+                        
                         codigo = None
                         for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED']:
                             if col in gdf_rural.columns and pd.notna(row.get(col)):
-                                codigo = str(row[col])
+                                codigo = str(row[col]).strip()
                                 break
-                        if codigo and row.geometry:
-                            try:
-                                geom_wgs84 = transform(project, row.geometry) if project else row.geometry
-                                
-                                # Validar que las coordenadas estén en Colombia
-                                if not validate_colombia_coordinates(geom_wgs84):
-                                    logger.warning(f"Geometría fuera de Colombia descartada: {codigo}")
-                                    continue
-                                
-                                # Calcular área en m2
-                                area_m2 = 0
-                                try:
-                                    # El área en grados se convierte aproximadamente a m2
-                                    # Factor para Colombia (~7° latitud): 1 grado ≈ 111320 m
-                                    area_deg = geom_wgs84.area
-                                    area_m2 = round(area_deg * (111320 ** 2), 2)
-                                except:
-                                    pass
-                                
-                                await db.gdb_geometrias.insert_one({
-                                    "codigo": codigo,
-                                    "tipo": "rural",
-                                    "tipo_zona": "rural",
-                                    "gdb_source": gdb_name,
-                                    "municipio": municipio_nombre,
-                                    "area_m2": area_m2,
-                                    "geometry": geom_wgs84.__geo_interface__
+                        
+                        if not codigo:
+                            errores_calidad['rurales_rechazados'] += 1
+                            continue
+                        
+                        # Validar longitud del código (debe ser 30 dígitos)
+                        if len(codigo) != 30:
+                            errores_calidad['codigos_invalidos'].append({
+                                'codigo': codigo,
+                                'longitud': len(codigo),
+                                'capa': rural_layer
+                            })
+                        
+                        if not row.geometry:
+                            errores_calidad['rurales_rechazados'] += 1
+                            errores_calidad['geometrias_rechazadas'].append({
+                                'codigo': codigo,
+                                'razon': 'Geometría nula',
+                                'capa': rural_layer
+                            })
+                            continue
+                        
+                        try:
+                            geom_wgs84 = transform(project, row.geometry) if project else row.geometry
+                            
+                            # Validar que las coordenadas estén en Colombia
+                            if not validate_colombia_coordinates(geom_wgs84):
+                                errores_calidad['rurales_rechazados'] += 1
+                                errores_calidad['geometrias_rechazadas'].append({
+                                    'codigo': codigo,
+                                    'razon': 'Coordenadas fuera de Colombia',
+                                    'capa': rural_layer
                                 })
-                                geometrias_guardadas += 1
-                                rural_guardadas += 1
+                                logger.warning(f"Geometría fuera de Colombia descartada: {codigo}")
+                                continue
+                            
+                            # Calcular área en m2
+                            area_m2 = 0
+                            try:
+                                # El área en grados se convierte aproximadamente a m2
+                                # Factor para Colombia (~7° latitud): 1 grado ≈ 111320 m
+                                area_deg = geom_wgs84.area
+                                area_m2 = round(area_deg * (111320 ** 2), 2)
                             except:
                                 pass
+                            
+                            await db.gdb_geometrias.insert_one({
+                                "codigo": codigo,
+                                "tipo": "rural",
+                                "tipo_zona": "rural",
+                                "gdb_source": gdb_name,
+                                "municipio": municipio_nombre,
+                                "area_m2": area_m2,
+                                "geometry": geom_wgs84.__geo_interface__
+                            })
+                            geometrias_guardadas += 1
+                            rural_guardadas += 1
+                        except Exception as geom_error:
+                            errores_calidad['rurales_rechazados'] += 1
+                            errores_calidad['geometrias_rechazadas'].append({
+                                'codigo': codigo,
+                                'razon': str(geom_error)[:50],
+                                'capa': rural_layer
+                            })
+                            logger.warning(f"Error procesando geometría rural {codigo}: {geom_error}")
+                    
                     logger.info(f"GDB {municipio_nombre}: Guardadas {rural_guardadas} geometrías rurales desde capa {rural_layer}")
                     break
-                except:
+                except Exception as layer_error:
+                    logger.debug(f"Capa {rural_layer} no encontrada o error: {layer_error}")
                     continue
             
             update_progress("guardando_urbano", 65, "Procesando geometrías urbanas...")
