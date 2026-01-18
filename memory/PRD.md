@@ -63,6 +63,20 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 
 ## Cambios Recientes
 
+### Sesión 18 Enero 2026 - Fork
+**Bug Crítico Corregido - Carga de GDB procesaba archivo equivocado:**
+1. ✅ **Identificación de GDB en ZIP:** El sistema ahora identifica el nombre de la carpeta .gdb DENTRO del ZIP antes de extraerlo, en lugar de buscar cualquier .gdb en el directorio
+2. ✅ **Priorización de capas U_TERRENO:** Eliminada la búsqueda dinámica de capas U_ que incluía capas incorrectas como U_BARRIO, U_MANZANA, etc.
+3. ✅ **Resultado:** Al cargar el GDB de Bucarasica (54109):
+   - Antes: Solo 7 predios urbanos (cargaba U_BARRIO)
+   - Ahora: 182 predios urbanos correctamente (U_TERRENO)
+   - Rurales: 1,249 predios ✅
+   - Total: 1,431 geometrías ✅
+
+**Correcciones de referencias a variables no definidas:**
+- ✅ Corregido uso de `municipio_nombre` antes de su definición en la función de upload GDB
+- ✅ Ahora usa `gdb_name` o `municipio_nombre_inicial` temporalmente hasta detectar desde códigos prediales
+
 ### Sesión 17 Enero 2026 (Parte 7) - Fork
 1. **Bug Fix - Registro de Usuarios (CORREGIDO):**
    - ✅ Corregido error en endpoint de registro - API usaba URL incorrecta
