@@ -618,24 +618,32 @@ export default function VisorPredios() {
       setSelectedPredio(predio);
       
       // Get geometry
+      const authToken = localStorage.getItem('token');
       const geoResponse = await axios.get(`${API}/predios/codigo/${predio.codigo_predial_nacional}/geometria`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${authToken}` }
       });
       
       setGeometry(geoResponse.data);
       
       // Verificar si el predio tiene construcciones (sin cargarlas)
       try {
-        const authToken = localStorage.getItem('token');
-        const constResponse = await axios.get(`${API}/gdb/construcciones/${predio.codigo_gdb || predio.codigo_predial_nacional}`, {
+        const codigoParaBuscar = predio.codigo_gdb || predio.codigo_predial_nacional;
+        console.log('Buscando construcciones para:', codigoParaBuscar);
+        
+        const constResponse = await axios.get(`${API}/gdb/construcciones/${codigoParaBuscar}`, {
           headers: { Authorization: `Bearer ${authToken}` }
         });
-        if (constResponse.data.construcciones?.length > 0) {
+        
+        console.log('Respuesta construcciones:', constResponse.data);
+        
+        if (constResponse.data && constResponse.data.construcciones && constResponse.data.construcciones.length > 0) {
+          console.log('Construcciones encontradas:', constResponse.data.construcciones.length);
           setTieneConstrucciones(true);
           // NO cargar automáticamente - el usuario debe activar el toggle
           setConstrucciones(null);
           setMostrarConstrucciones(false);
         } else {
+          console.log('No hay construcciones');
           setTieneConstrucciones(false);
           setConstrucciones(null);
         }
