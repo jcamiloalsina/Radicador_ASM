@@ -908,7 +908,7 @@ export default function VisorPredios() {
                       <button 
                         onClick={() => {
                           const link = document.createElement('a');
-                          link.href = `${API}/gdb/reporte/${calidad.reporte_pdf}`;
+                          link.href = `${API}/gdb/reportes-calidad/${calidad.reporte_pdf}`;
                           link.download = calidad.reporte_pdf;
                           link.target = '_blank';
                           document.body.appendChild(link);
