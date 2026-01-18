@@ -9027,6 +9027,53 @@ async def upload_gdb_file(
         # Limpiar progreso después de 5 minutos
         # (en producción esto se haría con un scheduler)
         
+        # Generar reporte de calidad si hay errores
+        reporte_path = None
+        tiene_errores = (
+            len(errores_calidad['codigos_invalidos']) > 0 or
+            len(errores_calidad['geometrias_rechazadas']) > 0 or
+            len(errores_calidad['construcciones_huerfanas']) > 0 or
+            errores_calidad['rurales_rechazados'] > 0 or
+            errores_calidad['urbanos_rechazados'] > 0
+        )
+        
+        # Calcular calidad
+        total_archivo = stats.get('rurales_archivo', 0) + stats.get('urbanos_archivo', 0)
+        total_cargadas = stats.get('rurales', 0) + stats.get('urbanos', 0)
+        calidad_pct = (total_cargadas / total_archivo * 100) if total_archivo > 0 else 100
+        
+        if tiene_errores or calidad_pct < 95:
+            try:
+                reporte_path = await generar_reporte_calidad_gdb(
+                    municipio=municipio_nombre,
+                    fecha_carga=datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    usuario=current_user['full_name'],
+                    stats=stats,
+                    errores=errores_calidad
+                )
+                logger.info(f"Reporte de calidad generado: {reporte_path}")
+                
+                # Notificar a coordinadores si hay errores significativos
+                if calidad_pct < 80 or len(errores_calidad['codigos_invalidos']) > 10:
+                    coordinadores = await db.users.find(
+                        {"role": {"$in": [UserRole.COORDINADOR, UserRole.ADMINISTRADOR]}},
+                        {"_id": 0, "id": 1, "full_name": 1}
+                    ).to_list(100)
+                    
+                    for coord in coordinadores:
+                        await crear_notificacion(
+                            usuario_id=coord['id'],
+                            titulo=f"⚠️ Reporte de Calidad GDB - {municipio_nombre}",
+                            mensaje=f"La carga de GDB de {municipio_nombre} tiene problemas de calidad ({calidad_pct:.1f}%). "
+                                   f"Códigos inválidos: {len(errores_calidad['codigos_invalidos'])}, "
+                                   f"Geometrías rechazadas: {len(errores_calidad['geometrias_rechazadas'])}. "
+                                   f"Revisar reporte PDF.",
+                            tipo="warning",
+                            enviar_email=False
+                        )
+            except Exception as report_err:
+                logger.error(f"Error generando reporte de calidad: {report_err}")
+        
         return {
             "message": f"Base gráfica de {municipio_nombre} actualizada exitosamente",
             "municipio": municipio_nombre,
@@ -9038,7 +9085,22 @@ async def upload_gdb_file(
             "codigos_unicos_gdb": stats.get("codigos_gdb_unicos", 0),
             "geometrias_guardadas": stats.get("geometrias_guardadas", 0),
             "predios_relacionados": stats["relacionados"],
-            "metodo_match": stats.get("metodo_match", "directo")
+            "metodo_match": stats.get("metodo_match", "directo"),
+            # Nuevos campos de calidad
+            "calidad": {
+                "porcentaje": round(calidad_pct, 1),
+                "rurales_archivo": stats.get('rurales_archivo', 0),
+                "urbanos_archivo": stats.get('urbanos_archivo', 0),
+                "codigos_invalidos": len(errores_calidad['codigos_invalidos']),
+                "geometrias_rechazadas": len(errores_calidad['geometrias_rechazadas']),
+                "construcciones_huerfanas": len(errores_calidad['construcciones_huerfanas']),
+                "reporte_pdf": reporte_path.split('/')[-1] if reporte_path else None
+            },
+            "construcciones": {
+                "total": stats.get('construcciones', 0),
+                "rurales": stats.get('construcciones_rurales', 0),
+                "urbanas": stats.get('construcciones_urbanas', 0)
+            }
         }
         
     except zipfile.BadZipFile:
