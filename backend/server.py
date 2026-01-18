@@ -8654,67 +8654,112 @@ async def upload_gdb_file(
                     urban_layers_save.insert(0, layer_name)
             
             urban_guardadas = 0
+            urbanos_en_archivo = 0
             for urban_layer in urban_layers_save:
                 try:
                     gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
                     if len(gdf_urban) == 0:
                         continue
                     
+                    urbanos_en_archivo = len(gdf_urban)
+                    
                     # Get transformer based on this layer's CRS
                     project = get_transformer_for_gdf(gdf_urban)
-                    logger.info(f"GDB {municipio_nombre}: CRS urbano ({urban_layer}): {gdf_urban.crs}")
+                    logger.info(f"GDB {municipio_nombre}: CRS urbano ({urban_layer}): {gdf_urban.crs}, Total registros: {len(gdf_urban)}")
                     
                     total_urban = len(gdf_urban)
                     for idx, row in gdf_urban.iterrows():
                         if idx % 500 == 0:
                             pct = 65 + int((idx / total_urban) * 10)
                             update_progress("guardando_urbano", pct, f"Procesando geometrías urbanas: {idx}/{total_urban}")
+                        
                         codigo = None
                         for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO', 'CODIGO_PRED']:
                             if col in gdf_urban.columns and pd.notna(row.get(col)):
-                                codigo = str(row[col])
+                                codigo = str(row[col]).strip()
                                 break
-                        if codigo and row.geometry:
-                            try:
-                                geom_wgs84 = transform(project, row.geometry) if project else row.geometry
-                                
-                                # Validar que las coordenadas estén en Colombia
-                                if not validate_colombia_coordinates(geom_wgs84):
-                                    logger.warning(f"Geometría fuera de Colombia descartada: {codigo}")
-                                    continue
-                                
-                                # Calcular área en m2
-                                area_m2 = 0
-                                try:
-                                    area_deg = geom_wgs84.area
-                                    area_m2 = round(area_deg * (111320 ** 2), 2)
-                                except:
-                                    pass
-                                
-                                await db.gdb_geometrias.insert_one({
-                                    "codigo": codigo,
-                                    "tipo": "urbano",
-                                    "tipo_zona": "urbano",
-                                    "gdb_source": gdb_name,
-                                    "municipio": municipio_nombre,
-                                    "area_m2": area_m2,
-                                    "geometry": geom_wgs84.__geo_interface__
+                        
+                        if not codigo:
+                            errores_calidad['urbanos_rechazados'] += 1
+                            continue
+                        
+                        # Validar longitud del código (debe ser 30 dígitos)
+                        if len(codigo) != 30:
+                            errores_calidad['codigos_invalidos'].append({
+                                'codigo': codigo,
+                                'longitud': len(codigo),
+                                'capa': urban_layer
+                            })
+                        
+                        if not row.geometry:
+                            errores_calidad['urbanos_rechazados'] += 1
+                            errores_calidad['geometrias_rechazadas'].append({
+                                'codigo': codigo,
+                                'razon': 'Geometría nula',
+                                'capa': urban_layer
+                            })
+                            continue
+                        
+                        try:
+                            geom_wgs84 = transform(project, row.geometry) if project else row.geometry
+                            
+                            # Validar que las coordenadas estén en Colombia
+                            if not validate_colombia_coordinates(geom_wgs84):
+                                errores_calidad['urbanos_rechazados'] += 1
+                                errores_calidad['geometrias_rechazadas'].append({
+                                    'codigo': codigo,
+                                    'razon': 'Coordenadas fuera de Colombia',
+                                    'capa': urban_layer
                                 })
-                                geometrias_guardadas += 1
-                                urban_guardadas += 1
+                                logger.warning(f"Geometría urbana fuera de Colombia descartada: {codigo}")
+                                continue
+                            
+                            # Calcular área en m2
+                            area_m2 = 0
+                            try:
+                                area_deg = geom_wgs84.area
+                                area_m2 = round(area_deg * (111320 ** 2), 2)
                             except:
                                 pass
+                            
+                            await db.gdb_geometrias.insert_one({
+                                "codigo": codigo,
+                                "tipo": "urbano",
+                                "tipo_zona": "urbano",
+                                "gdb_source": gdb_name,
+                                "municipio": municipio_nombre,
+                                "area_m2": area_m2,
+                                "geometry": geom_wgs84.__geo_interface__
+                            })
+                            geometrias_guardadas += 1
+                            urban_guardadas += 1
+                        except Exception as geom_error:
+                            errores_calidad['urbanos_rechazados'] += 1
+                            errores_calidad['geometrias_rechazadas'].append({
+                                'codigo': codigo,
+                                'razon': str(geom_error)[:50],
+                                'capa': urban_layer
+                            })
+                            logger.warning(f"Error procesando geometría urbana {codigo}: {geom_error}")
+                    
                     logger.info(f"GDB {municipio_nombre}: Guardadas {urban_guardadas} geometrías urbanas desde capa {urban_layer}")
                     break
-                except:
+                except Exception as layer_error:
+                    logger.debug(f"Capa {urban_layer} no encontrada o error: {layer_error}")
                     continue
         except Exception as e:
-            logger.warning(f"Error guardando geometrías: {e}")
+            logger.error(f"Error guardando geometrías: {e}")
+        
+        # Guardar estadísticas del archivo original
+        stats['rurales_archivo'] = rurales_en_archivo
+        stats['urbanos_archivo'] = urbanos_en_archivo
         
         # ===== PROCESAR CONSTRUCCIONES =====
         update_progress("leyendo_construcciones", 70, "Buscando capas de construcciones...")
         
         construcciones_guardadas = 0
+        construcciones_rurales = 0
+        construcciones_urbanas = 0
         # SOLO nombres estándar
         construcciones_layers = ['R_CONSTRUCCION', 'U_CONSTRUCCION']
         
