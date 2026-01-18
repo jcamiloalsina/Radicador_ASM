@@ -8688,8 +8688,6 @@ async def upload_gdb_file(
             ]
             # NO agregar dinámicamente otras capas U_ ya que pueden ser BARRIO, MANZANA, etc.
             
-            urban_guardadas = 0
-            urbanos_en_archivo = 0
             for urban_layer in urban_layers_save:
                 try:
                     gdf_urban = gpd.read_file(str(gdb_found), layer=urban_layer)
