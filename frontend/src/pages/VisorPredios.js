@@ -900,9 +900,28 @@ export default function VisorPredios() {
                   toast.error(`❌ Problemas de calidad. ${calidadMsg}. Se generó reporte PDF para revisión.`, { duration: 10000 });
                 }
                 
-                // Si hay reporte PDF, mostrar notificación adicional
+                // Si hay reporte PDF, mostrar notificación con enlace de descarga
                 if (calidad.reporte_pdf) {
-                  toast.info(`📄 Reporte de calidad disponible: ${calidad.reporte_pdf}`, { duration: 6000 });
+                  toast.info(
+                    <div className="flex flex-col gap-1">
+                      <span>📄 Reporte de calidad disponible</span>
+                      <button 
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = `${API}/gdb/reporte/${calidad.reporte_pdf}`;
+                          link.download = calidad.reporte_pdf;
+                          link.target = '_blank';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        className="text-blue-600 underline text-sm hover:text-blue-800"
+                      >
+                        Descargar PDF
+                      </button>
+                    </div>,
+                    { duration: 10000 }
+                  );
                 }
               } else {
                 toast.success(`¡Completado! ${response.data.predios_relacionados} predios relacionados de ${response.data.total_geometrias_gdb} geometrías GDB`);
