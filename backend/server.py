@@ -8675,18 +8675,14 @@ async def upload_gdb_file(
                     continue
             
             update_progress("guardando_urbano", 65, "Procesando geometrías urbanas...")
+            # Lista de capas urbanas de terreno - priorizar nombres específicos
             urban_layers_save = [
-                'U_TERRENO_1', 'U_TERRENO', 'U_Terreno', 'u_terreno', 'u_terreno_1',
-                'URBANO', 'Urbano', 'urbano',
+                'U_TERRENO', 'U_TERRENO_1',  # Prioridad: nombres estándar de TERRENO
+                'U_Terreno', 'u_terreno', 'u_terreno_1',
                 'TERRENO_U', 'terreno_u', 'Terreno_U',
                 'U_PREDIO', 'U_Predio', 'u_predio'
             ]
-            # También buscar capas dinámicamente
-            for layer_name in available_layers:
-                if layer_name.upper().startswith('U_') and layer_name not in urban_layers_save:
-                    urban_layers_save.insert(0, layer_name)
-                elif 'URBAN' in layer_name.upper() and layer_name not in urban_layers_save:
-                    urban_layers_save.insert(0, layer_name)
+            # NO agregar dinámicamente otras capas U_ ya que pueden ser BARRIO, MANZANA, etc.
             
             urban_guardadas = 0
             urbanos_en_archivo = 0
