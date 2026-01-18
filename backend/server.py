@@ -8513,7 +8513,7 @@ async def upload_gdb_file(
                     if len(gdf_urban) > 0:
                         stats["urbanos"] = len(gdf_urban)
                         urban_layer_found = urban_layer
-                        logger.info(f"GDB {municipio_nombre}: Capa urbana encontrada '{urban_layer}' con {len(gdf_urban)} registros")
+                        logger.info(f"GDB {gdb_name}: Capa urbana encontrada '{urban_layer}' con {len(gdf_urban)} registros")
                         update_progress("leyendo_urbano", 45, f"Capa urbana ({urban_layer}): {len(gdf_urban)} geometrías encontradas")
                         for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
                             if col in gdf_urban.columns:
