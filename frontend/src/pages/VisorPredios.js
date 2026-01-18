@@ -1617,62 +1617,6 @@ export default function VisorPredios() {
                   <p className="text-lg font-bold text-emerald-700">{formatCurrency(selectedPredio.avaluo)}</p>
                 </div>
 
-                {/* Construcciones del GDB - Toggle para mostrar/ocultar */}
-                {tieneConstrucciones ? (
-                  <div className="border-t pt-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs text-slate-500 flex items-center gap-1">
-                        <Building className="w-3 h-3 text-red-600" /> 
-                        Construcciones disponibles
-                      </p>
-                      <Button
-                        variant={mostrarConstrucciones ? "default" : "outline"}
-                        size="sm"
-                        className={`h-7 text-xs ${mostrarConstrucciones ? 'bg-red-600 hover:bg-red-700' : 'border-red-300 text-red-600 hover:bg-red-50'}`}
-                        onClick={toggleConstrucciones}
-                        disabled={cargandoConstrucciones}
-                        data-testid="toggle-construcciones-btn"
-                      >
-                        {cargandoConstrucciones ? (
-                          <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                        ) : mostrarConstrucciones ? (
-                          <Eye className="w-3 h-3 mr-1" />
-                        ) : (
-                          <EyeOff className="w-3 h-3 mr-1" />
-                        )}
-                        {mostrarConstrucciones ? 'Ocultar' : 'Mostrar'}
-                      </Button>
-                    </div>
-                    
-                    {/* Lista de construcciones (solo si están visibles) */}
-                    {mostrarConstrucciones && construcciones && construcciones.length > 0 && (
-                      <div className="space-y-2 max-h-32 overflow-y-auto">
-                        {construcciones.map((const_item, idx) => (
-                          <div key={idx} className="bg-red-50 border border-red-200 rounded p-2 text-xs">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-red-800">🏠 Construcción {idx + 1}</span>
-                              <Badge variant="outline" className="text-[10px] bg-red-100 text-red-700">
-                                {const_item.tipo_zona}
-                              </Badge>
-                            </div>
-                            <p className="text-red-700">Área: {formatArea(const_item.area_m2)}</p>
-                            {const_item.pisos > 1 && (
-                              <p className="text-red-600">Pisos: {const_item.pisos}</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : geometry && (
-                  <div className="border-t pt-2">
-                    <p className="text-xs text-slate-400 flex items-center gap-1">
-                      <Building className="w-3 h-3" /> 
-                      Sin construcciones en GDB
-                    </p>
-                  </div>
-                )}
-
                 {/* Botón Certificado */}
                 {['coordinador', 'administrador', 'atencion_usuario'].includes(user?.role) && (
                   <Button
