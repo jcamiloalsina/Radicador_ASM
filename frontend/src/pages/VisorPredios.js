@@ -624,17 +624,22 @@ export default function VisorPredios() {
       
       setGeometry(geoResponse.data);
       
-      // Obtener construcciones del predio
+      // Verificar si el predio tiene construcciones (sin cargarlas)
       try {
         const constResponse = await axios.get(`${API}/gdb/construcciones/${predio.codigo_gdb || predio.codigo_predial_nacional}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (constResponse.data.construcciones?.length > 0) {
-          setConstrucciones(constResponse.data.construcciones);
+          setTieneConstrucciones(true);
+          // NO cargar automáticamente - el usuario debe activar el toggle
+          setConstrucciones(null);
+          setMostrarConstrucciones(false);
         } else {
+          setTieneConstrucciones(false);
           setConstrucciones(null);
         }
       } catch (constError) {
+        setTieneConstrucciones(false);
         setConstrucciones(null);
       }
       
@@ -647,8 +652,38 @@ export default function VisorPredios() {
       }
       setGeometry(null);
       setConstrucciones(null);
+      setTieneConstrucciones(false);
+      setMostrarConstrucciones(false);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Función para cargar/ocultar construcciones
+  const toggleConstrucciones = async () => {
+    if (mostrarConstrucciones) {
+      // Ocultar
+      setMostrarConstrucciones(false);
+      setConstrucciones(null);
+      return;
+    }
+    
+    // Cargar y mostrar
+    if (!selectedPredio) return;
+    
+    setCargandoConstrucciones(true);
+    try {
+      const constResponse = await axios.get(`${API}/gdb/construcciones/${selectedPredio.codigo_gdb || selectedPredio.codigo_predial_nacional}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (constResponse.data.construcciones?.length > 0) {
+        setConstrucciones(constResponse.data.construcciones);
+        setMostrarConstrucciones(true);
+      }
+    } catch (error) {
+      toast.error('Error al cargar construcciones');
+    } finally {
+      setCargandoConstrucciones(false);
     }
   };
 
