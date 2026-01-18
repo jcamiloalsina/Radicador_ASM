@@ -1462,7 +1462,7 @@ export default function VisorPredios() {
                   </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 pt-3 text-sm">
+              <CardContent className="space-y-3 pt-3 text-sm max-h-[60vh] overflow-y-auto">
                 {/* Código Predial */}
                 <div className="bg-slate-50 p-2 rounded">
                   <p className="text-xs text-slate-500">Código Predial Nacional</p>
