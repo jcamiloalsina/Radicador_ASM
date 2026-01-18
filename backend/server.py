@@ -8487,7 +8487,7 @@ async def upload_gdb_file(
                     if len(gdf_rural) > 0:
                         stats["rurales"] = len(gdf_rural)
                         rural_layer_found = rural_layer
-                        logger.info(f"GDB {municipio_nombre}: Capa rural encontrada '{rural_layer}' con {len(gdf_rural)} registros")
+                        logger.info(f"GDB {gdb_name}: Capa rural encontrada '{rural_layer}' con {len(gdf_rural)} registros")
                         update_progress("leyendo_rural", 35, f"Capa rural ({rural_layer}): {len(gdf_rural)} geometrías encontradas")
                         # Extraer códigos prediales
                         for col in ['CODIGO', 'codigo', 'CODIGO_PREDIAL', 'codigo_predial', 'COD_PREDIO']:
