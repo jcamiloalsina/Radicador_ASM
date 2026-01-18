@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { 
   Map, Search, MapPin, Building, User, DollarSign, 
-  Layers, ZoomIn, ZoomOut, Home, FileText, AlertCircle, Eye, EyeOff, Navigation, Crosshair, AlertTriangle, CheckCircle, XCircle, Upload, Trash2, Image
+  Layers, ZoomIn, ZoomOut, Home, FileText, AlertCircle, Eye, EyeOff, Navigation, Crosshair, AlertTriangle, CheckCircle, XCircle, Upload, Trash2, Image, Loader2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
