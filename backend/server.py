@@ -8576,6 +8576,7 @@ async def upload_gdb_file(
                                 await db.gdb_geometrias.insert_one({
                                     "codigo": codigo,
                                     "tipo": "rural",
+                                    "tipo_zona": "rural",
                                     "gdb_source": gdb_name,
                                     "municipio": municipio_nombre,
                                     "area_m2": area_m2,
