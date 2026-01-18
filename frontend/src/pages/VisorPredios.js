@@ -843,7 +843,33 @@ export default function VisorPredios() {
               checkCount++;
               setTimeout(checkProgress, 1000);
             } else if (progressRes.data.status === 'completado') {
-              toast.success(`¡Completado! ${response.data.predios_relacionados} predios relacionados de ${response.data.total_geometrias_gdb} geometrías GDB`);
+              // Obtener datos de calidad de la respuesta original
+              const calidad = response.data.calidad;
+              const construcciones = response.data.construcciones;
+              
+              if (calidad) {
+                // Mostrar resumen de calidad
+                const calidadPct = calidad.porcentaje || 100;
+                let calidadMsg = `Calidad: ${calidadPct}%`;
+                
+                if (calidadPct >= 95) {
+                  toast.success(`✅ ¡Excelente! ${response.data.predios_relacionados} predios vinculados. ${calidadMsg}`);
+                } else if (calidadPct >= 80) {
+                  toast.success(`✓ Carga exitosa. ${response.data.predios_relacionados} predios vinculados. ${calidadMsg}`, { duration: 5000 });
+                } else if (calidadPct >= 60) {
+                  toast.warning(`⚠️ Carga con observaciones. ${calidadMsg}. Códigos inválidos: ${calidad.codigos_invalidos}, Rechazadas: ${calidad.geometrias_rechazadas}`, { duration: 8000 });
+                } else {
+                  toast.error(`❌ Problemas de calidad. ${calidadMsg}. Se generó reporte PDF para revisión.`, { duration: 10000 });
+                }
+                
+                // Si hay reporte PDF, mostrar notificación adicional
+                if (calidad.reporte_pdf) {
+                  toast.info(`📄 Reporte de calidad disponible: ${calidad.reporte_pdf}`, { duration: 6000 });
+                }
+              } else {
+                toast.success(`¡Completado! ${response.data.predios_relacionados} predios relacionados de ${response.data.total_geometrias_gdb} geometrías GDB`);
+              }
+              
               fetchGdbStats();
               verificarCargasMensuales(); // Actualizar estado de cargas mensuales
               setShowUploadGdb(false);
@@ -860,7 +886,12 @@ export default function VisorPredios() {
         setTimeout(checkProgress, 1000);
       } else {
         // Sin upload_id, mostrar resultado directo
-        toast.success(`Base gráfica de ${response.data.municipio || 'municipio'} actualizada. ${response.data.total_geometrias_gdb || response.data.total_geometrias} geometrías, ${response.data.predios_relacionados} predios relacionados.`);
+        const calidad = response.data.calidad;
+        if (calidad && calidad.porcentaje < 80) {
+          toast.warning(`⚠️ Carga con observaciones. Calidad: ${calidad.porcentaje}%. Revisar reporte PDF.`);
+        } else {
+          toast.success(`Base gráfica de ${response.data.municipio || 'municipio'} actualizada. ${response.data.total_geometrias_gdb || response.data.total_geometrias} geometrías, ${response.data.predios_relacionados} predios relacionados.`);
+        }
         fetchGdbStats();
         verificarCargasMensuales(); // Actualizar estado de cargas mensuales
         setShowUploadGdb(false);
