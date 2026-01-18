@@ -77,6 +77,12 @@ Sistema web para gestión catastral de la Asociación de Municipios del Catatumb
 - ✅ Corregido uso de `municipio_nombre` antes de su definición en la función de upload GDB
 - ✅ Ahora usa `gdb_name` o `municipio_nombre_inicial` temporalmente hasta detectar desde códigos prediales
 
+**Construcciones en Visor (VERIFICADO):**
+- ✅ 187 construcciones cargadas (186 urbanas + 1 rural)
+- ✅ Se visualizan en el mapa como polígonos rojos
+- ✅ Panel lateral muestra lista de construcciones con área
+- ✅ API `/api/gdb/construcciones/{codigo}` funciona correctamente
+
 ### Sesión 17 Enero 2026 (Parte 7) - Fork
 1. **Bug Fix - Registro de Usuarios (CORREGIDO):**
    - ✅ Corregido error en endpoint de registro - API usaba URL incorrecta
